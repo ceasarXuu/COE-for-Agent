@@ -1,0 +1,334 @@
+openapi: 3.1.0
+info:
+  title: COE for Agent Control Plane
+  version: 1.0.0
+  description: >-
+    Non-MCP control-plane endpoints for health, export, and projection maintenance.
+servers:
+  - url: http://127.0.0.1:8080
+tags:
+  - name: health
+  - name: export
+  - name: admin
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness probe
+      operationId: getHealthz
+      responses:
+        '200':
+          description: Service process is alive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /readyz:
+    get:
+      tags: [health]
+      summary: Readiness probe
+      operationId: getReadyz
+      responses:
+        '200':
+          description: Service can accept MCP traffic.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+  /version:
+    get:
+      tags: [health]
+      summary: Build version
+      operationId: getVersion
+      responses:
+        '200':
+          description: Running application version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+  /cases/{caseId}/export/prov:
+    get:
+      tags: [export]
+      summary: Export a PROV-compatible evidence package
+      operationId: exportProv
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      responses:
+        '200':
+          description: PROV export bundle.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvExportResponse'
+        '404':
+          description: Case not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /cases/{caseId}/export/events:
+    get:
+      tags: [export]
+      summary: Export canonical case events as CloudEvents envelopes
+      operationId: exportCaseEvents
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      responses:
+        '200':
+          description: Event export bundle.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventExportResponse'
+        '404':
+          description: Case not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/rebuild-projection:
+    post:
+      tags: [admin]
+      summary: Rebuild and checkpoint a case projection at a requested revision
+      operationId: rebuildProjection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RebuildProjectionRequest'
+      responses:
+        '200':
+          description: Projection rebuilt and checkpointed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RebuildProjectionResponse'
+        '400':
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Case not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  parameters:
+    CaseId:
+      name: caseId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Investigation case identifier.
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [ok, service]
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+    ReadyResponse:
+      type: object
+      additionalProperties: false
+      required: [ok, transport]
+      properties:
+        ok:
+          type: boolean
+        transport:
+          type: string
+    VersionResponse:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: string
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message:
+          type: string
+    ProvExportResponse:
+      type: object
+      additionalProperties: false
+      required: [caseId, generatedAt, entities, activities, relations]
+      properties:
+        caseId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvEntity'
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvActivity'
+        relations:
+          $ref: '#/components/schemas/ProvRelations'
+    ProvEntity:
+      type: object
+      additionalProperties: false
+      required: [id, kind, label]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        label:
+          type: string
+    ProvActivity:
+      type: object
+      additionalProperties: false
+      required: [activityId, activityType, caseRevision, occurredAt]
+      properties:
+        activityId:
+          type: string
+        activityType:
+          type: string
+        caseRevision:
+          type: integer
+        occurredAt:
+          type: string
+          format: date-time
+    ProvRelations:
+      type: object
+      additionalProperties: false
+      required: [used, wasGeneratedBy, wasAssociatedWith, wasDerivedFrom]
+      properties:
+        used:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvUsedRelation'
+        wasGeneratedBy:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvGeneratedByRelation'
+        wasAssociatedWith:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvAssociatedWithRelation'
+        wasDerivedFrom:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvDerivedFromRelation'
+    ProvUsedRelation:
+      type: object
+      additionalProperties: false
+      required: [activityId, activityType, entityId]
+      properties:
+        activityId:
+          type: string
+        activityType:
+          type: string
+        entityId:
+          type: string
+    ProvGeneratedByRelation:
+      type: object
+      additionalProperties: false
+      required: [entityId, activityId, activityType]
+      properties:
+        entityId:
+          type: string
+        activityId:
+          type: string
+        activityType:
+          type: string
+    ProvAssociatedWithRelation:
+      type: object
+      additionalProperties: false
+      required: [activityId, actorId, actorType]
+      properties:
+        activityId:
+          type: string
+        actorId:
+          type: string
+        actorType:
+          type: string
+    ProvDerivedFromRelation:
+      type: object
+      additionalProperties: false
+      required: [generatedEntityId, usedEntityId]
+      properties:
+        generatedEntityId:
+          type: string
+        usedEntityId:
+          type: string
+    EventExportResponse:
+      type: object
+      additionalProperties: false
+      required: [caseId, exportedAt, events]
+      properties:
+        caseId:
+          type: string
+        exportedAt:
+          type: string
+          format: date-time
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudEventEnvelope'
+    CloudEventEnvelope:
+      type: object
+      additionalProperties: true
+      required: [specversion, id, source, type, subject, time, dataschema, data]
+      properties:
+        specversion:
+          type: string
+          const: '1.0'
+        id:
+          type: string
+        source:
+          type: string
+        type:
+          type: string
+        subject:
+          type: string
+        time:
+          type: string
+          format: date-time
+        dataschema:
+          type: string
+          format: uri
+        data:
+          type: object
+          additionalProperties: true
+    RebuildProjectionRequest:
+      type: object
+      additionalProperties: false
+      required: [caseId]
+      properties:
+        caseId:
+          type: string
+        revision:
+          type: integer
+          minimum: 0
+          description: Optional target revision to replay and checkpoint.
+    RebuildProjectionResponse:
+      type: object
+      additionalProperties: false
+      required: [ok, caseId, requestedRevision, projectionRevision, headRevision]
+      properties:
+        ok:
+          type: boolean
+        caseId:
+          type: string
+        requestedRevision:
+          type: integer
+        projectionRevision:
+          type: integer
+        headRevision:
+          type: integer

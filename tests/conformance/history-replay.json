@@ -1,0 +1,12 @@
+{
+  "fixtureName": "history-replay",
+  "profileVersion": "1.0.0",
+  "caseId": "case_01JQ9Y2D3E5H7K9M1N2P3Q4R5S",
+  "fromRevision": 2,
+  "toRevision": 5,
+  "expectedResources": [
+    "investigation://cases/{caseId}/timeline",
+    "investigation://cases/{caseId}/snapshot",
+    "investigation://cases/{caseId}/diff"
+  ]
+}

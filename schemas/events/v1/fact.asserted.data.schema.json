@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/fact.asserted.data.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "caseId", "caseRevision", "factId", "statement", "factKind", "polarity"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "caseRevision": { "type": "integer", "minimum": 1 },
+    "factId": { "type": "string", "pattern": "^fact_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "statement": { "type": "string" },
+    "factKind": { "type": "string" },
+    "polarity": { "type": "string", "enum": ["positive", "negative"] }
+  }
+}

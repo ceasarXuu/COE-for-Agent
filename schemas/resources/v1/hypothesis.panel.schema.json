@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/resources/v1/hypothesis.panel.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["headRevision", "projectionRevision", "requestedRevision", "stale", "historical", "data"],
+  "properties": {
+    "headRevision": { "type": "integer", "minimum": 0 },
+    "projectionRevision": { "type": "integer", "minimum": 0 },
+    "requestedRevision": { "type": ["integer", "null"], "minimum": 0 },
+    "stale": { "type": "boolean" },
+    "historical": { "type": "boolean" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hypothesis", "supportingFacts", "relatedExperiments"],
+      "properties": {
+        "hypothesis": { "type": "object", "additionalProperties": true },
+        "supportingFacts": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "relatedExperiments": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      }
+    }
+  }
+}

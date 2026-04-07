@@ -1,0 +1,10 @@
+{
+  "fixtureName": "close-case-gated",
+  "profileVersion": "1.0.0",
+  "caseId": "case_01JQ9Y2D3E5H7K9M1N2P3Q4R5S",
+  "expectedGuardrail": "investigation.guardrail.close_case_check",
+  "blockingReasons": [
+    "open inquiry remains",
+    "missing validation references"
+  ]
+}

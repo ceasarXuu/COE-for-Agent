@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/resources/v1/cases.collection.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["headRevision", "projectionRevision", "requestedRevision", "stale", "historical", "data"],
+  "properties": {
+    "headRevision": { "type": "integer", "minimum": 0 },
+    "projectionRevision": { "type": "integer", "minimum": 0 },
+    "requestedRevision": { "type": ["integer", "null"], "minimum": 0 },
+    "stale": { "type": "boolean" },
+    "historical": { "type": "boolean" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["caseId", "title", "status", "stage", "severity", "headRevision"],
+            "properties": {
+              "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+              "title": { "type": "string" },
+              "status": { "type": "string" },
+              "stage": { "type": "string" },
+              "severity": { "type": "string" },
+              "headRevision": { "type": "integer", "minimum": 1 },
+              "updatedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

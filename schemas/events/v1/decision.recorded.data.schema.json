@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/decision.recorded.data.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "caseId", "caseRevision", "decisionId", "decisionKind", "statement"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "caseRevision": { "type": "integer", "minimum": 1 },
+    "decisionId": { "type": "string", "pattern": "^decision_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "decisionKind": { "type": "string" },
+    "statement": { "type": "string" }
+  }
+}

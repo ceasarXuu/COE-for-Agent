@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/artifact.attach.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "artifactKind", "title", "source"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "artifactKind": { "type": "string", "enum": ["log", "trace", "metric", "code_snippet", "config_snapshot", "test_output", "repro_script", "code_diff", "screenshot", "user_report"] },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "source": { "type": "object", "additionalProperties": false, "required": ["uri"], "properties": { "uri": { "type": "string", "minLength": 1 }, "externalRef": { "type": "string" } } },
+    "contentRef": { "type": "string" },
+    "excerpt": { "type": "string" },
+    "aboutRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "oneOf": [{ "required": ["contentRef"] }, { "required": ["excerpt"] }]
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/fact.schema.json",
+  "allOf": [
+    { "$ref": "../../common/base-node.schema.json" },
+    {
+      "type": "object",
+      "required": ["kind", "statement", "factKind", "polarity", "sourceArtifactIds"],
+      "properties": {
+        "kind": { "const": "investigation.fact" },
+        "inquiryId": { "type": "string", "pattern": "^inquiry_[0-9A-HJKMNP-TV-Z]{26}$" },
+        "statement": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "factKind": { "type": "string", "enum": ["direct_observation", "aggregate_observation", "test_result", "absence_observation", "manual_report"] },
+        "polarity": { "type": "string", "enum": ["positive", "negative"] },
+        "status": { "type": "string", "enum": ["active", "superseded", "retracted"], "default": "active" },
+        "sourceArtifactIds": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^artifact_[0-9A-HJKMNP-TV-Z]{26}$" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "aboutRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "timeWindow": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "string", "format": "date-time" },
+            "end": { "type": "string", "format": "date-time" }
+          }
+        },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "observationScope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scopeType", "query"],
+          "properties": {
+            "scopeType": { "type": "string", "enum": ["log_search", "trace_search", "metric_query", "code_search", "test_execution", "manual_observation"] },
+            "query": { "type": "string", "minLength": 1, "maxLength": 4000 },
+            "window": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["start", "end"],
+              "properties": {
+                "start": { "type": "string", "format": "date-time" },
+                "end": { "type": "string", "format": "date-time" }
+              }
+            },
+            "location": { "type": "string", "maxLength": 1000 },
+            "notes": { "type": "string", "maxLength": 2000 }
+          },
+          "oneOf": [{ "required": ["window"] }, { "required": ["location"] }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "polarity": { "const": "negative" } },
+            "required": ["polarity"]
+          },
+          "then": { "required": ["observationScope"] }
+        }
+      ]
+    }
+  ],
+  "unevaluatedProperties": false
+}

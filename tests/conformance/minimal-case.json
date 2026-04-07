@@ -1,0 +1,20 @@
+{
+  "fixtureName": "minimal-case",
+  "profileVersion": "1.0.0",
+  "mcpSurfaceVersion": "1.0.0",
+  "case": {
+    "title": "Minimal investigation",
+    "objective": "Verify the schema registry can validate a minimal case payload",
+    "severity": "medium"
+  },
+  "expectedTools": [
+    "investigation.case.open",
+    "investigation.fact.assert",
+    "investigation.hypothesis.propose"
+  ],
+  "expectedResources": [
+    "investigation://profile",
+    "investigation://cases",
+    "investigation://cases/{caseId}/snapshot"
+  ]
+}

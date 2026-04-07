@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/case.schema.json",
+  "allOf": [
+    { "$ref": "../../common/base-node.schema.json" },
+    {
+      "type": "object",
+      "required": ["kind", "title", "objective", "severity", "status", "stage"],
+      "properties": {
+        "kind": { "const": "investigation.case" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "objective": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "status": { "type": "string", "enum": ["active", "blocked", "ready_to_patch", "validating", "closed"] },
+        "stage": { "type": "string", "enum": ["intake", "scoping", "evidence_collection", "hypothesis_competition", "discriminative_testing", "repair_preparation", "repair_validation", "closed"] },
+        "environment": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "summary": { "type": "string", "maxLength": 4000 }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

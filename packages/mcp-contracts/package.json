@@ -1,0 +1,17 @@
+{
+  "name": "@coe/mcp-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/tool-names.ts",
+    "./tool-names": "./src/tool-names.ts",
+    "./resource-uris": "./src/resource-uris.ts",
+    "./error-codes": "./src/error-codes.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  }
+}

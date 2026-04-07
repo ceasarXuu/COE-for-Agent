@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/experiment.planned.data.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "caseId", "caseRevision", "experimentId", "title", "method"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "caseRevision": { "type": "integer", "minimum": 1 },
+    "experimentId": { "type": "string", "pattern": "^experiment_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "title": { "type": "string" },
+    "method": { "type": "string" }
+  }
+}

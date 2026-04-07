@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/artifact.attached.data.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "caseId", "caseRevision", "artifactId", "artifactKind", "title"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "caseRevision": { "type": "integer", "minimum": 1 },
+    "artifactId": { "type": "string", "pattern": "^artifact_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "artifactKind": { "type": "string" },
+    "title": { "type": "string" }
+  }
+}

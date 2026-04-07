@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/hypothesis.update_status.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "hypothesisId", "newStatus"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "hypothesisId": { "type": "string", "pattern": "^hypothesis_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "newStatus": { "type": "string", "enum": ["active", "favored", "weakened", "rejected", "confirmed"] },
+    "reason": { "type": "string", "maxLength": 2000 },
+    "reasonFactIds": { "type": "array", "items": { "type": "string", "pattern": "^fact_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true },
+    "reasonExperimentIds": { "type": "array", "items": { "type": "string", "pattern": "^experiment_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/symptom.reported.data.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "caseId", "caseRevision", "symptomId", "statement", "severity"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "caseRevision": { "type": "integer", "minimum": 1 },
+    "symptomId": { "type": "string", "pattern": "^symptom_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "statement": { "type": "string" },
+    "severity": { "type": "string" }
+  }
+}

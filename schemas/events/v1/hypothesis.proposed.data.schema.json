@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/hypothesis.proposed.data.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "caseId", "caseRevision", "hypothesisId", "title", "level"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "caseRevision": { "type": "integer", "minimum": 1 },
+    "hypothesisId": { "type": "string", "pattern": "^hypothesis_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "title": { "type": "string" },
+    "level": { "type": "string" }
+  }
+}

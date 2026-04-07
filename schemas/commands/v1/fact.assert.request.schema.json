@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/fact.assert.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "statement", "factKind", "polarity", "sourceArtifactIds"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "inquiryId": { "type": "string", "pattern": "^inquiry_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "statement": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "factKind": { "type": "string", "enum": ["direct_observation", "aggregate_observation", "test_result", "absence_observation", "manual_report"] },
+    "polarity": { "type": "string", "enum": ["positive", "negative"] },
+    "sourceArtifactIds": { "type": "array", "items": { "type": "string", "pattern": "^artifact_[0-9A-HJKMNP-TV-Z]{26}$" }, "minItems": 1, "uniqueItems": true },
+    "aboutRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "observationScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scopeType", "query"],
+      "properties": {
+        "scopeType": { "type": "string", "enum": ["log_search", "trace_search", "metric_query", "code_search", "test_execution", "manual_observation"] },
+        "query": { "type": "string", "minLength": 1 },
+        "window": { "type": "object", "additionalProperties": false, "required": ["start", "end"], "properties": { "start": { "type": "string", "format": "date-time" }, "end": { "type": "string", "format": "date-time" } } },
+        "location": { "type": "string" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "polarity": { "const": "negative" } }, "required": ["polarity"] },
+      "then": { "required": ["observationScope"] }
+    }
+  ]
+}

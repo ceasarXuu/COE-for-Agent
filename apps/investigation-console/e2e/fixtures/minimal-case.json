@@ -1,0 +1,7 @@
+{
+  "caseId": "case_01FIXTUREINVESTIGATION0001",
+  "currentRevision": 5,
+  "title": "Graph regression in worker fanout",
+  "stage": "discriminative_testing",
+  "selectedHypothesisId": "hypothesis_01FIXTUREINVESTIGATE"
+}

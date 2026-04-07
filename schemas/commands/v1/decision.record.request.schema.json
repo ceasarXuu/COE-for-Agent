@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/decision.record.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "title", "decisionKind", "statement"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "inquiryId": { "type": "string", "pattern": "^inquiry_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "decisionKind": { "type": "string", "enum": ["close_inquiry", "reject_hypothesis", "favor_hypothesis", "ready_to_patch", "accept_residual", "declare_root_cause", "deprioritize_branch", "escalate_sampling", "close_case"] },
+    "statement": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "supportingFactIds": { "type": "array", "items": { "type": "string", "pattern": "^fact_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true },
+    "supportingExperimentIds": { "type": "array", "items": { "type": "string", "pattern": "^experiment_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true },
+    "supportingHypothesisIds": { "type": "array", "items": { "type": "string", "pattern": "^hypothesis_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true },
+    "rationale": { "type": "string", "maxLength": 4000 }
+  },
+  "oneOf": [{ "required": ["supportingFactIds"] }, { "required": ["supportingExperimentIds"] }]
+}

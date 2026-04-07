@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/experiment.schema.json",
+  "allOf": [
+    { "$ref": "../../common/base-node.schema.json" },
+    {
+      "type": "object",
+      "required": ["kind", "inquiryId", "title", "objective", "method", "status", "testsHypothesisIds", "expectedOutcomes"],
+      "properties": {
+        "kind": { "const": "investigation.experiment" },
+        "inquiryId": { "type": "string", "pattern": "^inquiry_[0-9A-HJKMNP-TV-Z]{26}$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "objective": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "method": { "type": "string", "enum": ["search", "instrumentation", "reproduction", "compare_versions", "fault_injection", "binary_search", "test_run", "patch_probe"] },
+        "status": { "type": "string", "enum": ["planned", "running", "completed", "inconclusive", "canceled"] },
+        "testsHypothesisIds": { "type": "array", "items": { "type": "string", "pattern": "^hypothesis_[0-9A-HJKMNP-TV-Z]{26}$" }, "minItems": 1, "uniqueItems": true },
+        "expectedOutcomes": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "required": ["when", "expect"], "properties": { "when": { "type": "string", "minLength": 1 }, "expect": { "type": "string", "minLength": 1 } } } },
+        "changeIntent": { "type": "string", "enum": ["none", "instrumentation", "probe"] },
+        "cost": { "type": "string", "enum": ["low", "medium", "high"] },
+        "risk": { "type": "string", "enum": ["low", "medium", "high"] },
+        "aboutRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "resultSummary": { "type": "string", "maxLength": 4000 },
+        "producedArtifactIds": { "type": "array", "items": { "type": "string", "pattern": "^artifact_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true },
+        "producedFactIds": { "type": "array", "items": { "type": "string", "pattern": "^fact_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

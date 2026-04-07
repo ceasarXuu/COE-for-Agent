@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/common/actor-ref.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actorType", "actorId"],
+  "properties": {
+    "actorType": {
+      "type": "string",
+      "enum": ["agent", "user", "system", "adapter", "tool_runner"]
+    },
+    "actorId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "role": {
+      "type": "string",
+      "enum": ["Viewer", "Operator", "Reviewer", "Admin"]
+    },
+    "issuer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "authMode": {
+      "type": "string",
+      "enum": ["local", "oidc", "service"]
+    }
+  }
+}

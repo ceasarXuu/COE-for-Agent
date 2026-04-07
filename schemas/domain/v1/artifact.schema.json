@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/artifact.schema.json",
+  "allOf": [
+    { "$ref": "../../common/base-node.schema.json" },
+    {
+      "type": "object",
+      "required": ["kind", "artifactKind", "title", "source", "immutable"],
+      "properties": {
+        "kind": { "const": "investigation.artifact" },
+        "artifactKind": { "type": "string", "enum": ["log", "trace", "metric", "code_snippet", "config_snapshot", "test_output", "repro_script", "code_diff", "screenshot", "user_report"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["uri"],
+          "properties": {
+            "uri": { "type": "string", "minLength": 1 },
+            "externalRef": { "type": "string" }
+          }
+        },
+        "contentRef": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "aboutRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "immutable": { "const": true }
+      },
+      "oneOf": [{ "required": ["contentRef"] }, { "required": ["excerpt"] }]
+    }
+  ],
+  "unevaluatedProperties": false
+}
