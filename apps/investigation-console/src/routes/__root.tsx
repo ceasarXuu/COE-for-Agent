@@ -6,24 +6,30 @@ export function RootLayout() {
   const { t } = useI18n();
 
   return (
-    <div className="console-shell">
-      <header className="console-chrome">
-        <div className="chrome-brand">
-          <p className="chrome-kicker">{t('root.kicker')}</p>
-          <h1>{t('root.title')}</h1>
+    <div className="layout">
+      <header className="layout-header">
+        <div className="layout-brand">
+          <span className="layout-kicker">{t('root.kicker')}</span>
+          <h1 className="layout-title">{t('root.title')}</h1>
         </div>
-        <div className="chrome-statusband">
-          <span>{t('root.audit')}</span>
-          <span>{t('root.patch')}</span>
-          <span>{t('root.graph')}</span>
+
+        <div className="fx items-center gap-3">
+          <span className="badge">{t('root.audit')}</span>
+          <span className="badge">{t('root.patch')}</span>
+          <span className="badge">{t('root.graph')}</span>
         </div>
-        <nav className="chrome-nav">
-          <NavLink className="chrome-link" to="/cases">
+
+        <nav className="layout-nav">
+          <NavLink 
+            className={({ isActive }) => `btn btn-ghost${isActive ? ' btn-primary' : ''}`}
+            to="/cases"
+          >
             {t('root.cases')}
           </NavLink>
         </nav>
       </header>
-      <main className="console-main">
+
+      <main className="layout-main">
         <Outlet />
       </main>
     </div>

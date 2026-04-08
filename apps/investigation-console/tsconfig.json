@@ -13,7 +13,9 @@
       "node",
       "vite/client",
       "vitest/globals"
-    ]
+    ],
+    "skipLibCheck": true,
+    "exactOptionalPropertyTypes": false
   },
   "include": [
     "server/**/*.ts",

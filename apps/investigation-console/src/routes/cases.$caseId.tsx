@@ -5,7 +5,7 @@ import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-uti
 
 import { ActionPanel } from '../components/action-panel.js';
 import { CoverageView } from '../components/coverage-view.js';
-import { GraphScene } from '../components/graph-scene.js';
+import { GraphCanvas } from '../components/graph/GraphCanvas.js';
 import { GuardrailView } from '../components/guardrail-view.js';
 import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
 import { RevisionSlider } from '../components/revision-slider.js';
@@ -280,13 +280,14 @@ export function CaseWorkspaceRoute() {
         </aside>
 
         <section className="workspace-center">
-          {loading && !workspace ? <section className="panel workspace-stage"><p>{t('workspace.replaying')}</p></section> : null}
+          {loading && !workspace ? <section className="panel graph-stage"><p>{t('workspace.replaying')}</p></section> : null}
           {workspace ? <TimelineView timeline={workspace.timeline} /> : null}
           {workspace ? (
-            <GraphScene
+            <GraphCanvas
               graph={workspace.graph}
               onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
               selectedNodeId={selectedNodeId}
+              focusId={selectedNodeId}
             />
           ) : null}
         </section>

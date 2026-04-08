@@ -1,0 +1,73 @@
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  transition: border-color var(--transition-fast);
+}
+
+.card:hover {
+  border-color: var(--border-2);
+}
+
+.card-clickable {
+  cursor: pointer;
+}
+
+.card-clickable:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.card-clickable:active {
+  transform: translateY(0);
+}
+
+.card-bordered {
+  border-color: var(--border-2);
+}
+
+.card-accent {
+  border-color: rgba(0, 240, 255, 0.2);
+}
+
+.card-accent:hover {
+  border-color: rgba(0, 240, 255, 0.35);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--fg-2);
+  line-height: 1.4;
+}
+
+.card-subtitle {
+  font-size: var(--text-sm);
+  color: var(--fg-3);
+  margin-top: var(--space-1);
+}
+
+.card-body {
+  font-size: var(--text-sm);
+  color: var(--fg-3);
+  line-height: 1.6;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-1);
+}
