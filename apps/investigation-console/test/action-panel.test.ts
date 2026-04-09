@@ -163,7 +163,7 @@ describe('action panel', () => {
     expect(experimentHtml).toContain('data-testid="action-record-experiment-result"');
   });
 
-  test('surfaces closure decision and close-case controls during repair validation when close-case guardrail passes', () => {
+  test('requires closure rationale before the close-case action is enabled during repair validation', () => {
     const html = renderToStaticMarkup(
       createElement(ActionPanel, {
         caseId: 'case_01FIXTUREINVESTIGATION0001',
@@ -186,8 +186,9 @@ describe('action panel', () => {
       } as never)
     );
 
-    expect(html).toContain('data-testid="action-record-closure-decision"');
     expect(html).toContain('data-testid="action-advance-stage"');
     expect(html).toContain('Close case');
+    expect(html).toContain('data-testid="closure-decision-rationale"');
+    expect(html).toContain('disabled');
   });
 });

@@ -99,6 +99,63 @@ export function ActionPanel(props: {
     }
   }
 
+  async function executeCloseCaseFlow() {
+    if (props.caseStage !== 'repair_validation') {
+      return;
+    }
+
+    const rationale = closureDecisionRationale.trim();
+    if (rationale.length === 0) {
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+
+    try {
+      const closeDecisionConfirmation = await requestConfirmIntent({
+        commandName: 'investigation.decision.record',
+        caseId: props.caseId,
+        targetIds: [props.caseId],
+        rationale
+      });
+
+      const closeDecisionResult = await invokeTool<{ headRevisionAfter: number }>('investigation.decision.record', {
+        caseId: props.caseId,
+        ifCaseRevision: props.currentRevision,
+        title: t('action.closeReady'),
+        decisionKind: 'close_case',
+        statement: rationale,
+        rationale,
+        idempotencyKey: buildIdempotencyKey('decision-close-case'),
+        confirmToken: closeDecisionConfirmation.confirmToken
+      });
+
+      const closeCaseConfirmation = await requestConfirmIntent({
+        commandName: 'investigation.case.advance_stage',
+        caseId: props.caseId,
+        targetIds: [props.caseId],
+        rationale
+      });
+
+      await invokeTool('investigation.case.advance_stage', {
+        caseId: props.caseId,
+        ifCaseRevision: closeDecisionResult.headRevisionAfter,
+        stage: 'closed',
+        reason: rationale,
+        idempotencyKey: buildIdempotencyKey('case-close'),
+        confirmToken: closeCaseConfirmation.confirmToken
+      });
+
+      setClosureDecisionRationale('');
+      await props.onMutationComplete();
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : t('errors.mutationFailed'));
+    } finally {
+      setPending(false);
+    }
+  }
+
   function queueOrExecute(action: ActionConfig) {
     if (action.requiresConfirm) {
       setConfirmAction(action);
@@ -130,7 +187,8 @@ export function ActionPanel(props: {
       caseId: props.caseId,
       ifCaseRevision: props.currentRevision,
       stage: nextStage,
-      reason: stageRationale
+      reason: stageRationale,
+      idempotencyKey: buildIdempotencyKey(`case-stage-${nextStage}`)
     },
     reset: () => setStageRationale('')
   };
@@ -348,26 +406,6 @@ export function ActionPanel(props: {
       } satisfies ActionConfig
     : null;
 
-  const closureDecisionAction = props.caseStage === 'repair_validation'
-    ? {
-        commandName: 'investigation.decision.record',
-        title: t('action.recordClosureDecision'),
-        rationale: closureDecisionRationale,
-        requiresConfirm: true,
-        targetIds: [props.caseId],
-        payload: {
-          caseId: props.caseId,
-          ifCaseRevision: props.currentRevision,
-          title: t('action.closeReady'),
-          decisionKind: 'close_case',
-          statement: closureDecisionRationale,
-          rationale: closureDecisionRationale,
-          idempotencyKey: buildIdempotencyKey('decision-close-case')
-        },
-        reset: () => setClosureDecisionRationale('')
-      } satisfies ActionConfig
-    : null;
-
   return (
     <section className="panel action-panel">
       <p className="panel-kicker">{t('action.kicker')}</p>
@@ -390,8 +428,19 @@ export function ActionPanel(props: {
       <button
         className="action-button"
         data-testid="action-advance-stage"
-        disabled={props.historical || pending || stageRationale.trim().length === 0 || (nextStage === 'closed' && !closeCasePass)}
-        onClick={() => queueOrExecute(stageAction)}
+        disabled={props.historical
+          || pending
+          || (nextStage === 'closed'
+            ? closureDecisionRationale.trim().length === 0 || !closeCasePass
+            : stageRationale.trim().length === 0)}
+        onClick={() => {
+          if (nextStage === 'closed') {
+            void executeCloseCaseFlow();
+            return;
+          }
+
+          queueOrExecute(stageAction);
+        }}
         type="button"
       >
         {stageActionTitle}
@@ -410,15 +459,6 @@ export function ActionPanel(props: {
               value={closureDecisionRationale}
             />
           </label>
-          <button
-            className="ghost-button"
-            data-testid="action-record-closure-decision"
-            disabled={props.historical || pending || closureDecisionRationale.trim().length === 0 || !closeCasePass}
-            onClick={() => closureDecisionAction && queueOrExecute(closureDecisionAction)}
-            type="button"
-          >
-            {t('action.recordClosureDecision')}
-          </button>
         </>
       ) : null}
 

@@ -9,7 +9,7 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:web": "vite",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "sh ./node_modules/.bin/vitest run test/action-panel.test.ts test/fixture-mcp-client.test.ts test/graph-scene-controls.test.ts test/graph-scene.test.ts test/i18n.test.ts test/inspector-panel.test.ts test/server/cases-route.test.ts test/server/confirm-route.test.ts test/server/history-route.test.ts",
+    "test": "sh ./node_modules/.bin/vitest run",
     "test:e2e": "node scripts/run-e2e.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
