@@ -9,6 +9,17 @@ async function main() {
     sessionSecret: 'local-e2e-secret'
   });
 
+  const shutdown = async () => {
+    await app.close();
+  };
+
+  process.once('SIGINT', () => {
+    void shutdown().finally(() => process.exit(130));
+  });
+  process.once('SIGTERM', () => {
+    void shutdown().finally(() => process.exit(143));
+  });
+
   await app.listen({
     host: '127.0.0.1',
     port: PORT

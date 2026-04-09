@@ -237,13 +237,20 @@ export function CaseWorkspaceRoute() {
   const maxRevision = workspace?.snapshot.headRevision ?? 1;
   const currentRevision = revision ?? maxRevision;
   const historical = revision !== null;
+  const listSearchParams = new URLSearchParams(searchParams);
+  listSearchParams.delete('revision');
+  const listSearch = listSearchParams.toString();
   const selectedNode = workspace && selectedNodeId
     ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
 
   async function handleMutationComplete() {
+    const nextSearch = listSearchParams.toString();
     startTransition(() => {
-      navigate(`/cases/${caseId}`, { replace: true });
+      navigate({
+        pathname: `/cases/${caseId}`,
+        search: nextSearch ? `?${nextSearch}` : ''
+      }, { replace: true });
       setRevision(null);
     });
     requestRefresh();
@@ -253,7 +260,13 @@ export function CaseWorkspaceRoute() {
     <section className="workspace-shell">
       <header className="workspace-toolbar">
         <div>
-          <Link className="ghost-link" to="/cases">
+          <Link
+            className="ghost-link"
+            to={{
+              pathname: '/cases',
+              search: listSearch ? `?${listSearch}` : ''
+            }}
+          >
             {t('workspace.back')}
           </Link>
           <p className="panel-kicker">{revision === null ? t('workspace.headMode') : t('workspace.historicalMode', { revision })}</p>
@@ -264,8 +277,18 @@ export function CaseWorkspaceRoute() {
           currentRevision={currentRevision}
           maxRevision={maxRevision}
           onChange={(nextRevision) => {
+            const nextParams = new URLSearchParams(searchParams);
+            if (nextRevision >= maxRevision) {
+              nextParams.delete('revision');
+            } else {
+              nextParams.set('revision', String(nextRevision));
+            }
+
             startTransition(() => {
-              navigate(nextRevision >= maxRevision ? `/cases/${caseId}` : `/cases/${caseId}?revision=${nextRevision}`);
+              navigate({
+                pathname: `/cases/${caseId}`,
+                search: nextParams.toString() ? `?${nextParams.toString()}` : ''
+              });
             });
           }}
         />
@@ -313,6 +336,10 @@ export function CaseWorkspaceRoute() {
           <InspectorPanel inspector={inspector} loading={inspectorLoading} />
           <ActionPanel
             caseId={caseId}
+            caseStage={workspace?.snapshot.data.case?.stage ?? null}
+            defaultInquiryId={typeof workspace?.snapshot.data.case?.defaultInquiryId === 'string'
+              ? workspace.snapshot.data.case.defaultInquiryId
+              : null}
             currentRevision={currentRevision}
             guardrails={workspace?.guardrails ?? null}
             historical={historical}

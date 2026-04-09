@@ -3,15 +3,23 @@ import { Link } from 'react-router-dom';
 import type { CaseListItem } from '../lib/api.js';
 import { useI18n } from '../lib/i18n.js';
 
-export function CaseList(props: { items: CaseListItem[] }) {
+export function CaseList(props: { items: CaseListItem[]; search?: string }) {
   const { formatDateTime, formatEnumLabel, t } = useI18n();
 
   return (
     <div className="case-grid">
       {props.items.map((item) => (
-        <Link className="case-card" data-testid={`case-card-${item.caseId}`} key={item.caseId} to={`/cases/${item.caseId}`}>
+        <Link
+          className="case-card"
+          data-testid={`case-card-${item.caseId}`}
+          key={item.caseId}
+          to={{
+            pathname: `/cases/${item.caseId}`,
+            search: props.search ? `?${props.search}` : ''
+          }}
+        >
           <div className="case-card-header">
-            <p>{item.caseId.slice(0, 12)}</p>
+            <p title={item.caseId} translate="no">{item.caseId.slice(0, 12)}</p>
             <span className={`pill pill-${(item.severity ?? 'medium').toLowerCase()}`}>{formatEnumLabel(item.severity ?? 'unknown')}</span>
           </div>
           <h3>{item.title ?? t('caseList.untitled')}</h3>

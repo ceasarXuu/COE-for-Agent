@@ -3,7 +3,7 @@ import type { GraphNodeRecord } from '../useGraphLayout.js';
 
 export function EntityNode({ data }: NodeProps<GraphNodeRecord & { isSelected?: boolean }>) {
   return (
-    <div className={`graph-node graph-node-entity ${data.isSelected ? 'selected' : ''}`}>
+    <div className={`graph-node graph-node-entity ${data.isSelected ? 'selected' : ''}`} data-testid={`graph-node-${data.id}`}>
       <Handle type="target" position={Position.Left} className="node-handle" />
       
       <div className="node-header">

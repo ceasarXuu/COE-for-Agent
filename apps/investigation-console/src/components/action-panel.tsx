@@ -9,9 +9,14 @@ import { useI18n } from '../lib/i18n.js';
 interface ActionConfig {
   commandName:
     | 'investigation.case.advance_stage'
+    | 'investigation.hypothesis.propose'
     | 'investigation.hypothesis.update_status'
+    | 'investigation.experiment.plan'
+    | 'investigation.experiment.record_result'
+    | 'investigation.inquiry.close'
     | 'investigation.gap.open'
     | 'investigation.gap.resolve'
+    | 'investigation.residual.open'
     | 'investigation.residual.update'
     | 'investigation.decision.record';
   title: string;
@@ -24,6 +29,8 @@ interface ActionConfig {
 
 export function ActionPanel(props: {
   caseId: string;
+  caseStage?: string | null;
+  defaultInquiryId?: string | null;
   currentRevision: number;
   historical: boolean;
   selectedNode?: Pick<GraphNodeRecord, 'id' | 'kind' | 'label' | 'status'> | null;
@@ -33,10 +40,18 @@ export function ActionPanel(props: {
   const { t } = useI18n();
   const [stageRationale, setStageRationale] = useState('');
   const [hypothesisRationale, setHypothesisRationale] = useState('');
+  const [newHypothesisStatement, setNewHypothesisStatement] = useState('');
+  const [newHypothesisFalsification, setNewHypothesisFalsification] = useState('');
+  const [experimentObjective, setExperimentObjective] = useState('');
+  const [experimentExpectedOutcome, setExperimentExpectedOutcome] = useState('');
+  const [experimentResultSummary, setExperimentResultSummary] = useState('');
   const [gapQuestion, setGapQuestion] = useState('');
   const [gapResolution, setGapResolution] = useState('');
+  const [inquiryResolutionReason, setInquiryResolutionReason] = useState('');
+  const [residualStatement, setResidualStatement] = useState('');
   const [residualRationale, setResidualRationale] = useState('');
   const [decisionRationale, setDecisionRationale] = useState('');
+  const [closureDecisionRationale, setClosureDecisionRationale] = useState('');
   const [confirmAction, setConfirmAction] = useState<ActionConfig | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,16 +108,28 @@ export function ActionPanel(props: {
     void executeAction(action);
   }
 
+  const closeCasePass = props.guardrails?.closeCase.pass === true;
+  const nextStage = props.caseStage === 'repair_preparation'
+    ? 'repair_validation'
+    : props.caseStage === 'repair_validation'
+      ? 'closed'
+      : 'repair_preparation';
+  const stageActionTitle = nextStage === 'repair_validation'
+    ? t('action.advanceValidation')
+    : nextStage === 'closed'
+      ? t('action.closeCase')
+      : t('action.advance');
+
   const stageAction: ActionConfig = {
     commandName: 'investigation.case.advance_stage',
-    title: t('action.advance'),
+    title: stageActionTitle,
     rationale: stageRationale,
     requiresConfirm: true,
     targetIds: [props.caseId],
     payload: {
       caseId: props.caseId,
       ifCaseRevision: props.currentRevision,
-      stage: 'repair_preparation',
+      stage: nextStage,
       reason: stageRationale
     },
     reset: () => setStageRationale('')
@@ -130,6 +157,51 @@ export function ActionPanel(props: {
       } satisfies ActionConfig
     : null;
 
+  const symptomHypothesisAction = selectedNode?.kind === 'symptom' && props.defaultInquiryId
+    ? {
+        commandName: 'investigation.hypothesis.propose',
+        title: t('action.proposeHypothesis'),
+        rationale: newHypothesisStatement,
+        requiresConfirm: false,
+        targetIds: [selectedNode.id],
+        payload: {
+          caseId: props.caseId,
+          ifCaseRevision: props.currentRevision,
+          inquiryId: props.defaultInquiryId,
+          title: `${selectedNode.label} hypothesis`,
+          statement: newHypothesisStatement,
+          level: 'mechanism',
+          explainsSymptomIds: [selectedNode.id],
+          dependsOnFactIds: [],
+          falsificationCriteria: [newHypothesisFalsification],
+          idempotencyKey: buildIdempotencyKey('hypothesis-propose')
+        },
+        reset: () => {
+          setNewHypothesisStatement('');
+          setNewHypothesisFalsification('');
+        }
+      } satisfies ActionConfig
+    : null;
+
+  const symptomResidualAction = selectedNode?.kind === 'symptom'
+    ? {
+        commandName: 'investigation.residual.open',
+        title: t('action.openResidual'),
+        rationale: residualStatement,
+        requiresConfirm: false,
+        targetIds: [selectedNode.id],
+        payload: {
+          caseId: props.caseId,
+          ifCaseRevision: props.currentRevision,
+          statement: residualStatement,
+          severity: 'high',
+          relatedSymptomIds: [selectedNode.id],
+          idempotencyKey: buildIdempotencyKey('residual-open')
+        },
+        reset: () => setResidualStatement('')
+      } satisfies ActionConfig
+    : null;
+
   const hypothesisGapAction = selectedNode?.kind === 'hypothesis'
     ? {
         commandName: 'investigation.gap.open',
@@ -146,6 +218,36 @@ export function ActionPanel(props: {
           idempotencyKey: buildIdempotencyKey('gap-open')
         },
         reset: () => setGapQuestion('')
+      } satisfies ActionConfig
+    : null;
+
+  const hypothesisExperimentAction = selectedNode?.kind === 'hypothesis' && props.defaultInquiryId
+    ? {
+        commandName: 'investigation.experiment.plan',
+        title: t('action.planExperiment'),
+        rationale: experimentObjective,
+        requiresConfirm: false,
+        targetIds: [selectedNode.id],
+        payload: {
+          caseId: props.caseId,
+          ifCaseRevision: props.currentRevision,
+          inquiryId: props.defaultInquiryId,
+          title: `${selectedNode.label} experiment`,
+          objective: experimentObjective,
+          method: 'patch_probe',
+          testsHypothesisIds: [selectedNode.id],
+          expectedOutcomes: [
+            {
+              when: t('action.experimentWhen'),
+              expect: experimentExpectedOutcome
+            }
+          ],
+          idempotencyKey: buildIdempotencyKey('experiment-plan')
+        },
+        reset: () => {
+          setExperimentObjective('');
+          setExperimentExpectedOutcome('');
+        }
       } satisfies ActionConfig
     : null;
 
@@ -189,6 +291,44 @@ export function ActionPanel(props: {
       } satisfies ActionConfig
     : null;
 
+  const inquiryCloseAction = selectedNode?.kind === 'inquiry'
+    ? {
+        commandName: 'investigation.inquiry.close',
+        title: t('action.closeInquiry'),
+        rationale: inquiryResolutionReason,
+        requiresConfirm: false,
+        targetIds: [selectedNode.id],
+        payload: {
+          caseId: props.caseId,
+          ifCaseRevision: props.currentRevision,
+          inquiryId: selectedNode.id,
+          resolutionKind: 'answered',
+          reason: inquiryResolutionReason,
+          idempotencyKey: buildIdempotencyKey('inquiry-close')
+        },
+        reset: () => setInquiryResolutionReason('')
+      } satisfies ActionConfig
+    : null;
+
+  const experimentResultAction = selectedNode?.kind === 'experiment'
+    ? {
+        commandName: 'investigation.experiment.record_result',
+        title: t('action.recordExperimentResult'),
+        rationale: experimentResultSummary,
+        requiresConfirm: false,
+        targetIds: [selectedNode.id],
+        payload: {
+          caseId: props.caseId,
+          ifCaseRevision: props.currentRevision,
+          experimentId: selectedNode.id,
+          status: 'completed',
+          summary: experimentResultSummary,
+          idempotencyKey: buildIdempotencyKey('experiment-result')
+        },
+        reset: () => setExperimentResultSummary('')
+      } satisfies ActionConfig
+    : null;
+
   const residualAcceptAction = selectedNode?.kind === 'residual'
     ? {
         commandName: 'investigation.residual.update',
@@ -205,6 +345,26 @@ export function ActionPanel(props: {
           idempotencyKey: buildIdempotencyKey('residual-accept')
         },
         reset: () => setResidualRationale('')
+      } satisfies ActionConfig
+    : null;
+
+  const closureDecisionAction = props.caseStage === 'repair_validation'
+    ? {
+        commandName: 'investigation.decision.record',
+        title: t('action.recordClosureDecision'),
+        rationale: closureDecisionRationale,
+        requiresConfirm: true,
+        targetIds: [props.caseId],
+        payload: {
+          caseId: props.caseId,
+          ifCaseRevision: props.currentRevision,
+          title: t('action.closeReady'),
+          decisionKind: 'close_case',
+          statement: closureDecisionRationale,
+          rationale: closureDecisionRationale,
+          idempotencyKey: buildIdempotencyKey('decision-close-case')
+        },
+        reset: () => setClosureDecisionRationale('')
       } satisfies ActionConfig
     : null;
 
@@ -230,12 +390,37 @@ export function ActionPanel(props: {
       <button
         className="action-button"
         data-testid="action-advance-stage"
-        disabled={props.historical || pending || stageRationale.trim().length === 0}
+        disabled={props.historical || pending || stageRationale.trim().length === 0 || (nextStage === 'closed' && !closeCasePass)}
         onClick={() => queueOrExecute(stageAction)}
         type="button"
       >
-        {t('action.advance')}
+        {stageActionTitle}
       </button>
+
+      {props.caseStage === 'repair_validation' ? (
+        <>
+          <label className="search-field">
+            <span>{t('action.closureRationale')}</span>
+            <textarea
+              data-testid="closure-decision-rationale"
+              disabled={props.historical || pending}
+              onChange={(event) => setClosureDecisionRationale(event.currentTarget.value)}
+              placeholder={t('action.closurePlaceholder')}
+              rows={3}
+              value={closureDecisionRationale}
+            />
+          </label>
+          <button
+            className="ghost-button"
+            data-testid="action-record-closure-decision"
+            disabled={props.historical || pending || closureDecisionRationale.trim().length === 0 || !closeCasePass}
+            onClick={() => closureDecisionAction && queueOrExecute(closureDecisionAction)}
+            type="button"
+          >
+            {t('action.recordClosureDecision')}
+          </button>
+        </>
+      ) : null}
 
       {selectedNode?.kind === 'hypothesis' ? (
         <>
@@ -278,6 +463,15 @@ export function ActionPanel(props: {
             >
               {t('action.recordDecision')}
             </button>
+            <button
+              className="ghost-button"
+              data-testid="action-plan-experiment"
+              disabled={props.historical || pending || experimentObjective.trim().length === 0 || experimentExpectedOutcome.trim().length === 0 || !props.defaultInquiryId}
+              onClick={() => hypothesisExperimentAction && queueOrExecute(hypothesisExperimentAction)}
+              type="button"
+            >
+              {t('action.planExperiment')}
+            </button>
           </div>
           <label className="search-field">
             <span>{t('action.gapQuestion')}</span>
@@ -299,6 +493,136 @@ export function ActionPanel(props: {
               value={decisionRationale}
             />
           </label>
+          <label className="search-field">
+            <span>{t('action.experimentObjective')}</span>
+            <textarea
+              data-testid="experiment-objective"
+              disabled={props.historical || pending || !props.defaultInquiryId}
+              onChange={(event) => setExperimentObjective(event.currentTarget.value)}
+              placeholder={t('action.experimentObjectivePlaceholder')}
+              rows={2}
+              value={experimentObjective}
+            />
+          </label>
+          <label className="search-field">
+            <span>{t('action.expectedOutcome')}</span>
+            <textarea
+              data-testid="experiment-expected-outcome"
+              disabled={props.historical || pending || !props.defaultInquiryId}
+              onChange={(event) => setExperimentExpectedOutcome(event.currentTarget.value)}
+              placeholder={t('action.expectedOutcomePlaceholder')}
+              rows={2}
+              value={experimentExpectedOutcome}
+            />
+          </label>
+        </>
+      ) : null}
+
+      {selectedNode?.kind === 'symptom' ? (
+        <>
+          <label className="search-field">
+            <span>{t('action.newHypothesis')}</span>
+            <textarea
+              data-testid="new-hypothesis-statement"
+              disabled={props.historical || pending || !props.defaultInquiryId}
+              onChange={(event) => setNewHypothesisStatement(event.currentTarget.value)}
+              placeholder={t('action.newHypothesisPlaceholder', { label: selectedNode.label })}
+              rows={3}
+              value={newHypothesisStatement}
+            />
+          </label>
+          <label className="search-field">
+            <span>{t('action.falsificationCriteria')}</span>
+            <textarea
+              data-testid="new-hypothesis-falsification"
+              disabled={props.historical || pending || !props.defaultInquiryId}
+              onChange={(event) => setNewHypothesisFalsification(event.currentTarget.value)}
+              placeholder={t('action.falsificationPlaceholder')}
+              rows={2}
+              value={newHypothesisFalsification}
+            />
+          </label>
+          <div className="confirm-actions">
+            <button
+              className="action-button"
+              data-testid="action-propose-hypothesis"
+              disabled={props.historical || pending || newHypothesisStatement.trim().length === 0 || newHypothesisFalsification.trim().length === 0 || !props.defaultInquiryId}
+              onClick={() => symptomHypothesisAction && queueOrExecute(symptomHypothesisAction)}
+              type="button"
+            >
+              {t('action.proposeHypothesis')}
+            </button>
+            <button
+              className="ghost-button"
+              data-testid="action-open-residual"
+              disabled={props.historical || pending || residualStatement.trim().length === 0}
+              onClick={() => symptomResidualAction && queueOrExecute(symptomResidualAction)}
+              type="button"
+            >
+              {t('action.openResidual')}
+            </button>
+          </div>
+          <label className="search-field">
+            <span>{t('action.residualStatement')}</span>
+            <textarea
+              data-testid="residual-statement"
+              disabled={props.historical || pending}
+              onChange={(event) => setResidualStatement(event.currentTarget.value)}
+              placeholder={t('action.residualStatementPlaceholder', { label: selectedNode.label })}
+              rows={2}
+              value={residualStatement}
+            />
+          </label>
+        </>
+      ) : null}
+
+      {selectedNode?.kind === 'experiment' ? (
+        <>
+          <label className="search-field">
+            <span>{t('action.experimentResult')}</span>
+            <textarea
+              data-testid="experiment-result-summary"
+              disabled={props.historical || pending}
+              onChange={(event) => setExperimentResultSummary(event.currentTarget.value)}
+              placeholder={t('action.experimentResultPlaceholder')}
+              rows={3}
+              value={experimentResultSummary}
+            />
+          </label>
+          <button
+            className="action-button"
+            data-testid="action-record-experiment-result"
+            disabled={props.historical || pending || experimentResultSummary.trim().length === 0}
+            onClick={() => experimentResultAction && queueOrExecute(experimentResultAction)}
+            type="button"
+          >
+            {t('action.recordExperimentResult')}
+          </button>
+        </>
+      ) : null}
+
+      {selectedNode?.kind === 'inquiry' ? (
+        <>
+          <label className="search-field">
+            <span>{t('action.inquiryResolution')}</span>
+            <textarea
+              data-testid="inquiry-resolution-reason"
+              disabled={props.historical || pending}
+              onChange={(event) => setInquiryResolutionReason(event.currentTarget.value)}
+              placeholder={t('action.inquiryResolutionPlaceholder')}
+              rows={3}
+              value={inquiryResolutionReason}
+            />
+          </label>
+          <button
+            className="ghost-button"
+            data-testid="action-close-inquiry"
+            disabled={props.historical || pending || inquiryResolutionReason.trim().length === 0}
+            onClick={() => inquiryCloseAction && queueOrExecute(inquiryCloseAction)}
+            type="button"
+          >
+            {t('action.closeInquiry')}
+          </button>
         </>
       ) : null}
 

@@ -51,7 +51,7 @@
   flex-direction: column;
   gap: var(--space-5);
   padding: var(--space-6);
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 @media (max-width: 1200px) {

@@ -27,6 +27,30 @@ const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
   'investigation.decision.record': 'commands/v1/decision.record.request.schema.json'
 };
 
+const TOOL_DESCRIPTION_BY_NAME: Record<string, string> = {
+  'investigation.case.open': 'Open a new investigation case and create its default inquiry.',
+  'investigation.case.advance_stage': 'Advance a case to the next investigation lifecycle stage.',
+  'investigation.inquiry.open': 'Open a follow-on inquiry inside an existing case.',
+  'investigation.inquiry.close': 'Close or merge an existing inquiry.',
+  'investigation.entity.register': 'Register an entity referenced by the investigation evidence graph.',
+  'investigation.symptom.report': 'Report a symptom observed during the investigation.',
+  'investigation.artifact.attach': 'Attach an investigation artifact such as a log, trace, or document excerpt.',
+  'investigation.fact.assert': 'Assert a fact backed by artifacts and scoped observations.',
+  'investigation.hypothesis.propose': 'Propose a hypothesis that explains one or more symptoms.',
+  'investigation.hypothesis.update_status': 'Update the status of an existing hypothesis.',
+  'investigation.experiment.plan': 'Plan an experiment to test one or more hypotheses.',
+  'investigation.experiment.record_result': 'Record the outcome of a planned experiment.',
+  'investigation.gap.open': 'Open a blocking investigation gap on the current branch.',
+  'investigation.gap.resolve': 'Resolve an existing investigation gap.',
+  'investigation.residual.open': 'Open a residual risk that still needs explicit treatment.',
+  'investigation.residual.update': 'Update the treatment state of a residual risk.',
+  'investigation.decision.record': 'Record a reviewer or operator decision on the current investigation branch.',
+  'investigation.guardrail.check': 'Evaluate the aggregate investigation guardrail state for a case.',
+  'investigation.guardrail.stall_check': 'Evaluate whether the current investigation branch is stalled.',
+  'investigation.guardrail.ready_to_patch_check': 'Evaluate whether the current evidence chain is strong enough to enter repair preparation.',
+  'investigation.guardrail.close_case_check': 'Evaluate whether the case satisfies all conditions required for closure.'
+};
+
 const GUARDRAIL_INPUT_SCHEMA: JsonSchema = {
   type: 'object',
   additionalProperties: false,
@@ -112,14 +136,14 @@ export function registerToolDefinitions(): ToolRegistration[] {
     return {
       name,
       inputSchema: withMutationAuthEnvelope(loadSchemaByRelativePath(schemaPath)),
-      description: `Stub registration for ${name}`
+      description: TOOL_DESCRIPTION_BY_NAME[name] ?? name
     };
   });
 
   const guardrailTools = GUARDRAIL_TOOL_NAMES.map((name) => ({
     name,
     inputSchema: GUARDRAIL_INPUT_SCHEMA,
-    description: `Stub registration for ${name}`
+    description: TOOL_DESCRIPTION_BY_NAME[name] ?? name
   }));
 
   return [...mutationTools, ...guardrailTools];

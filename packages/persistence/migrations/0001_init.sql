@@ -24,6 +24,9 @@ create table if not exists command_dedup (
   primary key (case_id, tool_name, idempotency_key)
 );
 
+alter table if exists command_dedup
+  add column if not exists command_result jsonb not null default '{}'::jsonb;
+
 create table if not exists cases (
   id text primary key,
   title text,

@@ -5,6 +5,7 @@ import { handleConfirmIntentRequest } from '../../server/auth/confirm.js';
 
 describe('confirm route', () => {
   test('issues a confirm token for reviewer confirmation intents', async () => {
+    const now = new Date();
     const session = createLocalSession(
       {
         actorType: 'user',
@@ -14,7 +15,7 @@ describe('confirm route', () => {
         authMode: 'local'
       },
       'local-test-secret',
-      new Date('2026-04-07T10:00:00.000Z')
+      now
     );
 
     const response = await handleConfirmIntentRequest({
