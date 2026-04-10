@@ -22,6 +22,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   en: {
     'root.kicker': 'COE / Investigation Console',
     'root.title': 'Investigation Console',
+    'root.githubLinkLabel': 'Open the project homepage on GitHub',
     'root.cases': 'Cases',
     'cases.search': 'Search transcript',
     'cases.searchPlaceholder': 'symptom, objective, title…',
@@ -227,6 +228,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   'zh-CN': {
     'root.kicker': 'COE / 调查控制台',
     'root.title': '调查控制台',
+    'root.githubLinkLabel': '在 GitHub 中打开项目主页',
     'root.cases': '案件',
     'cases.search': '检索记录',
     'cases.searchPlaceholder': '症状、目标、标题…',
