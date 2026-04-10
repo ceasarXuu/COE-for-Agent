@@ -241,6 +241,20 @@ export function CaseWorkspaceRoute() {
     ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
 
+  const handleGraphSelection = useEffectEvent((nodeId: string | null) => {
+    const nextSelectedNodeId = nodeId && nodeId === selectedNodeId ? null : nodeId;
+
+    console.info('[investigation-console] graph-focus', {
+      caseId,
+      revision: revision ?? 'head',
+      previousSelectedNodeId: selectedNodeId,
+      selectedNodeId: nextSelectedNodeId,
+      action: nextSelectedNodeId ? 'focus-node' : 'clear-focus'
+    });
+
+    setSelectedNodeId(nextSelectedNodeId);
+  });
+
   async function handleMutationComplete() {
     const nextSearch = listSearchParams.toString();
     startTransition(() => {
@@ -299,7 +313,7 @@ export function CaseWorkspaceRoute() {
           {workspace ? (
             <GraphCanvas
               graph={workspace.graph}
-              onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
+              onSelectNode={handleGraphSelection}
               selectedNodeId={selectedNodeId}
               focusId={selectedNodeId}
             />

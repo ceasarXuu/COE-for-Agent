@@ -42,7 +42,7 @@ const edgeTypes = {
 interface GraphCanvasProps {
   graph: CaseGraphEnvelope;
   selectedNodeId: string | null;
-  onSelectNode: (nodeId: string) => void;
+  onSelectNode: (nodeId: string | null) => void;
   focusId?: string | null;
 }
 
@@ -95,6 +95,16 @@ export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: Gr
         </div>
 
         <div aria-label={t('graph.controls')} className="graph-controls">
+          {focusId ? (
+            <button
+              className="ghost-button graph-control-button"
+              data-testid="graph-clear-focus"
+              onClick={() => onSelectNode(null)}
+              type="button"
+            >
+              {t('graph.clearFocus')}
+            </button>
+          ) : null}
           <span className="focus-chip">{modeLabel}</span>
           <span className="focus-chip">{t('graph.zoom')}</span>
         </div>
@@ -129,6 +139,7 @@ export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: Gr
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable
+          onPaneClick={() => onSelectNode(null)}
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeRecord>) => onSelectNode(node.id)}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />

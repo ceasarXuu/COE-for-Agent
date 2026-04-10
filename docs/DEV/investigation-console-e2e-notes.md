@@ -30,3 +30,9 @@ pnpm --filter @coe/investigation-console test:e2e
 - When verifying `cases.$caseId.tsx` layout order, run Vitest with package-local paths such as `pnpm --filter @coe/investigation-console test -- test/case-workspace-layout.test.ts`.
 - Passing workspace-root style paths into the package test script can miss the intended file filter because the script executes from `apps/investigation-console`.
 - Keep a dedicated regression test for the main-column panel order so “案件图在上、时间线在下” does not silently flip during future workspace refactors.
+
+## Graph Focus Recovery
+
+- The case graph now needs an explicit “return to full graph” path whenever requests are made with `focusId`; otherwise the UI can get stuck on a focused slice after a node click.
+- For React Flow based interactions, keep both a visible toolbar action and a pane-click fallback so users can recover from focused state without guessing hidden gestures.
+- Regression coverage should verify both the visible control and the clear-focus callback path before changing graph selection behavior.
