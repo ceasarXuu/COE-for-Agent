@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
@@ -29,5 +31,30 @@ describe('create case panel', () => {
     expect(html).not.toContain('手动受理');
     expect(html).not.toContain('用一条完整但轻量的受理信息开启新调查，让工作台一进来就有上下文。');
     expect(html).not.toContain('case-form-callout');
+  });
+
+  test('keeps the header close button from shrinking into wrapped text', () => {
+    const html = renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'zh-CN',
+        children: createElement(CreateCasePanel, {
+          error: null,
+          open: true,
+          pending: false,
+          onClose() {
+            return;
+          },
+          async onSubmit() {
+            return;
+          }
+        })
+      })
+    );
+    const css = readFileSync(new URL('../src/styles/app.css', import.meta.url), 'utf8');
+
+    expect(html).toContain('case-create-panel-close');
+    expect(css).toContain('.case-create-panel-close');
+    expect(css).toContain('flex-shrink: 0;');
+    expect(css).toContain('white-space: nowrap;');
   });
 });

@@ -27,6 +27,10 @@ pnpm --filter @coe/investigation-console test:e2e
 
 - When doing ad hoc browser probes against the Vite dev server, prefer `domcontentloaded` plus an explicit short wait over `networkidle`; the latter can hang on persistent local activity and slow down quick regression checks.
 
+## Drawer Header Layout
+
+- In tight drawer headers with localized copy, keep secondary action buttons opted out of flex shrinking and text wrapping, otherwise short Chinese labels such as `关闭` can collapse into vertical text.
+
 ## Workspace Layout Regression
 
 - When verifying `cases.$caseId.tsx` layout order, run Vitest with package-local paths such as `pnpm --filter @coe/investigation-console test -- test/case-workspace-layout.test.ts`.
