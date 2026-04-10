@@ -47,4 +47,15 @@ describe('case workspace layout', () => {
     expect(source).toContain('snapshot={workspace.snapshot}');
     expect(source).not.toContain('<SnapshotView');
   });
+
+  test('does not render guardrail or diff modules in the side rail', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+
+    expect(source).not.toContain('<GuardrailView');
+    expect(source).not.toContain('data-testid="workspace-diff-panel"');
+    expect(source).not.toContain("t('workspace.diff')");
+  });
 });

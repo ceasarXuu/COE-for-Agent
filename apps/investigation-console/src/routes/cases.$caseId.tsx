@@ -5,14 +5,12 @@ import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-uti
 
 import { ActionPanel } from '../components/action-panel.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
-import { GuardrailView } from '../components/guardrail-view.js';
 import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
 import { RevisionSlider } from '../components/revision-slider.js';
 import { TimelineView } from '../components/timeline-view.js';
 import { connectConsoleStream } from '../lib/sse.js';
 import {
   getCaseCoverage,
-  getCaseDiff,
   getCaseGraph,
   getHypothesisPanel,
   getInquiryPanel,
@@ -21,7 +19,6 @@ import {
   getGuardrails,
   type GraphNodeRecord,
   type CaseCoverageEnvelope,
-  type CaseDiffEnvelope,
   type CaseGraphEnvelope,
   type CaseSnapshotEnvelope,
   type CaseTimelineEnvelope,
@@ -35,7 +32,6 @@ interface WorkspaceData {
   timeline: CaseTimelineEnvelope;
   graph: CaseGraphEnvelope;
   coverage: CaseCoverageEnvelope;
-  diff: CaseDiffEnvelope | null;
   guardrails: GuardrailBundle;
 }
 
@@ -86,10 +82,7 @@ export function CaseWorkspaceRoute() {
       getCaseCoverage(caseId, revision),
       getGuardrails(caseId, revision)
     ])
-      .then(([snapshot, timeline, graph, coverage, guardrails]) => {
-        const diff = revision ? getCaseDiff(caseId, Math.max(revision - 1, 0), revision) : Promise.resolve(null);
-        return diff.then((resolvedDiff) => ({ snapshot, timeline, graph, coverage, guardrails, diff: resolvedDiff }));
-      })
+      .then(([snapshot, timeline, graph, coverage, guardrails]) => ({ snapshot, timeline, graph, coverage, guardrails }))
       .then((data) => {
         if (!cancelled) {
           startTransition(() => {
@@ -330,22 +323,6 @@ export function CaseWorkspaceRoute() {
             onMutationComplete={handleMutationComplete}
             selectedNode={selectedNode}
           />
-          {workspace ? <GuardrailView guardrails={workspace.guardrails} /> : null}
-          <section className="panel panel-diagnostic" data-testid="workspace-diff-panel">
-            <p className="panel-kicker">{t('workspace.diff')}</p>
-            {workspace?.diff ? (
-              <>
-                <h4>{t('workspace.changedNodes', { count: workspace.diff.data.changedNodeIds.length })}</h4>
-                <ul className="compact-list">
-                  {workspace.diff.data.summary.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <p>{t('workspace.noDiff')}</p>
-            )}
-          </section>
         </aside>
 
       </div>

@@ -48,6 +48,11 @@ pnpm --filter @coe/investigation-console test:e2e
 - Snapshot context no longer renders as a standalone side-rail card in the workspace; stage, severity, objective, and the inquiry/symptom/artifact/fact badges now live in the graph header area.
 - If the workspace layout changes again, verify both the route structure and the graph header rendering together so a blank summary rail is not reintroduced.
 
+## Workspace Pruning
+
+- The case detail side rail no longer mounts the standalone guardrail panel or diff summary panel; keep the workspace focused on graph, timeline, inspector, and actions unless those modules regain a clear decision-making use case.
+- When pruning detail-page modules, also remove dead data fetches from the route so the page does not keep paying network and render cost for hidden panels.
+
 ## Locale Toggle Verification
 
 - Header locale selection follows a stable precedence order: explicit local preference first, then browser language detection.
