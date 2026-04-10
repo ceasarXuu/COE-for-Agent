@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-utils';
 
 import { ActionPanel } from '../components/action-panel.js';
-import { CoverageView } from '../components/coverage-view.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
 import { GuardrailView } from '../components/guardrail-view.js';
 import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
@@ -355,7 +354,6 @@ export function CaseWorkspaceRoute() {
 
         <aside className="workspace-rail workspace-rail-summary">
           {workspace ? <SnapshotView historical={historical} snapshot={workspace.snapshot} /> : null}
-          {workspace ? <CoverageView coverage={workspace.coverage} /> : null}
         </aside>
       </div>
     </section>

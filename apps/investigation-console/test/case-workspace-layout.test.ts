@@ -17,4 +17,13 @@ describe('case workspace layout', () => {
     expect(timelineIndex).toBeGreaterThan(-1);
     expect(graphIndex).toBeLessThan(timelineIndex);
   });
+
+  test('does not render the coverage preview module in the workspace rail', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+
+    expect(source).not.toContain('<CoverageView');
+  });
 });
