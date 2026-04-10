@@ -132,7 +132,6 @@ export function CasesIndexRoute() {
         <div className="case-index-toolbar">
           <div className="case-index-toolbar-controls">
             <label className="search-field">
-              <span>{t('cases.search')}</span>
               <input
                 aria-label={t('cases.search')}
                 autoComplete="off"
@@ -156,7 +155,6 @@ export function CasesIndexRoute() {
               />
             </label>
             <label className="sort-field">
-              <span>{t('cases.sort')}</span>
               <select
                 aria-label={t('cases.sort')}
                 onChange={(event) => {
