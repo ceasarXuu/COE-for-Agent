@@ -546,6 +546,13 @@
   margin: var(--space-2) 0 0 0;
 }
 
+.workspace-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 .workspace-rail {
   display: flex;
   flex-direction: column;
@@ -892,13 +899,6 @@ input::placeholder {
   padding: 0;
   position: relative;
   z-index: 1;
-}
-
-.graph-context-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: var(--space-4);
 }
 
 .graph-context-copy {

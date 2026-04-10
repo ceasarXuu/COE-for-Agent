@@ -84,11 +84,6 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           </div>
         </div>
         <div className="graph-context-strip">
-          <div className="graph-context-header">
-            <span className={`pill pill-${(caseRecord?.severity ?? 'medium').toLowerCase()}`}>
-              {formatEnumLabel(caseRecord?.severity ?? 'unknown')}
-            </span>
-          </div>
           <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
           {snapshot.historical ? (
             <p className="history-banner" data-testid="historical-mode">
@@ -116,11 +111,6 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       </div>
 
       <div className="graph-context-strip">
-        <div className="graph-context-header">
-          <span className={`pill pill-${(caseRecord?.severity ?? 'medium').toLowerCase()}`}>
-            {formatEnumLabel(caseRecord?.severity ?? 'unknown')}
-          </span>
-        </div>
         <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
         {snapshot.historical ? (
           <p className="history-banner" data-testid="historical-mode">

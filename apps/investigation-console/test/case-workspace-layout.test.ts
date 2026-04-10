@@ -28,6 +28,17 @@ describe('case workspace layout', () => {
     expect(source).not.toContain("t('workspace.historicalMode'");
   });
 
+  test('renders the severity pill next to the workspace title instead of inside the graph module', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('className="workspace-title-row"');
+    expect(source).toContain('workspace?.snapshot.data.case?.severity ? (');
+    expect(source).toContain('formatEnumLabel(workspace.snapshot.data.case.severity)');
+  });
+
   test('does not render the coverage preview module in the workspace rail', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),

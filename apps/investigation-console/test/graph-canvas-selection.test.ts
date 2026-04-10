@@ -83,7 +83,7 @@ describe('graph canvas selection', () => {
     expect(html).not.toContain('实时切片');
     expect(html).not.toContain('缩放');
     expect(html).not.toContain('graph-meta-row');
-    expect(html).toContain('严重');
+    expect(html).not.toContain('严重');
     expect(html).toContain('问题 1');
     expect(html).toContain('症状 0');
     expect(html).toContain('证据 0');
