@@ -13,12 +13,6 @@ export function RootLayout() {
           <h1 className="layout-title">{t('root.title')}</h1>
         </div>
 
-        <div className="fx items-center gap-3">
-          <span className="badge">{t('root.audit')}</span>
-          <span className="badge">{t('root.patch')}</span>
-          <span className="badge">{t('root.graph')}</span>
-        </div>
-
         <nav className="layout-nav">
           <NavLink 
             className={({ isActive }) => `btn btn-ghost${isActive ? ' btn-primary' : ''}`}

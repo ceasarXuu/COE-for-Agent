@@ -44,12 +44,6 @@ export function CasesIndexRoute() {
 
   return (
     <div className="case-index">
-      <aside aria-labelledby="hero-panel-title" className="hero-panel">
-        <p className="panel-kicker">{t('cases.hero.kicker')}</p>
-        <h2 id="hero-panel-title">{t('cases.hero.title')}</h2>
-        <p className="panel-copy">{t('cases.hero.copy')}</p>
-      </aside>
-
       <div className="case-index-board">
         <div className="case-index-toolbar">
           <label className="search-field">
@@ -87,7 +81,7 @@ export function CasesIndexRoute() {
           <CaseList items={cases} search={caseLinkSearch} />
 
           {!loading && cases.length === 0 ? (
-            <article className="empty-card">
+            <article className="empty-card" data-testid="cases-empty-state">
               <p className="panel-kicker">{t('cases.emptyKicker')}</p>
               <h3>{t('cases.emptyTitle')}</h3>
               <p>{t('cases.emptyCopy')}</p>
