@@ -176,10 +176,6 @@ export function CasesIndexRoute() {
                 <option value="title">{t('cases.sortTitle')}</option>
               </select>
             </label>
-            <div aria-live="polite" className="toolbar-badges">
-              <span>{t('cases.loaded', { count: cases.length })}</span>
-              <span>{loading ? t('cases.refreshing') : t('cases.stableProjection')}</span>
-            </div>
           </div>
         </div>
 
