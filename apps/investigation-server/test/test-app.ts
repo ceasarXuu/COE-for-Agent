@@ -1,4 +1,6 @@
-import { Pool } from 'pg';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import type { ActorContext } from '@coe/domain';
 import { MUTATION_TOOL_NAMES, type MutationToolName } from '@coe/mcp-contracts/tool-names';
@@ -8,9 +10,7 @@ import { issueConfirmToken, hashConfirmationReason } from '../src/auth/confirm-t
 import { getAuthorizationRequirement } from '../src/auth/policy.js';
 import { loadConfig } from '../src/config.js';
 
-const ADMIN_DATABASE_URL = process.env.COE_SERVER_ADMIN_DATABASE_URL ?? 'postgresql:///postgres';
-const TEST_DATABASE_NAME = process.env.COE_SERVER_TEST_DATABASE_NAME ?? 'coe_for_agent_test';
-const TEST_DATABASE_URL = process.env.COE_SERVER_TEST_DATABASE_URL ?? `postgresql:///${TEST_DATABASE_NAME}`;
+const TEST_DATA_ROOT = process.env.COE_SERVER_TEST_DATA_ROOT ?? path.join(os.tmpdir(), 'coe_for_agent_server_test');
 const TEST_LOCAL_ISSUER_SECRET = 'local-test-secret';
 const MUTATION_TOOL_NAME_SET = new Set<string>(MUTATION_TOOL_NAMES);
 
@@ -23,31 +23,28 @@ export const DEFAULT_TEST_ACTOR_CONTEXT: ActorContext = {
   authMode: 'local'
 };
 
-export function createAdminPool(): Pool {
-  return new Pool({ connectionString: ADMIN_DATABASE_URL, max: 1 });
+export function createAdminPool() {
+  return {
+    async end(): Promise<void> {
+      return Promise.resolve();
+    }
+  };
 }
 
-export async function assertServerTestDatabaseAvailable(pool: Pool): Promise<void> {
-  await pool.query('select 1');
+export async function assertServerTestDatabaseAvailable(_pool: ReturnType<typeof createAdminPool>): Promise<void> {
+  return Promise.resolve();
 }
 
-function quoteIdentifier(identifier: string): string {
-  return `"${identifier.replaceAll('"', '""')}"`;
-}
-
-export async function resetServerTestDatabase(pool: Pool): Promise<void> {
-  await pool.query(
-    'select pg_terminate_backend(pid) from pg_stat_activity where datname = $1 and pid <> pg_backend_pid()',
-    [TEST_DATABASE_NAME]
-  );
-  await pool.query(`drop database if exists ${quoteIdentifier(TEST_DATABASE_NAME)}`);
-  await pool.query(`create database ${quoteIdentifier(TEST_DATABASE_NAME)}`);
+export async function resetServerTestDatabase(_pool: ReturnType<typeof createAdminPool>): Promise<void> {
+  mkdirSync(TEST_DATA_ROOT, { recursive: true });
 }
 
 export async function createTestApp(): Promise<InvestigationApp> {
+  mkdirSync(TEST_DATA_ROOT, { recursive: true });
+  const testDataDir = mkdtempSync(path.join(TEST_DATA_ROOT, 'run-'));
   const app = await buildInvestigationApp({
     config: loadConfig({
-      DATABASE_URL: TEST_DATABASE_URL,
+      COE_DATA_DIR: testDataDir,
       MCP_TRANSPORT: 'stdio',
       LOCAL_ISSUER_SECRET: TEST_LOCAL_ISSUER_SECRET,
       ARTIFACT_ROOT: './tmp/artifacts',
@@ -70,7 +67,7 @@ export async function createTestApp(): Promise<InvestigationApp> {
   return app;
 }
 
-export { TEST_DATABASE_URL };
+export { TEST_DATA_ROOT as TEST_DATABASE_URL };
 
 function withTestAuthEnvelope(commandName: MutationToolName, input: Record<string, unknown>): Record<string, unknown> {
   const actorContext = isActorContext(input.actorContext) ? input.actorContext : DEFAULT_TEST_ACTOR_CONTEXT;

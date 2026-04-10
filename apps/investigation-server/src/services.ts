@@ -1,9 +1,7 @@
-import type { Kysely, Transaction } from 'kysely';
-
-import type { PersistenceDatabase } from '@coe/persistence';
+import type { PersistenceDatabaseConnection, PersistenceTransactionConnection } from '@coe/persistence';
 
 export interface InvestigationServerServices {
-  db: Kysely<PersistenceDatabase>;
+  db: PersistenceDatabaseConnection;
 }
 
-export type InvestigationServerTransaction = Transaction<PersistenceDatabase>;
+export type InvestigationServerTransaction = PersistenceTransactionConnection;

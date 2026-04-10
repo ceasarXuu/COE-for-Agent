@@ -8,6 +8,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { CaseGraphEnvelope } from '../../lib/api.js';
+import { useI18n } from '../../lib/i18n.js';
 import { useGraphLayout, type GraphNodeRecord } from './useGraphLayout.js';
 import { HypothesisNode } from './nodes/HypothesisNode.js';
 import { FactNode } from './nodes/FactNode.js';
@@ -46,7 +47,9 @@ interface GraphCanvasProps {
 }
 
 export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: GraphCanvasProps) {
+  const { t } = useI18n();
   const layout = useGraphLayout(graph);
+  const modeLabel = graph.historical ? t('graph.historical') : t('graph.live');
   
   const nodes: Node<GraphNodeRecord>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
@@ -73,40 +76,71 @@ export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: Gr
   
   if (nodes.length === 0) {
     return (
-      <div className="graph-canvas-empty">
-        <p className="panel-kicker">Graph Slice</p>
-        <p>No nodes are available in this graph slice yet.</p>
-      </div>
+      <section className="panel panel-primary graph-stage" data-testid="graph-stage">
+        <div className="panel-headline-row">
+          <p className="panel-kicker">{t('graph.caseGraph')}</p>
+          <span className="focus-chip">{modeLabel}</span>
+        </div>
+        <p className="graph-empty-copy">{t('graph.empty')}</p>
+      </section>
     );
   }
   
   return (
-    <div className="graph-canvas-container">
-      {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.5}
-        maxZoom={2}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable
-        onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeRecord>) => onSelectNode(node.id)}
-      >
-        <Background color="rgba(0, 240, 255, 0.05)" gap={16} />
-        <Controls className="graph-controls" />
-        <MiniMap
-          nodeColor={(node) => getNodeColor(node.type)}
-          maskColor="rgba(3, 3, 3, 0.85)"
-          className="graph-minimap"
-        />
-      </ReactFlow>
-    </div>
+    <section className="panel panel-primary graph-stage" data-testid="graph-stage">
+      <div className="graph-toolbar">
+        <div className="panel-headline-row">
+          <p className="panel-kicker">{t('graph.caseGraph')}</p>
+          {focusId ? <span className="focus-chip">{t('graph.focus', { id: focusId.slice(0, 10) })}</span> : null}
+        </div>
+
+        <div aria-label={t('graph.controls')} className="graph-controls">
+          <span className="focus-chip">{modeLabel}</span>
+          <span className="focus-chip">{t('graph.zoom')}</span>
+        </div>
+      </div>
+
+      <div className="graph-meta-row">
+        <div className="metric-strip">
+          <span>{t('graph.nodes', { count: nodes.length })}</span>
+          <span>{t('graph.links', { count: edges.length })}</span>
+          <span>{modeLabel}</span>
+        </div>
+
+        <div aria-label={t('graph.legend')} className="graph-legend">
+          <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
+          <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
+          <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
+        </div>
+      </div>
+
+      <div className="graph-canvas-container">
+        {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          minZoom={0.5}
+          maxZoom={2}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable
+          onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeRecord>) => onSelectNode(node.id)}
+        >
+          <Background color="rgba(0, 240, 255, 0.05)" gap={16} />
+          <Controls className="graph-flow-controls" />
+          <MiniMap
+            nodeColor={(node) => getNodeColor(node.type)}
+            maskColor="rgba(3, 3, 3, 0.85)"
+            className="graph-minimap"
+          />
+        </ReactFlow>
+      </div>
+    </section>
   );
 }
 

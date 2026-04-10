@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "bootstrap:hosts": "node --import tsx ./src/bootstrap/host-bootstrap-cli.ts",
     "dev": "tsx watch src/index.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
+    "mcp:stdio": "node --import tsx ./src/mcp/stdio-entry.ts",
     "test": "vitest run --maxWorkers=1 --testTimeout=30000 --hookTimeout=30000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

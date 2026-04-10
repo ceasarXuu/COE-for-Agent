@@ -11,13 +11,13 @@ export function InspectorShell(props: {
   const { formatEnumLabel, t } = useI18n();
 
   return (
-    <section className="panel inspector-panel" data-testid="inspector-panel">
+    <section className="panel panel-context inspector-panel" data-testid="inspector-panel">
       <p className="panel-kicker">{t('inspector.panelKind', { kind: formatEnumLabel(props.inspector.kind) })}</p>
       <h4 data-testid="inspector-title">{props.inspector.title}</h4>
       <p className="inspector-status" data-testid="inspector-status">
         {formatEnumLabel(props.inspector.status ?? 'stateless')}
       </p>
-      <p>{props.inspector.summary}</p>
+      {props.inspector.summary ? <p>{props.inspector.summary}</p> : null}
       <div className="inspector-columns">
         <div>
           <p className="panel-kicker">{props.primaryTitle}</p>

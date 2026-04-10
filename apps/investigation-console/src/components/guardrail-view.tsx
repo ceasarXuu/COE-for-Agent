@@ -5,9 +5,16 @@ export function GuardrailView(props: { guardrails: GuardrailBundle }) {
   const { formatEnumLabel, t } = useI18n();
   const warningCount = Array.isArray(props.guardrails.aggregate.warnings) ? props.guardrails.aggregate.warnings.length : 0;
   const violationCount = Array.isArray(props.guardrails.aggregate.violations) ? props.guardrails.aggregate.violations.length : 0;
+  const blockedReadyToPatch = props.guardrails.readyToPatch.pass === false;
+  const blockedCloseCase = props.guardrails.closeCase.pass === false;
+  const stalled = props.guardrails.stall.stall === true;
+  const needsEmphasis = warningCount > 0 || violationCount > 0 || blockedReadyToPatch || blockedCloseCase || stalled;
+  const panelClassName = needsEmphasis
+    ? 'panel panel-warning'
+    : 'panel panel-diagnostic';
 
   return (
-    <section className="panel">
+    <section className={panelClassName} data-testid="guardrail-panel">
       <div className="panel-headline-row">
         <p className="panel-kicker">{t('guardrails.kicker')}</p>
         <span className="focus-chip">{t('guardrails.counts', { warnings: warningCount, violations: violationCount })}</span>

@@ -1,6 +1,5 @@
 import { createResourceEnvelope } from '@coe/domain';
-import { CaseListProjectionRepository, type ListCaseProjectionQuery } from '@coe/persistence';
-import { sql } from 'kysely';
+import { CaseListProjectionRepository, CurrentStateRepository, type ListCaseProjectionQuery } from '@coe/persistence';
 
 import type { InvestigationServerServices } from '../../services.js';
 
@@ -32,10 +31,7 @@ export async function readCasesResource(services: InvestigationServerServices, u
   }
 
   const items = await repository.list(query);
-  const revisionRow = await sql<{ head_revision: number }>`select coalesce(max(revision), 0) as head_revision from cases`.execute(
-    services.db
-  );
-  const headRevision = Number(revisionRow.rows[0]?.head_revision ?? 0);
+  const headRevision = await new CurrentStateRepository(services.db).getHeadRevision();
 
   return {
     uri: url.toString(),

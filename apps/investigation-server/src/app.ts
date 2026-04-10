@@ -21,7 +21,7 @@ export async function buildInvestigationApp(
 ): Promise<InvestigationApp> {
   const config = options.config ?? loadConfig();
   const app = Fastify({ logger: false }) as unknown as InvestigationApp;
-  const persistence = createPersistenceClient({ connectionString: config.databaseUrl });
+  const persistence = createPersistenceClient({ dataDir: config.dataDir });
 
   await migrateToLatest(persistence.db);
 

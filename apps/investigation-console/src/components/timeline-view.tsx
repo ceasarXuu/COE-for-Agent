@@ -5,7 +5,7 @@ export function TimelineView(props: { timeline: CaseTimelineEnvelope }) {
   const { t } = useI18n();
 
   return (
-    <section className="panel workspace-stage">
+    <section className="panel panel-diagnostic workspace-stage">
       <p className="panel-kicker">{t('timeline.kicker')}</p>
       <ul className="timeline-list">
         {props.timeline.data.events.map((event) => (

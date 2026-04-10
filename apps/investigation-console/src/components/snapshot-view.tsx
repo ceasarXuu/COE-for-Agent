@@ -6,7 +6,7 @@ export function SnapshotView(props: { snapshot: CaseSnapshotEnvelope; historical
   const caseRecord = props.snapshot.data.case;
 
   return (
-    <section className="panel panel-hero" data-testid="snapshot-panel">
+    <section className="panel panel-context panel-hero" data-testid="snapshot-panel">
       <p className="panel-kicker">{t('snapshot.kicker')}</p>
       <div className="panel-headline-row">
         <h3 data-testid="snapshot-stage">{formatEnumLabel(caseRecord?.stage ?? 'unknown')}</h3>

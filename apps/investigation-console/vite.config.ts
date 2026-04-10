@@ -6,6 +6,7 @@ const CONSOLE_BFF_PORT = Number(process.env.CONSOLE_BFF_PORT ?? '4318');
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '127.0.0.1',
     port: Number(process.env.CONSOLE_WEB_PORT ?? '4173'),
     proxy: {
       '/api': {

@@ -6,6 +6,7 @@ import {
   createTestApp,
   resetServerTestDatabase
 } from '../test-app.js';
+import { CheckpointRepository } from '@coe/persistence';
 import { buildReplayScenario } from '../support/resource-scenarios.js';
 
 describe.sequential('history replay resources', () => {
@@ -73,12 +74,7 @@ describe.sequential('history replay resources', () => {
         `investigation://cases/${scenario.caseId}/snapshot?atRevision=1`
       );
 
-      const checkpoint = await app.services.db
-        .selectFrom('case_projection_checkpoints')
-        .select(['case_id', 'revision'])
-        .where('case_id', '=', scenario.caseId)
-        .where('revision', '=', 1)
-        .executeTakeFirst();
+      const checkpoint = await new CheckpointRepository(app.services.db).loadNearest(scenario.caseId, 1);
 
       expect(timeline.data).toMatchObject({
         headRevision: 3,
@@ -89,8 +85,8 @@ describe.sequential('history replay resources', () => {
           events: []
         }
       });
-      expect(checkpoint).toEqual({
-        case_id: scenario.caseId,
+      expect(checkpoint).toMatchObject({
+        caseId: scenario.caseId,
         revision: 1
       });
     } finally {

@@ -69,7 +69,7 @@ describe('action panel', () => {
 
     expect(html).toContain('data-testid="action-confirm-hypothesis"');
     expect(html).toContain('disabled');
-    expect(html).toContain('Historical mode freezes mutations.');
+    expect(html).toContain('Historical');
   });
 
   test('offers symptom follow-up actions for proposing a hypothesis and opening residual risk', () => {

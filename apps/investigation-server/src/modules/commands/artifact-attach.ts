@@ -73,23 +73,6 @@ export async function handleArtifactAttach(
           })
         });
 
-        if (payload.contentRef) {
-          await trx
-            .insertInto('artifact_blobs')
-            .values({
-              artifact_id: artifactId,
-              storage_uri: payload.contentRef,
-              digest: null,
-              size_bytes: null
-            })
-            .onConflict((oc) =>
-              oc.column('artifact_id').doUpdateSet({
-                storage_uri: payload.contentRef
-              })
-            )
-            .execute();
-        }
-
         return createCommandResult({
           ok: true,
           eventId: result.eventId,

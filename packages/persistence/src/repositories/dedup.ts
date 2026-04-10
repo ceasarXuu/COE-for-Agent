@@ -1,8 +1,6 @@
-import { type Kysely, type Transaction } from 'kysely';
+import { readPersistenceStore, writePersistenceStore, type PersistenceExecutor } from '../client.js';
+import type { JsonValue } from '../schema.js';
 
-import type { JsonValue, PersistenceDatabase } from '../schema.js';
-
-type DatabaseExecutor = Kysely<PersistenceDatabase> | Transaction<PersistenceDatabase>;
 const PENDING_EVENT_ID = '__pending__';
 const PENDING_COMMAND_RESULT = { pending: true } as const satisfies JsonValue;
 
@@ -40,55 +38,43 @@ export interface CompleteDedupInput extends ClaimDedupInput {
   commandResult: JsonValue;
 }
 
+function dedupKey(input: ClaimDedupInput): string {
+  return `${input.caseId}::${input.toolName}::${input.idempotencyKey}`;
+}
+
 export class CommandDedupRepository {
-  constructor(private readonly db: DatabaseExecutor) {}
+  constructor(private readonly db: PersistenceExecutor) {}
 
   async claim(input: ClaimDedupInput): Promise<ClaimDedupResult> {
-    const inserted = await this.db
-      .insertInto('command_dedup')
-      .values({
-        case_id: input.caseId,
-        tool_name: input.toolName,
-        idempotency_key: input.idempotencyKey,
-        event_id: PENDING_EVENT_ID,
-        command_result: PENDING_COMMAND_RESULT
-      })
-      .onConflict((oc) => oc.columns(['case_id', 'tool_name', 'idempotency_key']).doNothing())
-      .returning(['event_id'])
-      .executeTakeFirst();
+    return writePersistenceStore(this.db, (store) => {
+      const key = dedupKey(input);
+      const existing = store.dedup[key];
 
-    if (inserted) {
+      if (!existing) {
+        store.dedup[key] = {
+          eventId: PENDING_EVENT_ID,
+          commandResult: PENDING_COMMAND_RESULT,
+          createdAt: new Date()
+        };
+        return { claimed: true } as const;
+      }
+
       return {
-        claimed: true
-      };
-    }
-
-    const existing = await this.db
-      .selectFrom('command_dedup')
-      .select(['event_id', 'command_result'])
-      .where('case_id', '=', input.caseId)
-      .where('tool_name', '=', input.toolName)
-      .where('idempotency_key', '=', input.idempotencyKey)
-      .executeTakeFirstOrThrow();
-
-    return {
-      claimed: false,
-      eventId: existing.event_id,
-      commandResult: existing.command_result
-    };
+        claimed: false,
+        eventId: existing.eventId,
+        commandResult: structuredClone(existing.commandResult)
+      } as const;
+    });
   }
 
   async complete(input: CompleteDedupInput): Promise<void> {
-    await this.db
-      .updateTable('command_dedup')
-      .set({
-        event_id: input.eventId,
-        command_result: input.commandResult
-      })
-      .where('case_id', '=', input.caseId)
-      .where('tool_name', '=', input.toolName)
-      .where('idempotency_key', '=', input.idempotencyKey)
-      .execute();
+    await writePersistenceStore(this.db, (store) => {
+      store.dedup[dedupKey(input)] = {
+        eventId: input.eventId,
+        commandResult: structuredClone(input.commandResult),
+        createdAt: store.dedup[dedupKey(input)]?.createdAt ?? new Date()
+      };
+    });
   }
 
   async record(input: DedupRecordInput): Promise<DedupRecordResult> {

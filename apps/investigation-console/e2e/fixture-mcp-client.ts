@@ -1239,6 +1239,36 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
       }
 
       if (parsed.segments.length === 0) {
+        const query = (
+          parsed.url.searchParams.get('search')
+          ?? parsed.url.searchParams.get('q')
+          ?? ''
+        ).trim().toLowerCase();
+        const caseItems = [
+          {
+            caseId: FIXTURE_IDS.caseId,
+            title: state.caseRecord.title,
+            status: state.caseRecord.status,
+            stage: state.caseRecord.stage,
+            severity: state.caseRecord.severity,
+            headRevision,
+            updatedAt: '2025-01-01T10:16:00.000Z'
+          }
+        ].filter((item) => {
+          if (query.length === 0) {
+            return true;
+          }
+
+          return [
+            item.caseId,
+            item.title,
+            state.caseRecord.objective,
+            state.caseRecord.summary
+          ]
+            .filter((value): value is string => typeof value === 'string')
+            .some((value) => value.toLowerCase().includes(query));
+        });
+
         return {
           uri,
           mimeType: 'application/json',
@@ -1246,17 +1276,7 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             headRevision,
             projectionRevision: headRevision,
             data: {
-              items: [
-                {
-                  caseId: FIXTURE_IDS.caseId,
-                  title: state.caseRecord.title,
-                  status: state.caseRecord.status,
-                  stage: state.caseRecord.stage,
-                  severity: state.caseRecord.severity,
-                  headRevision,
-                  updatedAt: '2025-01-01T10:16:00.000Z'
-                }
-              ]
+              items: caseItems
             }
           })
         };

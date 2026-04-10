@@ -5,7 +5,7 @@ export function CoverageView(props: { coverage: CaseCoverageEnvelope }) {
   const { formatEnumLabel, t } = useI18n();
 
   return (
-    <section className="panel">
+    <section className="panel panel-diagnostic">
       <div className="panel-headline-row">
         <p className="panel-kicker">{t('coverage.kicker')}</p>
         <span className="focus-chip">

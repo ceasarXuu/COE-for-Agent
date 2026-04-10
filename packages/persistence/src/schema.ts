@@ -1,5 +1,3 @@
-import type { Generated } from 'kysely';
-
 export type JsonPrimitive = boolean | number | string | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
@@ -12,7 +10,7 @@ export interface InvestigationEventsTable {
   actor: JsonValue;
   payload: JsonValue;
   metadata: JsonValue;
-  created_at: Generated<Date>;
+  created_at: Date;
 }
 
 export interface CommandDedupTable {
@@ -21,7 +19,7 @@ export interface CommandDedupTable {
   idempotency_key: string;
   event_id: string;
   command_result: JsonValue;
-  created_at: Generated<Date>;
+  created_at: Date;
 }
 
 export interface CasesTable {
@@ -32,8 +30,8 @@ export interface CasesTable {
   stage: string;
   revision: number;
   payload: JsonValue;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface CurrentStateTable {
@@ -42,8 +40,8 @@ export interface CurrentStateTable {
   revision: number;
   status: string | null;
   payload: JsonValue;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface CaseEdgesTable {
@@ -53,21 +51,21 @@ export interface CaseEdgesTable {
   edge_type: string;
   source_event_id: string;
   payload: JsonValue;
-  created_at: Generated<Date>;
+  created_at: Date;
 }
 
 export interface CaseSnapshotCacheTable {
   case_id: string;
   case_revision: number;
   payload: JsonValue;
-  updated_at: Generated<Date>;
+  updated_at: Date;
 }
 
 export interface CoverageCacheTable {
   case_id: string;
   case_revision: number;
   payload: JsonValue;
-  updated_at: Generated<Date>;
+  updated_at: Date;
 }
 
 export interface GuardrailCacheTable {
@@ -75,7 +73,7 @@ export interface GuardrailCacheTable {
   case_revision: number;
   stall_risk: string | null;
   ready_to_patch_payload: JsonValue;
-  updated_at: Generated<Date>;
+  updated_at: Date;
 }
 
 export interface CaseListProjectionTable {
@@ -89,14 +87,14 @@ export interface CaseListProjectionTable {
   open_gap_count: number;
   open_residual_count: number;
   stall_risk: string | null;
-  updated_at: Generated<Date>;
+  updated_at: Date;
 }
 
 export interface CaseProjectionCheckpointTable {
   case_id: string;
   revision: number;
   projection_state: JsonValue;
-  created_at: Generated<Date>;
+  created_at: Date;
 }
 
 export interface ProjectionOutboxTable {
@@ -111,8 +109,8 @@ export interface ProjectionOutboxTable {
   claimed_by: string | null;
   claimed_at: Date | null;
   last_error: string | null;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface ArtifactBlobsTable {
@@ -120,7 +118,7 @@ export interface ArtifactBlobsTable {
   storage_uri: string;
   digest: string | null;
   size_bytes: number | null;
-  created_at: Generated<Date>;
+  created_at: Date;
 }
 
 export interface PersistenceDatabase {

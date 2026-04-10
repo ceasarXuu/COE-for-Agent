@@ -1,6 +1,5 @@
-import { type Kysely } from 'kysely';
-
-import type { JsonValue, PersistenceDatabase } from '../schema.js';
+import { readPersistenceStore, writePersistenceStore, type PersistenceExecutor } from '../client.js';
+import type { JsonValue } from '../schema.js';
 
 export interface CheckpointRecord {
   caseId: string;
@@ -9,41 +8,38 @@ export interface CheckpointRecord {
 }
 
 export class CheckpointRepository {
-  constructor(private readonly db: Kysely<PersistenceDatabase>) {}
+  constructor(private readonly db: PersistenceExecutor) {}
 
   async save(record: CheckpointRecord): Promise<void> {
-    await this.db
-      .insertInto('case_projection_checkpoints')
-      .values({
-        case_id: record.caseId,
+    await writePersistenceStore(this.db, (store) => {
+      if (!store.checkpointsByCase[record.caseId]) {
+        store.checkpointsByCase[record.caseId] = {};
+      }
+
+      store.checkpointsByCase[record.caseId]![String(record.revision)] = {
+        caseId: record.caseId,
         revision: record.revision,
-        projection_state: record.projectionState
-      })
-      .onConflict((oc) =>
-        oc.columns(['case_id', 'revision']).doUpdateSet({
-          projection_state: record.projectionState
-        })
-      )
-      .execute();
+        projectionState: structuredClone(record.projectionState)
+      };
+    });
   }
 
   async loadNearest(caseId: string, targetRevision: number): Promise<CheckpointRecord | undefined> {
-    const row = await this.db
-      .selectFrom('case_projection_checkpoints')
-      .select(['case_id', 'revision', 'projection_state'])
-      .where('case_id', '=', caseId)
-      .where('revision', '<=', targetRevision)
-      .orderBy('revision', 'desc')
-      .executeTakeFirst();
+    return readPersistenceStore(this.db, (store) => {
+      const entries = Object.values(store.checkpointsByCase[caseId] ?? {})
+        .filter((record) => record.revision <= targetRevision)
+        .sort((left, right) => right.revision - left.revision);
 
-    if (!row) {
-      return undefined;
-    }
+      const record = entries[0];
+      if (!record) {
+        return undefined;
+      }
 
-    return {
-      caseId: row.case_id,
-      revision: row.revision,
-      projectionState: row.projection_state
-    };
+      return {
+        caseId: record.caseId,
+        revision: record.revision,
+        projectionState: structuredClone(record.projectionState)
+      };
+    });
   }
 }

@@ -1,11 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
 import { assertRevisionMatch, type ActorContext } from '@coe/domain';
-import { type Kysely, type Transaction } from 'kysely';
 
-import type { JsonValue, PersistenceDatabase } from '../schema.js';
-
-type DatabaseExecutor = Kysely<PersistenceDatabase> | Transaction<PersistenceDatabase>;
+import { readPersistenceStore, writePersistenceStore, type PersistenceExecutor, type PersistenceStore, type StoredEvent } from '../client.js';
+import type { JsonValue } from '../schema.js';
 
 export interface AppendEventInput {
   caseId: string;
@@ -30,143 +28,74 @@ export interface ReplayRange {
   toRevisionInclusive: number;
 }
 
-export interface StoredEvent {
-  eventId: string;
-  caseId: string;
-  caseRevision: number;
-  eventType: string;
-  commandName: string;
-  actor: JsonValue;
-  payload: JsonValue;
-  metadata: JsonValue;
-  createdAt: Date;
-}
-
 export class EventStoreRepository {
-  constructor(private readonly db: DatabaseExecutor) {}
+  constructor(private readonly db: PersistenceExecutor) {}
 
   async appendEvent(input: AppendEventInput): Promise<AppendEventResult> {
-    return this.db.transaction().execute(async (trx) => this.appendEventInExecutor(trx, input));
+    return writePersistenceStore(this.db, (store) => appendEventInStore(store, input));
   }
 
-  async appendEventInExecutor(executor: DatabaseExecutor, input: AppendEventInput): Promise<AppendEventResult> {
-    const currentCase = await executor
-      .selectFrom('cases')
-      .select(['id', 'revision'])
-      .where('id', '=', input.caseId)
-      .forUpdate()
-      .executeTakeFirst();
-
-    const actualRevision = currentCase?.revision ?? 0;
-    assertRevisionMatch(input.caseId, input.expectedRevision, actualRevision);
-
-    const nextRevision = actualRevision + 1;
-    const eventId = randomUUID();
-
-    await executor
-      .insertInto('investigation_events')
-      .values({
-        event_id: eventId,
-        case_id: input.caseId,
-        case_revision: nextRevision,
-        event_type: input.eventType,
-        command_name: input.commandName,
-        actor: input.actor as unknown as JsonValue,
-        payload: input.payload,
-        metadata: input.metadata
-      })
-      .execute();
-
-    await executor
-      .insertInto('cases')
-      .values({
-        id: input.caseId,
-        title: null,
-        severity: null,
-        status: 'active',
-        stage: 'intake',
-        revision: nextRevision,
-        payload: {}
-      })
-      .onConflict((oc) =>
-        oc.column('id').doUpdateSet({
-          revision: nextRevision,
-          updated_at: new Date()
-        })
-      )
-      .execute();
-
-    return {
-      eventId,
-      caseRevision: nextRevision
-    };
+  async appendEventInExecutor(_executor: PersistenceExecutor, input: AppendEventInput): Promise<AppendEventResult> {
+    return writePersistenceStore(this.db, (store) => appendEventInStore(store, input));
   }
 
   async listForReplay(range: ReplayRange): Promise<StoredEvent[]> {
-    const rows = await this.db
-      .selectFrom('investigation_events')
-      .select([
-        'event_id',
-        'case_id',
-        'case_revision',
-        'event_type',
-        'command_name',
-        'actor',
-        'payload',
-        'metadata',
-        'created_at'
-      ])
-      .where('case_id', '=', range.caseId)
-      .where('case_revision', '>', range.fromRevisionExclusive)
-      .where('case_revision', '<=', range.toRevisionInclusive)
-      .orderBy('case_revision', 'asc')
-      .execute();
-
-    return rows.map((row) => ({
-      eventId: row.event_id,
-      caseId: row.case_id,
-      caseRevision: row.case_revision,
-      eventType: row.event_type,
-      commandName: row.command_name,
-      actor: row.actor,
-      payload: row.payload,
-      metadata: row.metadata,
-      createdAt: row.created_at as Date
-    }));
+    return readPersistenceStore(this.db, (store) =>
+      (store.eventsByCase[range.caseId] ?? [])
+        .filter((event) => event.caseRevision > range.fromRevisionExclusive && event.caseRevision <= range.toRevisionInclusive)
+        .map((event) => structuredClone(event))
+    );
   }
 
   async listCaseEvents(caseId: string, toRevisionInclusive?: number): Promise<StoredEvent[]> {
-    let query = this.db
-      .selectFrom('investigation_events')
-      .select([
-        'event_id',
-        'case_id',
-        'case_revision',
-        'event_type',
-        'command_name',
-        'actor',
-        'payload',
-        'metadata',
-        'created_at'
-      ])
-      .where('case_id', '=', caseId);
-
-    if (typeof toRevisionInclusive === 'number') {
-      query = query.where('case_revision', '<=', toRevisionInclusive);
-    }
-
-    const rows = await query.orderBy('case_revision', 'asc').execute();
-
-    return rows.map((row) => ({
-      eventId: row.event_id,
-      caseId: row.case_id,
-      caseRevision: row.case_revision,
-      eventType: row.event_type,
-      commandName: row.command_name,
-      actor: row.actor,
-      payload: row.payload,
-      metadata: row.metadata,
-      createdAt: row.created_at as Date
-    }));
+    return readPersistenceStore(this.db, (store) =>
+      (store.eventsByCase[caseId] ?? [])
+        .filter((event) => typeof toRevisionInclusive !== 'number' || event.caseRevision <= toRevisionInclusive)
+        .map((event) => structuredClone(event))
+    );
   }
+}
+
+function appendEventInStore(store: PersistenceStore, input: AppendEventInput): AppendEventResult {
+  const currentCase = store.cases[input.caseId];
+  const actualRevision = currentCase?.revision ?? 0;
+  assertRevisionMatch(input.caseId, input.expectedRevision, actualRevision);
+
+  const nextRevision = actualRevision + 1;
+  const eventId = randomUUID();
+  const now = new Date();
+
+  const event: StoredEvent = {
+    eventId,
+    caseId: input.caseId,
+    caseRevision: nextRevision,
+    eventType: input.eventType,
+    commandName: input.commandName,
+    actor: structuredClone(input.actor) as unknown as JsonValue,
+    payload: structuredClone(input.payload),
+    metadata: structuredClone(input.metadata),
+    createdAt: now
+  };
+
+  if (!store.eventsByCase[input.caseId]) {
+    store.eventsByCase[input.caseId] = [];
+  }
+  store.eventsByCase[input.caseId]!.push(event);
+
+  store.cases[input.caseId] = {
+    id: input.caseId,
+    title: currentCase?.title ?? null,
+    severity: currentCase?.severity ?? null,
+    status: currentCase?.status ?? 'active',
+    stage: currentCase?.stage ?? 'intake',
+    revision: nextRevision,
+    payload: structuredClone(currentCase?.payload ?? {}),
+    createdAt: currentCase?.createdAt ?? now,
+    updatedAt: now
+  };
+
+  return {
+    eventId,
+    caseRevision: nextRevision
+  };
 }

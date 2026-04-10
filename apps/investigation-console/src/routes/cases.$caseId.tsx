@@ -41,9 +41,6 @@ interface WorkspaceData {
   guardrails: GuardrailBundle;
 }
 
-type Translator = ReturnType<typeof useI18n>['t'];
-type EnumFormatter = ReturnType<typeof useI18n>['formatEnumLabel'];
-
 export function CaseWorkspaceRoute() {
   const { formatEnumLabel, t } = useI18n();
   const params = useParams();
@@ -173,7 +170,7 @@ export function CaseWorkspaceRoute() {
       }
 
       if (graphNode) {
-        return buildGraphBackedInspector(graphNode, workspace, t, formatEnumLabel);
+        return buildGraphBackedInspector(graphNode, workspace);
       }
 
       return {
@@ -297,12 +294,7 @@ export function CaseWorkspaceRoute() {
       {error ? <p className="inline-error">{error}</p> : null}
 
       <div className="workspace-grid">
-        <aside className="workspace-rail workspace-rail-left">
-          {workspace ? <SnapshotView historical={historical} snapshot={workspace.snapshot} /> : null}
-          {workspace ? <CoverageView coverage={workspace.coverage} /> : null}
-        </aside>
-
-        <section className="workspace-center">
+        <section className="workspace-main">
           {loading && !workspace ? <section className="panel graph-stage"><p>{t('workspace.replaying')}</p></section> : null}
           {workspace ? <TimelineView timeline={workspace.timeline} /> : null}
           {workspace ? (
@@ -315,24 +307,7 @@ export function CaseWorkspaceRoute() {
           ) : null}
         </section>
 
-        <aside className="workspace-rail workspace-rail-right">
-          <section className="panel">
-            <p className="panel-kicker">{t('workspace.diff')}</p>
-            {workspace?.diff ? (
-              <>
-                <h4>{t('workspace.changedNodes', { count: workspace.diff.data.changedNodeIds.length })}</h4>
-                <ul className="compact-list">
-                  {workspace.diff.data.summary.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <p>{t('workspace.compareHint')}</p>
-            )}
-          </section>
-
-          {workspace ? <GuardrailView guardrails={workspace.guardrails} /> : null}
+        <aside className="workspace-rail workspace-rail-side">
           <InspectorPanel inspector={inspector} loading={inspectorLoading} />
           <ActionPanel
             caseId={caseId}
@@ -346,6 +321,27 @@ export function CaseWorkspaceRoute() {
             onMutationComplete={handleMutationComplete}
             selectedNode={selectedNode}
           />
+          {workspace ? <GuardrailView guardrails={workspace.guardrails} /> : null}
+          <section className="panel panel-diagnostic" data-testid="workspace-diff-panel">
+            <p className="panel-kicker">{t('workspace.diff')}</p>
+            {workspace?.diff ? (
+              <>
+                <h4>{t('workspace.changedNodes', { count: workspace.diff.data.changedNodeIds.length })}</h4>
+                <ul className="compact-list">
+                  {workspace.diff.data.summary.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>{t('workspace.noDiff')}</p>
+            )}
+          </section>
+        </aside>
+
+        <aside className="workspace-rail workspace-rail-summary">
+          {workspace ? <SnapshotView historical={historical} snapshot={workspace.snapshot} /> : null}
+          {workspace ? <CoverageView coverage={workspace.coverage} /> : null}
         </aside>
       </div>
     </section>
@@ -354,9 +350,7 @@ export function CaseWorkspaceRoute() {
 
 function buildGraphBackedInspector(
   node: GraphNodeRecord,
-  workspace: WorkspaceData,
-  t: Translator,
-  formatEnumLabel: EnumFormatter
+  workspace: WorkspaceData
 ): InspectorViewModel {
   const relatedNodes = collectRelatedNodes(node.id, workspace.graph.data.nodes, workspace.graph.data.edges);
   const coverageItems = workspace.coverage.data.items.filter((item) => item.supportingFactIds.includes(node.id));
@@ -367,7 +361,7 @@ function buildGraphBackedInspector(
         kind: 'fact',
         title: node.label,
         status: node.status,
-        summary: t('workspace.factSummary'),
+        summary: '',
         primaryItems: coverageItems.map((item) => item.statement),
         secondaryItems: coverageItems.flatMap((item) => item.relatedHypothesisIds.map((hypothesisId) => findNodeLabel(workspace.graph.data.nodes, hypothesisId)))
       };
@@ -376,16 +370,16 @@ function buildGraphBackedInspector(
         kind: 'experiment',
         title: node.label,
         status: node.status,
-        summary: t('workspace.experimentSummary'),
+        summary: '',
         primaryItems: relatedNodes.filter((relatedNode) => relatedNode.kind === 'hypothesis').map((relatedNode) => relatedNode.label),
-        secondaryItems: node.status === 'completed' ? [t('workspace.experimentOutcome')] : []
+        secondaryItems: []
       };
     case 'decision':
       return {
         kind: 'decision',
         title: node.label,
         status: node.status,
-        summary: t('workspace.decisionSummary'),
+        summary: '',
         primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
         secondaryItems: []
       };
@@ -394,7 +388,7 @@ function buildGraphBackedInspector(
         kind: 'gap',
         title: node.label,
         status: node.status,
-        summary: t('workspace.gapSummary'),
+        summary: '',
         primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
         secondaryItems: []
       };
@@ -403,16 +397,16 @@ function buildGraphBackedInspector(
         kind: 'residual',
         title: node.label,
         status: node.status,
-        summary: t('workspace.residualSummary'),
+        summary: '',
         primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
-        secondaryItems: workspace.guardrails.closeCase.pass ? [t('workspace.closureClear')] : [t('workspace.closureBlocked')]
+        secondaryItems: []
       };
     default:
       return {
         kind: 'node',
         title: node.label,
         status: node.status,
-        summary: t('workspace.selectedFromSlice', { kind: formatEnumLabel(node.kind) }),
+        summary: '',
         primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
         secondaryItems: []
       };

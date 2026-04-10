@@ -407,7 +407,7 @@ export function ActionPanel(props: {
     : null;
 
   return (
-    <section className="panel action-panel">
+    <section className="panel panel-primary action-panel" data-testid="action-panel">
       <p className="panel-kicker">{t('action.kicker')}</p>
       <p className="snapshot-objective">
         {t('action.description')}

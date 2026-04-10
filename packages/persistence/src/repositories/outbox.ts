@@ -1,8 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { type Kysely, type Selectable } from 'kysely';
-
-import type { PersistenceDatabase, ProjectionOutboxTable } from '../schema.js';
+import { readPersistenceStore, writePersistenceStore, type PersistenceExecutor, type StoredOutboxRecord } from '../client.js';
 
 export interface EnqueueOutboxInput {
   caseId: string;
@@ -31,104 +29,97 @@ export interface ClaimNextInput {
 }
 
 export class ProjectionOutboxRepository {
-  constructor(private readonly db: Kysely<PersistenceDatabase>) {}
+  constructor(private readonly db: PersistenceExecutor) {}
 
   async enqueue(input: EnqueueOutboxInput): Promise<OutboxRecord> {
-    const row = await this.db
-      .insertInto('projection_outbox')
-      .values({
-        outbox_id: randomUUID(),
-        case_id: input.caseId,
-        head_revision: input.headRevision,
-        event_id: input.eventId,
-        task_type: input.taskType,
+    return writePersistenceStore(this.db, (store) => {
+      const now = new Date();
+      const record: OutboxRecord = {
+        outboxId: randomUUID(),
+        caseId: input.caseId,
+        headRevision: input.headRevision,
+        eventId: input.eventId,
+        taskType: input.taskType,
         status: 'pending',
-        attempt_count: 0,
-        available_at: new Date(),
-        claimed_by: null,
-        claimed_at: null,
-        last_error: null
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+        attemptCount: 0,
+        availableAt: now,
+        claimedBy: null,
+        claimedAt: null,
+        lastError: null
+      };
 
-    return mapOutboxRow(row);
+      store.outbox[record.outboxId] = {
+        ...record,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      return record;
+    });
   }
 
   async claimNext(input: ClaimNextInput): Promise<OutboxRecord | null> {
-    return this.db.transaction().execute(async (trx) => {
-      const nextRow = await trx
-        .selectFrom('projection_outbox')
-        .selectAll()
-        .where('task_type', '=', input.taskType)
-        .where('status', '=', 'pending')
-        .where('available_at', '<=', new Date())
-        .orderBy('created_at', 'asc')
-        .forUpdate()
-        .skipLocked()
-        .executeTakeFirst();
+    return writePersistenceStore(this.db, (store) => {
+      const next = Object.values(store.outbox)
+        .filter((record) => record.taskType === input.taskType && record.status === 'pending' && record.availableAt <= new Date())
+        .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())[0];
 
-      if (!nextRow) {
+      if (!next) {
         return null;
       }
 
-      const claimed = await trx
-        .updateTable('projection_outbox')
-        .set({
-          status: 'processing',
-          claimed_by: input.workerId,
-          claimed_at: new Date(),
-          attempt_count: nextRow.attempt_count + 1,
-          updated_at: new Date(),
-          last_error: null
-        })
-        .where('outbox_id', '=', nextRow.outbox_id)
-        .returningAll()
-        .executeTakeFirstOrThrow();
+      next.status = 'processing';
+      next.claimedBy = input.workerId;
+      next.claimedAt = new Date();
+      next.attemptCount += 1;
+      next.updatedAt = new Date();
+      next.lastError = null;
 
-      return mapOutboxRow(claimed);
+      return toOutboxRecord(next);
     });
   }
 
   async markFailed(input: { outboxId: string; errorMessage: string }): Promise<void> {
-    await this.db
-      .updateTable('projection_outbox')
-      .set({
-        status: 'pending',
-        available_at: new Date(),
-        claimed_by: null,
-        claimed_at: null,
-        last_error: input.errorMessage,
-        updated_at: new Date()
-      })
-      .where('outbox_id', '=', input.outboxId)
-      .execute();
+    await writePersistenceStore(this.db, (store) => {
+      const record = store.outbox[input.outboxId];
+      if (!record) {
+        return;
+      }
+
+      record.status = 'pending';
+      record.availableAt = new Date();
+      record.claimedBy = null;
+      record.claimedAt = null;
+      record.lastError = input.errorMessage;
+      record.updatedAt = new Date();
+    });
   }
 
   async markDone(outboxId: string): Promise<void> {
-    await this.db
-      .updateTable('projection_outbox')
-      .set({
-        status: 'completed',
-        updated_at: new Date()
-      })
-      .where('outbox_id', '=', outboxId)
-      .execute();
+    await writePersistenceStore(this.db, (store) => {
+      const record = store.outbox[outboxId];
+      if (!record) {
+        return;
+      }
+
+      record.status = 'completed';
+      record.updatedAt = new Date();
+    });
   }
 }
 
-function mapOutboxRow(row: Selectable<ProjectionOutboxTable>): OutboxRecord {
+function toOutboxRecord(record: StoredOutboxRecord): OutboxRecord {
   return {
-    outboxId: row.outbox_id,
-    caseId: row.case_id,
-    headRevision: row.head_revision,
-    eventId: row.event_id,
-    taskType: row.task_type,
-    status: row.status,
-    attemptCount: row.attempt_count,
-    availableAt: row.available_at as Date,
-    claimedBy: row.claimed_by,
-    claimedAt: row.claimed_at as Date | null,
-    lastError: row.last_error
+    outboxId: record.outboxId,
+    caseId: record.caseId,
+    headRevision: record.headRevision,
+    eventId: record.eventId,
+    taskType: record.taskType,
+    status: record.status,
+    attemptCount: record.attemptCount,
+    availableAt: record.availableAt,
+    claimedBy: record.claimedBy,
+    claimedAt: record.claimedAt,
+    lastError: record.lastError
   };
 }

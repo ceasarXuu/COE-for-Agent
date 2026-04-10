@@ -132,16 +132,7 @@ importers:
       '@coe/domain':
         specifier: workspace:*
         version: link:../domain
-      kysely:
-        specifier: ^0.28.2
-        version: 0.28.15
-      pg:
-        specifier: ^8.16.3
-        version: 8.20.0
     devDependencies:
-      '@types/pg':
-        specifier: ^8.15.5
-        version: 8.20.0
       vitest:
         specifier: ^3.1.2
         version: 3.2.4(@types/node@22.19.17)(tsx@4.21.0)

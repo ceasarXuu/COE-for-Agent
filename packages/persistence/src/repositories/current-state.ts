@@ -1,19 +1,7 @@
-import { type Kysely, type Transaction } from 'kysely';
+import { readPersistenceStore, writePersistenceStore, type PersistenceCurrentStateTableName, type PersistenceExecutor } from '../client.js';
+import type { JsonValue } from '../schema.js';
 
-import type { JsonValue, PersistenceDatabase } from '../schema.js';
-
-type DatabaseExecutor = Kysely<PersistenceDatabase> | Transaction<PersistenceDatabase>;
-export type CurrentStateTableName =
-  | 'inquiries'
-  | 'entities'
-  | 'symptoms'
-  | 'artifacts'
-  | 'facts'
-  | 'hypotheses'
-  | 'experiments'
-  | 'gaps'
-  | 'residuals'
-  | 'decisions';
+export type CurrentStateTableName = PersistenceCurrentStateTableName;
 
 export interface CaseStateRecord {
   id: string;
@@ -34,122 +22,118 @@ export interface CurrentStateNodeRecord {
 }
 
 export class CurrentStateRepository {
-  constructor(private readonly db: DatabaseExecutor) {}
+  constructor(private readonly db: PersistenceExecutor) {}
 
   async upsertCase(record: CaseStateRecord): Promise<void> {
-    await this.db
-      .insertInto('cases')
-      .values({
+    await writePersistenceStore(this.db, (store) => {
+      const existing = store.cases[record.id];
+      const now = new Date();
+      store.cases[record.id] = {
         id: record.id,
         title: record.title ?? null,
         severity: record.severity ?? null,
         status: record.status,
         stage: record.stage,
         revision: record.revision,
-        payload: record.payload ?? {}
-      })
-      .onConflict((oc) =>
-        oc.column('id').doUpdateSet({
-          title: record.title ?? null,
-          severity: record.severity ?? null,
-          status: record.status,
-          stage: record.stage,
-          revision: record.revision,
-          payload: record.payload ?? {},
-          updated_at: new Date()
-        })
-      )
-      .execute();
+        payload: structuredClone(record.payload ?? {}),
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now
+      };
+    });
   }
 
   async getCase(caseId: string): Promise<CaseStateRecord | undefined> {
-    const row = await this.db
-      .selectFrom('cases')
-      .select(['id', 'title', 'severity', 'status', 'stage', 'revision', 'payload'])
-      .where('id', '=', caseId)
-      .executeTakeFirst();
+    return readPersistenceStore(this.db, (store) => {
+      const row = store.cases[caseId];
+      if (!row) {
+        return undefined;
+      }
 
-    if (!row) {
-      return undefined;
-    }
+      return {
+        id: row.id,
+        title: row.title,
+        severity: row.severity,
+        status: row.status,
+        stage: row.stage,
+        revision: row.revision,
+        payload: structuredClone(row.payload)
+      };
+    });
+  }
 
-    return {
-      id: row.id,
-      title: row.title,
-      severity: row.severity,
-      status: row.status,
-      stage: row.stage,
-      revision: row.revision,
-      payload: row.payload
-    };
+  async listCases(): Promise<CaseStateRecord[]> {
+    return readPersistenceStore(this.db, (store) =>
+      Object.values(store.cases)
+        .sort((left, right) => left.updatedAt.getTime() - right.updatedAt.getTime())
+        .map((row) => ({
+          id: row.id,
+          title: row.title,
+          severity: row.severity,
+          status: row.status,
+          stage: row.stage,
+          revision: row.revision,
+          payload: structuredClone(row.payload)
+        }))
+    );
+  }
+
+  async getHeadRevision(): Promise<number> {
+    return readPersistenceStore(this.db, (store) =>
+      Object.values(store.cases).reduce((max, record) => Math.max(max, record.revision), 0)
+    );
   }
 
   async upsertRecord(tableName: CurrentStateTableName, record: CurrentStateNodeRecord): Promise<void> {
-    await this.db
-      .insertInto(tableName)
-      .values({
+    await writePersistenceStore(this.db, (store) => {
+      const existing = store.currentState[tableName][record.id];
+      const now = new Date();
+      store.currentState[tableName][record.id] = {
         id: record.id,
-        case_id: record.caseId,
+        caseId: record.caseId,
         revision: record.revision,
         status: record.status ?? null,
-        payload: record.payload ?? {}
-      })
-      .onConflict((oc) =>
-        oc.column('id').doUpdateSet({
-          case_id: record.caseId,
-          revision: record.revision,
-          status: record.status ?? null,
-          payload: record.payload ?? {},
-          updated_at: new Date()
-        })
-      )
-      .execute();
+        payload: structuredClone(record.payload ?? {}),
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now
+      };
+    });
   }
 
   async getRecord(tableName: CurrentStateTableName, id: string): Promise<CurrentStateNodeRecord | undefined> {
-    const row = await this.db
-      .selectFrom(tableName)
-      .select(['id', 'case_id', 'revision', 'status', 'payload'])
-      .where('id', '=', id)
-      .executeTakeFirst();
+    return readPersistenceStore(this.db, (store) => {
+      const row = store.currentState[tableName][id];
+      if (!row) {
+        return undefined;
+      }
 
-    if (!row) {
-      return undefined;
-    }
-
-    return {
-      id: row.id,
-      caseId: row.case_id,
-      revision: row.revision,
-      status: row.status,
-      payload: row.payload
-    };
+      return {
+        id: row.id,
+        caseId: row.caseId,
+        revision: row.revision,
+        status: row.status,
+        payload: structuredClone(row.payload)
+      };
+    });
   }
 
   async listRecordsByCase(tableName: CurrentStateTableName, caseId: string): Promise<CurrentStateNodeRecord[]> {
-    const rows = await this.db
-      .selectFrom(tableName)
-      .select(['id', 'case_id', 'revision', 'status', 'payload'])
-      .where('case_id', '=', caseId)
-      .orderBy('created_at', 'asc')
-      .execute();
-
-    return rows.map((row) => ({
-      id: row.id,
-      caseId: row.case_id,
-      revision: row.revision,
-      status: row.status,
-      payload: row.payload
-    }));
+    return readPersistenceStore(this.db, (store) =>
+      Object.values(store.currentState[tableName])
+        .filter((row) => row.caseId === caseId)
+        .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+        .map((row) => ({
+          id: row.id,
+          caseId: row.caseId,
+          revision: row.revision,
+          status: row.status,
+          payload: structuredClone(row.payload)
+        }))
+    );
   }
 
   async countByCase(tableName: CurrentStateTableName, caseId: string): Promise<number> {
-    const row = await this.db
-      .selectFrom(tableName)
-      .select((eb) => eb.fn.countAll<number>().as('count'))
-      .where('case_id', '=', caseId)
-      .executeTakeFirstOrThrow();
-
-    return Number(row.count);
+    return readPersistenceStore(this.db, (store) =>
+      Object.values(store.currentState[tableName]).filter((row) => row.caseId === caseId).length
+    );
   }
 }

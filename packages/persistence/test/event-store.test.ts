@@ -51,11 +51,12 @@ describe.sequential('event store', () => {
 
     expect(result.caseRevision).toBe(1);
 
-    const rows = await persistence.pool.query(
-      'select case_revision, event_type, command_name from investigation_events where case_id = $1',
-      [caseId]
-    );
-    expect(rows.rows).toEqual([
+    const rows = await eventStore.listCaseEvents(caseId);
+    expect(rows.map((row) => ({
+      case_revision: row.caseRevision,
+      event_type: row.eventType,
+      command_name: row.commandName
+    }))).toEqual([
       {
         case_revision: 1,
         event_type: 'case.opened',

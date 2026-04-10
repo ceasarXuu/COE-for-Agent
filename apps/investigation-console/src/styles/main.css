@@ -8,7 +8,6 @@
 @import './atoms/utilities.css';
 @import './molecules/layout.css';
 @import './molecules/panel.css';
-@import './organisms/workspace.css';
 @import './organisms/graph.css';
 @import './organisms/drawer.css';
 @import './app.css';

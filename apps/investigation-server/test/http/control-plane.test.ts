@@ -6,6 +6,7 @@ import {
   createTestApp,
   resetServerTestDatabase
 } from '../test-app.js';
+import { CheckpointRepository } from '@coe/persistence';
 import { buildProvScenario, buildReplayScenario } from '../support/resource-scenarios.js';
 
 describe.sequential('control plane routes', () => {
@@ -95,12 +96,7 @@ describe.sequential('control plane routes', () => {
         }
       });
 
-      const checkpoint = await app.services.db
-        .selectFrom('case_projection_checkpoints')
-        .select(['case_id', 'revision'])
-        .where('case_id', '=', scenario.caseId)
-        .where('revision', '=', 2)
-        .executeTakeFirst();
+      const checkpoint = await new CheckpointRepository(app.services.db).loadNearest(scenario.caseId, 2);
 
       expect(response.statusCode).toBe(200);
       expect(response.json()).toMatchObject({
@@ -110,8 +106,8 @@ describe.sequential('control plane routes', () => {
         projectionRevision: 2,
         headRevision: 3
       });
-      expect(checkpoint).toEqual({
-        case_id: scenario.caseId,
+      expect(checkpoint).toMatchObject({
+        caseId: scenario.caseId,
         revision: 2
       });
     } finally {
