@@ -6,7 +6,6 @@ import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-uti
 import { ActionPanel } from '../components/action-panel.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
 import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
-import { RevisionSlider } from '../components/revision-slider.js';
 import { TimelineView } from '../components/timeline-view.js';
 import { connectConsoleStream } from '../lib/sse.js';
 import {
@@ -278,26 +277,6 @@ export function CaseWorkspaceRoute() {
             ) : null}
           </div>
         </div>
-
-        <RevisionSlider
-          currentRevision={currentRevision}
-          maxRevision={maxRevision}
-          onChange={(nextRevision) => {
-            const nextParams = new URLSearchParams(searchParams);
-            if (nextRevision >= maxRevision) {
-              nextParams.delete('revision');
-            } else {
-              nextParams.set('revision', String(nextRevision));
-            }
-
-            startTransition(() => {
-              navigate({
-                pathname: `/cases/${caseId}`,
-                search: nextParams.toString() ? `?${nextParams.toString()}` : ''
-              });
-            });
-          }}
-        />
       </header>
 
       {error ? <p className="inline-error">{error}</p> : null}
@@ -312,7 +291,30 @@ export function CaseWorkspaceRoute() {
               onSelectNode={handleGraphSelection}
             />
           ) : null}
-          {workspace ? <TimelineView timeline={workspace.timeline} /> : null}
+          {workspace ? (
+            <TimelineView
+              timeline={workspace.timeline}
+              revisionControls={{
+                currentRevision,
+                maxRevision,
+                onChange: (nextRevision) => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  if (nextRevision >= maxRevision) {
+                    nextParams.delete('revision');
+                  } else {
+                    nextParams.set('revision', String(nextRevision));
+                  }
+
+                  startTransition(() => {
+                    navigate({
+                      pathname: `/cases/${caseId}`,
+                      search: nextParams.toString() ? `?${nextParams.toString()}` : ''
+                    });
+                  });
+                }
+              }}
+            />
+          ) : null}
         </section>
 
         <aside className="workspace-rail workspace-rail-side">

@@ -18,6 +18,17 @@ describe('case workspace layout', () => {
     expect(graphIndex).toBeLessThan(timelineIndex);
   });
 
+  test('passes revision slider controls into the timeline module instead of rendering them in the header', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('<TimelineView');
+    expect(source).toContain('revisionControls={{');
+    expect(source).not.toContain('<RevisionSlider');
+  });
+
   test('does not render the workspace mode kicker above the case title', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
