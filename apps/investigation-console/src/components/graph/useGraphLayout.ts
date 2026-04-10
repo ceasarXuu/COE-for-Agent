@@ -64,10 +64,10 @@ export function useGraphLayout(
 
   const NODE_WIDTH = 200;
   const NODE_HEIGHT = 120;
-  const COLUMN_GAP = 100;
-  const ROW_GAP = 50;
-  const PAD_X = 60;
-  const PAD_Y = 60;
+  const COLUMN_GAP = 72;
+  const ROW_GAP = 32;
+  const PAD_X = 40;
+  const PAD_Y = 40;
 
   const maxRows = Math.max(...lanes.map((lane) => lane.length), 1);
   const activeLaneCount = Math.max(

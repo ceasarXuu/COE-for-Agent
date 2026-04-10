@@ -74,27 +74,40 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       data: edge.data ?? {}
     }));
   }, [layout.edges]);
+
+  const summaryTags = [
+    t('snapshot.inquiries', { count: snapshot.data.counts.inquiries }),
+    t('snapshot.symptoms', { count: snapshot.data.counts.symptoms }),
+    t('snapshot.artifacts', { count: snapshot.data.counts.artifacts }),
+    t('snapshot.facts', { count: snapshot.data.counts.facts }),
+    t('graph.nodes', { count: nodes.length }),
+    t('graph.links', { count: edges.length })
+  ];
   
   if (nodes.length === 0) {
     return (
       <section className="panel panel-primary graph-stage" data-testid="graph-stage">
-        <div className="graph-toolbar">
-          <div className="panel-headline-row">
+        <div className="graph-header">
+          <div className="graph-title-block">
             <p className="panel-kicker">{t('graph.caseGraph')}</p>
+            <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
           </div>
-        </div>
-        <div className="graph-context-strip">
-          <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
           {snapshot.historical ? (
-            <p className="history-banner" data-testid="historical-mode">
+            <p className="history-banner graph-history-banner" data-testid="historical-mode">
               {t('snapshot.historical')}
             </p>
           ) : null}
-          <div className="metric-strip graph-context-tags">
-            <span>{t('snapshot.inquiries', { count: snapshot.data.counts.inquiries })}</span>
-            <span>{t('snapshot.symptoms', { count: snapshot.data.counts.symptoms })}</span>
-            <span>{t('snapshot.artifacts', { count: snapshot.data.counts.artifacts })}</span>
-            <span>{t('snapshot.facts', { count: snapshot.data.counts.facts })}</span>
+          <div className="graph-summary-row">
+            <div className="metric-strip graph-context-tags">
+              {summaryTags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+            <div aria-label={t('graph.legend')} className="graph-legend">
+              <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
+              <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
+              <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
+            </div>
           </div>
         </div>
         <p className="graph-empty-copy">{t('graph.empty')}</p>
@@ -104,33 +117,28 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   
   return (
     <section className="panel panel-primary graph-stage" data-testid="graph-stage">
-      <div className="graph-toolbar">
-        <div className="panel-headline-row">
+      <div className="graph-header">
+        <div className="graph-title-block">
           <p className="panel-kicker">{t('graph.caseGraph')}</p>
+          <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
         </div>
-      </div>
-
-      <div className="graph-context-strip">
-        <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
         {snapshot.historical ? (
-          <p className="history-banner" data-testid="historical-mode">
+          <p className="history-banner graph-history-banner" data-testid="historical-mode">
             {t('snapshot.historical')}
           </p>
         ) : null}
-        <div className="metric-strip graph-context-tags">
-          <span>{t('snapshot.inquiries', { count: snapshot.data.counts.inquiries })}</span>
-          <span>{t('snapshot.symptoms', { count: snapshot.data.counts.symptoms })}</span>
-          <span>{t('snapshot.artifacts', { count: snapshot.data.counts.artifacts })}</span>
-          <span>{t('snapshot.facts', { count: snapshot.data.counts.facts })}</span>
-          <span>{t('graph.nodes', { count: nodes.length })}</span>
-          <span>{t('graph.links', { count: edges.length })}</span>
+        <div className="graph-summary-row">
+          <div className="metric-strip graph-context-tags">
+            {summaryTags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+          <div aria-label={t('graph.legend')} className="graph-legend">
+            <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
+            <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
+            <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
+          </div>
         </div>
-      </div>
-
-      <div aria-label={t('graph.legend')} className="graph-legend">
-        <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
-        <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
-        <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
       </div>
 
       <div className="graph-canvas-container">
@@ -141,7 +149,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          fitViewOptions={{ padding: 0.2 }}
+          fitViewOptions={{ padding: 0.12 }}
           minZoom={0.5}
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}

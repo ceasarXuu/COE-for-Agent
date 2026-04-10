@@ -84,12 +84,16 @@ describe('graph canvas selection', () => {
     expect(html).not.toContain('缩放');
     expect(html).not.toContain('graph-meta-row');
     expect(html).not.toContain('严重');
+    expect(html).toContain('graph-summary-row');
     expect(html).toContain('问题 1');
     expect(html).toContain('症状 0');
     expect(html).toContain('证据 0');
     expect(html).toContain('事实 0');
     expect(html).toContain('2 个节点');
     expect(html).toContain('1 条连线');
+    expect(html).toContain('支撑');
+    expect(html).toContain('解释');
+    expect(html).toContain('验证');
 
     const nodes = capturedProps?.nodes as Array<{
       data: {

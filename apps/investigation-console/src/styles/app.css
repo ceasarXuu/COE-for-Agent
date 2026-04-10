@@ -871,40 +871,41 @@ input::placeholder {
   border-radius: var(--radius-xl);
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: var(--space-4);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-3);
 }
 
-.graph-toolbar {
+.graph-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-3);
   padding: var(--space-1) 0 0;
   position: relative;
   z-index: 1;
 }
 
-.graph-controls {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.graph-context-strip {
+.graph-title-block {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+}
+
+.graph-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: var(--space-3);
-  padding: 0;
-  position: relative;
-  z-index: 1;
+  flex-wrap: wrap;
 }
 
 .graph-context-copy {
   margin: 0;
   color: var(--fg-3);
-  max-width: 56ch;
+  max-width: 52ch;
+}
+
+.graph-history-banner {
+  margin: 0;
 }
 
 .graph-context-tags {
@@ -913,6 +914,8 @@ input::placeholder {
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .graph-context-tags::-webkit-scrollbar {
@@ -925,6 +928,7 @@ input::placeholder {
   flex-wrap: wrap;
   position: relative;
   z-index: 1;
+  flex: 0 0 auto;
 }
 
 .graph-legend-item {
@@ -965,6 +969,10 @@ input::placeholder {
   padding: 0;
 }
 
+.graph-canvas-container {
+  min-height: 460px;
+}
+
 @media (max-width: 1200px) {
   .workspace-grid {
     grid-template-columns: minmax(0, 1fr) 320px;
@@ -973,6 +981,15 @@ input::placeholder {
 
   .workspace-toolbar {
     flex-direction: column;
+  }
+
+  .graph-summary-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .graph-legend {
+    justify-content: flex-start;
   }
 
   .case-index-toolbar {
