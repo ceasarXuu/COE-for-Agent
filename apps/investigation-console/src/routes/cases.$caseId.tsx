@@ -269,7 +269,6 @@ export function CaseWorkspaceRoute() {
           >
             {t('workspace.back')}
           </Link>
-          <p className="panel-kicker">{revision === null ? t('workspace.headMode') : t('workspace.historicalMode', { revision })}</p>
           <h2>{workspace?.snapshot.data.case?.title ?? caseId}</h2>
         </div>
 

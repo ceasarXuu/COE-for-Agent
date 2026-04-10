@@ -49,7 +49,6 @@ interface GraphCanvasProps {
 export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps) {
   const { compareText, formatEnumLabel, t } = useI18n();
   const layout = useGraphLayout(graph, compareText);
-  const modeLabel = graph.historical ? t('graph.historical') : t('graph.live');
   const caseRecord = snapshot.data.case;
   
   const nodes: Node<GraphNodeViewData>[] = useMemo(() => {
@@ -83,11 +82,6 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           <div className="panel-headline-row">
             <p className="panel-kicker">{t('graph.caseGraph')}</p>
           </div>
-
-          <div aria-label={t('graph.controls')} className="graph-controls">
-            <span className="focus-chip">{modeLabel}</span>
-            <span className="focus-chip">{t('graph.zoom')}</span>
-          </div>
         </div>
         <div className="graph-context-strip">
           <div className="graph-context-header">
@@ -118,11 +112,6 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       <div className="graph-toolbar">
         <div className="panel-headline-row">
           <p className="panel-kicker">{t('graph.caseGraph')}</p>
-        </div>
-
-        <div aria-label={t('graph.controls')} className="graph-controls">
-          <span className="focus-chip">{modeLabel}</span>
-          <span className="focus-chip">{t('graph.zoom')}</span>
         </div>
       </div>
 
