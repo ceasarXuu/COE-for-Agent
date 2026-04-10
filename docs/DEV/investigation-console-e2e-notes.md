@@ -37,11 +37,11 @@ pnpm --filter @coe/investigation-console test:e2e
 - Passing workspace-root style paths into the package test script can miss the intended file filter because the script executes from `apps/investigation-console`.
 - Keep a dedicated regression test for the main-column panel order so “案件图在上、时间线在下” does not silently flip during future workspace refactors.
 
-## Graph Focus Recovery
+## Graph Selection Behavior
 
-- The case graph now needs an explicit “return to full graph” path whenever requests are made with `focusId`; otherwise the UI can get stuck on a focused slice after a node click.
-- For React Flow based interactions, keep both a visible toolbar action and a pane-click fallback so users can recover from focused state without guessing hidden gestures.
-- Regression coverage should verify both the visible control and the clear-focus callback path before changing graph selection behavior.
+- The case graph in `cases.$caseId.tsx` is now a stable full-graph view; node selection should only refresh the inspector and must not alter graph query params or enter a focused slice mode.
+- Keep `getCaseGraph` requests revision-aware only in the workspace route unless the product explicitly reintroduces subgraph behavior.
+- Regression coverage should verify both the route contract and the React Flow props so future graph work does not silently reintroduce focus chips, pane-clear behavior, or selection-driven layout changes.
 
 ## Locale Toggle Verification
 

@@ -42,12 +42,10 @@ const edgeTypes = {
 
 interface GraphCanvasProps {
   graph: CaseGraphEnvelope;
-  selectedNodeId: string | null;
-  onSelectNode: (nodeId: string | null) => void;
-  focusId?: string | null;
+  onSelectNode: (nodeId: string) => void;
 }
 
-export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: GraphCanvasProps) {
+export function GraphCanvas({ graph, onSelectNode }: GraphCanvasProps) {
   const { compareText, formatEnumLabel, t } = useI18n();
   const layout = useGraphLayout(graph, compareText);
   const modeLabel = graph.historical ? t('graph.historical') : t('graph.live');
@@ -61,12 +59,10 @@ export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: Gr
         ...node.data,
         kindLabel: formatEnumLabel(node.data.kind),
         revisionLabel: t('graph.revision', { revision: node.data.revision }),
-        statusLabel: formatEnumLabel(node.data.status ?? 'stateless'),
-        isSelected: node.id === selectedNodeId,
-        isFocus: node.id === focusId
+        statusLabel: formatEnumLabel(node.data.status ?? 'stateless')
       }
     }));
-  }, [focusId, formatEnumLabel, layout.nodes, selectedNodeId, t]);
+  }, [formatEnumLabel, layout.nodes, t]);
   
   const edges: Edge[] = useMemo(() => {
     return layout.edges.map((edge) => ({
@@ -95,20 +91,9 @@ export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: Gr
       <div className="graph-toolbar">
         <div className="panel-headline-row">
           <p className="panel-kicker">{t('graph.caseGraph')}</p>
-          {focusId ? <span className="focus-chip">{t('graph.focus', { id: focusId.slice(0, 10) })}</span> : null}
         </div>
 
         <div aria-label={t('graph.controls')} className="graph-controls">
-          {focusId ? (
-            <button
-              className="ghost-button graph-control-button"
-              data-testid="graph-clear-focus"
-              onClick={() => onSelectNode(null)}
-              type="button"
-            >
-              {t('graph.clearFocus')}
-            </button>
-          ) : null}
           <span className="focus-chip">{modeLabel}</span>
           <span className="focus-chip">{t('graph.zoom')}</span>
         </div>
@@ -143,7 +128,6 @@ export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: Gr
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable
-          onPaneClick={() => onSelectNode(null)}
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => onSelectNode(node.id)}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />

@@ -26,4 +26,15 @@ describe('case workspace layout', () => {
 
     expect(source).not.toContain('<CoverageView');
   });
+
+  test('does not request a focused subgraph when a node is selected', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('getCaseGraph(caseId, { revision })');
+    expect(source).not.toContain('focusId: selectedNodeId');
+    expect(source).not.toContain('focusId={selectedNodeId}');
+  });
 });

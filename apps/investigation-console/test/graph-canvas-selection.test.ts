@@ -18,12 +18,12 @@ vi.mock('reactflow', () => ({
 import { GraphCanvas } from '../src/components/graph/GraphCanvas.js';
 import { I18nProvider } from '../src/lib/i18n.js';
 
-describe('graph canvas focus controls', () => {
+describe('graph canvas selection', () => {
   beforeEach(() => {
     capturedProps = null;
   });
 
-  test('renders a clear-focus control in Chinese when the graph is focused', () => {
+  test('keeps the graph presentation unchanged when a node is selected', () => {
     const html = renderToStaticMarkup(
       createElement(I18nProvider, {
         initialLocale: 'zh-CN',
@@ -35,7 +35,7 @@ describe('graph canvas focus controls', () => {
             stale: false,
             historical: false,
             data: {
-              focusId: 'hypothesis_01',
+              focusId: null,
               nodes: [
                 { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
                 { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
@@ -45,20 +45,28 @@ describe('graph canvas focus controls', () => {
               ]
             }
           },
-          selectedNodeId: 'hypothesis_01',
           onSelectNode() {
             return;
-          },
-          focusId: 'hypothesis_01'
+          }
         })
       })
     );
 
-    expect(html).toContain('data-testid="graph-clear-focus"');
-    expect(html).toContain('返回全图');
+    expect(html).not.toContain('data-testid="graph-clear-focus"');
+    expect(html).not.toContain('焦点 hypothesis');
+
+    const nodes = capturedProps?.nodes as Array<{
+      data: {
+        isSelected?: boolean;
+        isFocus?: boolean;
+      };
+    }> | undefined;
+
+    expect(nodes?.every((node) => node.data.isSelected === undefined)).toBe(true);
+    expect(nodes?.every((node) => node.data.isFocus === undefined)).toBe(true);
   });
 
-  test('clears the focused slice when the pane is clicked', () => {
+  test('only selects nodes through node click callbacks and does not clear on pane clicks', () => {
     const onSelectNode = vi.fn();
 
     renderToStaticMarkup(
@@ -72,7 +80,7 @@ describe('graph canvas focus controls', () => {
             stale: false,
             historical: false,
             data: {
-              focusId: 'hypothesis_01',
+              focusId: null,
               nodes: [
                 { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
                 { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
@@ -82,55 +90,12 @@ describe('graph canvas focus controls', () => {
               ]
             }
           },
-          selectedNodeId: 'hypothesis_01',
-          onSelectNode,
-          focusId: 'hypothesis_01'
+          onSelectNode
         })
       })
     );
 
-    expect(typeof capturedProps?.onPaneClick).toBe('function');
-    (capturedProps?.onPaneClick as (() => void) | undefined)?.();
-    expect(onSelectNode).toHaveBeenCalledWith(null);
-  });
-
-  test('passes localized node badges to React Flow when the locale is Chinese', () => {
-    renderToStaticMarkup(
-      createElement(I18nProvider, {
-        initialLocale: 'zh-CN',
-        children: createElement(GraphCanvas, {
-          graph: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              focusId: null,
-              nodes: [
-                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 }
-              ],
-              edges: []
-            }
-          },
-          selectedNodeId: 'fact_01',
-          onSelectNode() {
-            return;
-          }
-        })
-      })
-    );
-
-    const nodes = capturedProps?.nodes as Array<{
-      data: {
-        kindLabel?: string;
-        revisionLabel?: string;
-        statusLabel?: string;
-      };
-    }> | undefined;
-
-    expect(nodes?.[0]?.data.kindLabel).toBe('事实');
-    expect(nodes?.[0]?.data.statusLabel).toBe('已记录');
-    expect(nodes?.[0]?.data.revisionLabel).toBe('修订 4');
+    expect(capturedProps?.onPaneClick).toBeUndefined();
+    expect(typeof capturedProps?.onNodeClick).toBe('function');
   });
 });

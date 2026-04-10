@@ -83,7 +83,7 @@ export function CaseWorkspaceRoute() {
     Promise.all([
       getCaseSnapshot(caseId, revision),
       getCaseTimeline(caseId, revision),
-      getCaseGraph(caseId, selectedNodeId ? { revision, focusId: selectedNodeId } : { revision }),
+      getCaseGraph(caseId, { revision }),
       getCaseCoverage(caseId, revision),
       getGuardrails(caseId, revision)
     ])
@@ -116,7 +116,7 @@ export function CaseWorkspaceRoute() {
     return () => {
       cancelled = true;
     };
-  }, [caseId, refreshNonce, revision, selectedNodeId]);
+  }, [caseId, refreshNonce, revision, t]);
 
   useEffect(() => {
     if (!workspace || !selectedNodeId) {
@@ -240,18 +240,16 @@ export function CaseWorkspaceRoute() {
     ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
 
-  const handleGraphSelection = useEffectEvent((nodeId: string | null) => {
-    const nextSelectedNodeId = nodeId && nodeId === selectedNodeId ? null : nodeId;
-
-    console.info('[investigation-console] graph-focus', {
+  const handleGraphSelection = useEffectEvent((nodeId: string) => {
+    console.info('[investigation-console] graph-selection', {
       caseId,
       revision: revision ?? 'head',
       previousSelectedNodeId: selectedNodeId,
-      selectedNodeId: nextSelectedNodeId,
-      action: nextSelectedNodeId ? 'focus-node' : 'clear-focus'
+      selectedNodeId: nodeId,
+      action: 'inspect-node'
     });
 
-    setSelectedNodeId(nextSelectedNodeId);
+    setSelectedNodeId(nodeId);
   });
 
   async function handleMutationComplete() {
@@ -313,8 +311,6 @@ export function CaseWorkspaceRoute() {
             <GraphCanvas
               graph={workspace.graph}
               onSelectNode={handleGraphSelection}
-              selectedNodeId={selectedNodeId}
-              focusId={selectedNodeId}
             />
           ) : null}
           {workspace ? <TimelineView timeline={workspace.timeline} /> : null}
