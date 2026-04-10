@@ -76,9 +76,7 @@ export function CreateCasePanel(props: CreateCasePanelProps) {
       >
         <div className="case-create-panel-header">
           <div>
-            <p className="panel-kicker">{t('caseCreate.kicker')}</p>
             <h2 id="create-case-panel-title">{t('caseCreate.title')}</h2>
-            <p>{t('caseCreate.copy')}</p>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={props.onClose} type="button">
             {t('caseCreate.close')}

@@ -26,6 +26,8 @@ describe('create case panel', () => {
 
     expect(html).not.toContain('首个修订');
     expect(html).not.toContain('新 case 会以 intake 阶段创建，并自动带上默认 inquiry，方便立即进入工作台。');
+    expect(html).not.toContain('手动受理');
+    expect(html).not.toContain('用一条完整但轻量的受理信息开启新调查，让工作台一进来就有上下文。');
     expect(html).not.toContain('case-form-callout');
   });
 });

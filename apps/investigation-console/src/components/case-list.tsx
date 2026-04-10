@@ -31,7 +31,6 @@ export function CaseList(props: { items: CaseListItem[]; onCreateRequest: () => 
       >
         <span aria-hidden="true" className="case-create-plus">+</span>
         <div className="case-create-copy">
-          <p className="panel-kicker">{t('caseCreate.galleryKicker')}</p>
           <h3>{t('caseCreate.galleryTitle')}</h3>
           <p>{t('caseCreate.galleryCopy')}</p>
         </div>
