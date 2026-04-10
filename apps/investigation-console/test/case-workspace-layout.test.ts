@@ -37,4 +37,14 @@ describe('case workspace layout', () => {
     expect(source).not.toContain('focusId: selectedNodeId');
     expect(source).not.toContain('focusId={selectedNodeId}');
   });
+
+  test('embeds snapshot tags into the graph module instead of rendering a separate snapshot panel', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('snapshot={workspace.snapshot}');
+    expect(source).not.toContain('<SnapshotView');
+  });
 });

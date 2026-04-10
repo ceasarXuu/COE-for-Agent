@@ -28,6 +28,31 @@ describe('graph canvas selection', () => {
       createElement(I18nProvider, {
         initialLocale: 'zh-CN',
         children: createElement(GraphCanvas, {
+          snapshot: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              case: {
+                id: 'case_01',
+                title: 'debug',
+                severity: 'critical',
+                status: 'active',
+                stage: 'intake',
+                revision: 5,
+                objective: 'debug'
+              },
+              counts: {
+                inquiries: 1,
+                symptoms: 0,
+                artifacts: 0,
+                facts: 0
+              },
+              warnings: []
+            }
+          },
           graph: {
             headRevision: 5,
             projectionRevision: 5,
@@ -54,6 +79,11 @@ describe('graph canvas selection', () => {
 
     expect(html).not.toContain('data-testid="graph-clear-focus"');
     expect(html).not.toContain('焦点 hypothesis');
+    expect(html).toContain('严重');
+    expect(html).toContain('问题 1');
+    expect(html).toContain('症状 0');
+    expect(html).toContain('证据 0');
+    expect(html).toContain('事实 0');
 
     const nodes = capturedProps?.nodes as Array<{
       data: {
@@ -73,6 +103,31 @@ describe('graph canvas selection', () => {
       createElement(I18nProvider, {
         initialLocale: 'en',
         children: createElement(GraphCanvas, {
+          snapshot: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              case: {
+                id: 'case_01',
+                title: 'debug',
+                severity: 'critical',
+                status: 'active',
+                stage: 'intake',
+                revision: 5,
+                objective: 'debug'
+              },
+              counts: {
+                inquiries: 1,
+                symptoms: 0,
+                artifacts: 0,
+                facts: 0
+              },
+              warnings: []
+            }
+          },
           graph: {
             headRevision: 5,
             projectionRevision: 5,

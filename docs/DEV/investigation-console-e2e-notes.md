@@ -43,6 +43,11 @@ pnpm --filter @coe/investigation-console test:e2e
 - Keep `getCaseGraph` requests revision-aware only in the workspace route unless the product explicitly reintroduces subgraph behavior.
 - Regression coverage should verify both the route contract and the React Flow props so future graph work does not silently reintroduce focus chips, pane-clear behavior, or selection-driven layout changes.
 
+## Snapshot Placement
+
+- Snapshot context no longer renders as a standalone side-rail card in the workspace; stage, severity, objective, and the inquiry/symptom/artifact/fact badges now live in the graph header area.
+- If the workspace layout changes again, verify both the route structure and the graph header rendering together so a blank summary rail is not reintroduced.
+
 ## Locale Toggle Verification
 
 - Header locale selection follows a stable precedence order: explicit local preference first, then browser language detection.

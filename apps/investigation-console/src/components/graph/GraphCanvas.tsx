@@ -7,7 +7,7 @@ import ReactFlow, {
   type Edge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import type { CaseGraphEnvelope } from '../../lib/api.js';
+import type { CaseGraphEnvelope, CaseSnapshotEnvelope } from '../../lib/api.js';
 import { useI18n } from '../../lib/i18n.js';
 import { useGraphLayout, type GraphNodeRecord } from './useGraphLayout.js';
 import { HypothesisNode } from './nodes/HypothesisNode.js';
@@ -41,14 +41,16 @@ const edgeTypes = {
 };
 
 interface GraphCanvasProps {
+  snapshot: CaseSnapshotEnvelope;
   graph: CaseGraphEnvelope;
   onSelectNode: (nodeId: string) => void;
 }
 
-export function GraphCanvas({ graph, onSelectNode }: GraphCanvasProps) {
+export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps) {
   const { compareText, formatEnumLabel, t } = useI18n();
   const layout = useGraphLayout(graph, compareText);
   const modeLabel = graph.historical ? t('graph.historical') : t('graph.live');
+  const caseRecord = snapshot.data.case;
   
   const nodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
@@ -77,9 +79,35 @@ export function GraphCanvas({ graph, onSelectNode }: GraphCanvasProps) {
   if (nodes.length === 0) {
     return (
       <section className="panel panel-primary graph-stage" data-testid="graph-stage">
-        <div className="panel-headline-row">
-          <p className="panel-kicker">{t('graph.caseGraph')}</p>
-          <span className="focus-chip">{modeLabel}</span>
+        <div className="graph-toolbar">
+          <div className="panel-headline-row">
+            <p className="panel-kicker">{t('graph.caseGraph')}</p>
+          </div>
+
+          <div aria-label={t('graph.controls')} className="graph-controls">
+            <span className="focus-chip">{modeLabel}</span>
+            <span className="focus-chip">{t('graph.zoom')}</span>
+          </div>
+        </div>
+        <div className="graph-context-strip">
+          <div className="graph-context-header">
+            <h3 className="graph-context-stage">{formatEnumLabel(caseRecord?.stage ?? 'unknown')}</h3>
+            <span className={`pill pill-${(caseRecord?.severity ?? 'medium').toLowerCase()}`}>
+              {formatEnumLabel(caseRecord?.severity ?? 'unknown')}
+            </span>
+          </div>
+          <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
+          {snapshot.historical ? (
+            <p className="history-banner" data-testid="historical-mode">
+              {t('snapshot.historical')}
+            </p>
+          ) : null}
+          <div className="metric-strip graph-context-tags">
+            <span>{t('snapshot.inquiries', { count: snapshot.data.counts.inquiries })}</span>
+            <span>{t('snapshot.symptoms', { count: snapshot.data.counts.symptoms })}</span>
+            <span>{t('snapshot.artifacts', { count: snapshot.data.counts.artifacts })}</span>
+            <span>{t('snapshot.facts', { count: snapshot.data.counts.facts })}</span>
+          </div>
         </div>
         <p className="graph-empty-copy">{t('graph.empty')}</p>
       </section>
@@ -99,11 +127,31 @@ export function GraphCanvas({ graph, onSelectNode }: GraphCanvasProps) {
         </div>
       </div>
 
+      <div className="graph-context-strip">
+        <div className="graph-context-header">
+          <h3 className="graph-context-stage">{formatEnumLabel(caseRecord?.stage ?? 'unknown')}</h3>
+          <span className={`pill pill-${(caseRecord?.severity ?? 'medium').toLowerCase()}`}>
+            {formatEnumLabel(caseRecord?.severity ?? 'unknown')}
+          </span>
+        </div>
+        <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
+        {snapshot.historical ? (
+          <p className="history-banner" data-testid="historical-mode">
+            {t('snapshot.historical')}
+          </p>
+        ) : null}
+        <div className="metric-strip graph-context-tags">
+          <span>{t('snapshot.inquiries', { count: snapshot.data.counts.inquiries })}</span>
+          <span>{t('snapshot.symptoms', { count: snapshot.data.counts.symptoms })}</span>
+          <span>{t('snapshot.artifacts', { count: snapshot.data.counts.artifacts })}</span>
+          <span>{t('snapshot.facts', { count: snapshot.data.counts.facts })}</span>
+        </div>
+      </div>
+
       <div className="graph-meta-row">
         <div className="metric-strip">
           <span>{t('graph.nodes', { count: nodes.length })}</span>
           <span>{t('graph.links', { count: edges.length })}</span>
-          <span>{modeLabel}</span>
         </div>
 
         <div aria-label={t('graph.legend')} className="graph-legend">

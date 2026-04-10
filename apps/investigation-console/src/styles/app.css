@@ -520,8 +520,8 @@
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 320px;
-  grid-template-areas: 'summary main side';
+  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-areas: 'main side';
   gap: var(--space-5);
   flex: 1;
   min-height: 0;
@@ -560,10 +560,6 @@
   min-height: 0;
   min-width: 0;
   grid-area: main;
-}
-
-.workspace-rail-summary {
-  grid-area: summary;
 }
 
 .workspace-rail-side {
@@ -899,6 +895,39 @@ input::placeholder {
   z-index: 1;
 }
 
+.graph-context-strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.graph-context-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.graph-context-stage {
+  margin: 0;
+  color: var(--fg-2);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.graph-context-copy {
+  margin: 0;
+  color: var(--fg-3);
+  max-width: 56ch;
+}
+
+.graph-context-tags {
+  align-items: center;
+}
+
 .graph-legend {
   display: flex;
   gap: var(--space-2);
@@ -946,9 +975,7 @@ input::placeholder {
 @media (max-width: 1200px) {
   .workspace-grid {
     grid-template-columns: minmax(0, 1fr) 320px;
-    grid-template-areas:
-      'main side'
-      'summary side';
+    grid-template-areas: 'main side';
   }
 
   .workspace-toolbar {
