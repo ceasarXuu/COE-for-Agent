@@ -132,20 +132,15 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           <span>{t('snapshot.symptoms', { count: snapshot.data.counts.symptoms })}</span>
           <span>{t('snapshot.artifacts', { count: snapshot.data.counts.artifacts })}</span>
           <span>{t('snapshot.facts', { count: snapshot.data.counts.facts })}</span>
-        </div>
-      </div>
-
-      <div className="graph-meta-row">
-        <div className="metric-strip">
           <span>{t('graph.nodes', { count: nodes.length })}</span>
           <span>{t('graph.links', { count: edges.length })}</span>
         </div>
+      </div>
 
-        <div aria-label={t('graph.legend')} className="graph-legend">
-          <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
-          <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
-          <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
-        </div>
+      <div aria-label={t('graph.legend')} className="graph-legend">
+        <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
+        <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
+        <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
       </div>
 
       <div className="graph-canvas-container">
