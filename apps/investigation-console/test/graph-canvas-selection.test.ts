@@ -79,6 +79,7 @@ describe('graph canvas selection', () => {
 
     expect(html).not.toContain('data-testid="graph-clear-focus"');
     expect(html).not.toContain('焦点 hypothesis');
+    expect(html).not.toContain('受理');
     expect(html).toContain('严重');
     expect(html).toContain('问题 1');
     expect(html).toContain('症状 0');

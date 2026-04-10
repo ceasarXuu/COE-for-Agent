@@ -91,7 +91,6 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
         </div>
         <div className="graph-context-strip">
           <div className="graph-context-header">
-            <h3 className="graph-context-stage">{formatEnumLabel(caseRecord?.stage ?? 'unknown')}</h3>
             <span className={`pill pill-${(caseRecord?.severity ?? 'medium').toLowerCase()}`}>
               {formatEnumLabel(caseRecord?.severity ?? 'unknown')}
             </span>
@@ -129,7 +128,6 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
 
       <div className="graph-context-strip">
         <div className="graph-context-header">
-          <h3 className="graph-context-stage">{formatEnumLabel(caseRecord?.stage ?? 'unknown')}</h3>
           <span className={`pill pill-${(caseRecord?.severity ?? 'medium').toLowerCase()}`}>
             {formatEnumLabel(caseRecord?.severity ?? 'unknown')}
           </span>

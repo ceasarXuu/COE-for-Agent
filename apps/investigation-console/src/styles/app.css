@@ -907,15 +907,8 @@ input::placeholder {
 .graph-context-header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--space-4);
-}
-
-.graph-context-stage {
-  margin: 0;
-  color: var(--fg-2);
-  font-size: var(--text-xl);
-  font-weight: 700;
 }
 
 .graph-context-copy {
