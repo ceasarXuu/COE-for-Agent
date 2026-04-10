@@ -1,17 +1,30 @@
 import { Link, Outlet } from 'react-router-dom';
 
-import { useI18n } from '../lib/i18n.js';
+import { useI18n, type Locale } from '../lib/i18n.js';
 
 const GITHUB_REPO_URL = 'https://github.com/ceasarXuu/COE-for-Agent';
 
 export function RootLayout() {
-  const { t } = useI18n();
+  const { locale, setLocale, t } = useI18n();
 
   function handleGithubClick() {
     console.info('[investigation-console] open-repo-homepage', {
       href: GITHUB_REPO_URL,
       source: 'layout-header'
     });
+  }
+
+  function handleLocaleChange(nextLocale: Locale) {
+    if (nextLocale === locale) {
+      return;
+    }
+
+    console.info('[investigation-console] locale-changed', {
+      previousLocale: locale,
+      nextLocale,
+      source: 'layout-header'
+    });
+    setLocale(nextLocale);
   }
 
   return (
@@ -43,6 +56,37 @@ export function RootLayout() {
                 />
               </svg>
             </a>
+          </div>
+        </div>
+
+        <div className="layout-actions">
+          <div
+            aria-label={t('root.languageSwitcher')}
+            className="layout-locale-switcher"
+            role="group"
+          >
+            <button
+              aria-label={t('root.switchToEnglish')}
+              aria-pressed={locale === 'en'}
+              className={`layout-locale-button${locale === 'en' ? ' active' : ''}`}
+              data-testid="layout-locale-en"
+              onClick={() => handleLocaleChange('en')}
+              title={t('root.switchToEnglish')}
+              type="button"
+            >
+              EN
+            </button>
+            <button
+              aria-label={t('root.switchToChinese')}
+              aria-pressed={locale === 'zh-CN'}
+              className={`layout-locale-button${locale === 'zh-CN' ? ' active' : ''}`}
+              data-testid="layout-locale-zh-CN"
+              onClick={() => handleLocaleChange('zh-CN')}
+              title={t('root.switchToChinese')}
+              type="button"
+            >
+              中文
+            </button>
           </div>
         </div>
       </header>

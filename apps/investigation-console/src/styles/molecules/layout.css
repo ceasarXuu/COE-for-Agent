@@ -86,6 +86,54 @@
   gap: var(--space-4);
 }
 
+.layout-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.layout-locale-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border-1);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-3) 88%, transparent);
+}
+
+.layout-locale-button {
+  min-width: 3.25rem;
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-2);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.layout-locale-button:hover {
+  color: var(--fg-1);
+  transform: translateY(-1px);
+}
+
+.layout-locale-button:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.layout-locale-button.active {
+  color: var(--fg-1);
+  background: color-mix(in srgb, var(--accent-2) 18%, var(--bg-2));
+}
+
 .layout-main {
   flex: 1;
   display: flex;
@@ -100,6 +148,11 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-4);
+  }
+
+  .layout-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
   
   .layout-main {

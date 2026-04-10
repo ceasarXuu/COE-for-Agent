@@ -9,7 +9,11 @@ import { buildIdempotencyKey } from '@coe/shared-utils';
 
 type CaseSortKey = 'priority' | 'recent' | 'title';
 
-function sortCases(items: CaseListItem[], sort: CaseSortKey): CaseListItem[] {
+function sortCases(
+  items: CaseListItem[],
+  sort: CaseSortKey,
+  compareText: (left: string, right: string) => number
+): CaseListItem[] {
   const severityRank: Record<string, number> = {
     critical: 4,
     high: 3,
@@ -19,7 +23,7 @@ function sortCases(items: CaseListItem[], sort: CaseSortKey): CaseListItem[] {
 
   return [...items].sort((left, right) => {
     if (sort === 'title') {
-      return (left.title ?? '').localeCompare(right.title ?? '');
+      return compareText(left.title ?? '', right.title ?? '');
     }
 
     if (sort === 'priority') {
@@ -35,12 +39,12 @@ function sortCases(items: CaseListItem[], sort: CaseSortKey): CaseListItem[] {
       return rightTime - leftTime;
     }
 
-    return (left.title ?? '').localeCompare(right.title ?? '');
+    return compareText(left.title ?? '', right.title ?? '');
   });
 }
 
 export function CasesIndexRoute() {
-  const { t } = useI18n();
+  const { compareText, t } = useI18n();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') ?? '';
@@ -62,7 +66,7 @@ export function CasesIndexRoute() {
     listCases(deferredQuery ? { search: deferredQuery } : undefined)
       .then((result) => {
         if (!cancelled) {
-          setCases(sortCases(result.items, sort));
+          setCases(sortCases(result.items, sort, compareText));
         }
       })
       .catch((reason: unknown) => {
@@ -79,7 +83,7 @@ export function CasesIndexRoute() {
     return () => {
       cancelled = true;
     };
-  }, [deferredQuery, sort, t]);
+  }, [compareText, deferredQuery, sort, t]);
 
   async function handleCreateCase(draft: ManualCaseDraft) {
     setCreatePending(true);

@@ -50,8 +50,8 @@ export function GraphScene(props: {
   selectedNodeId: string | null;
   onSelectNode: (nodeId: string) => void;
 }) {
-  const { formatEnumLabel, t } = useI18n();
-  const layout = useMemo(() => buildGraphLayout(props.graph), [props.graph]);
+  const { compareText, formatEnumLabel, t } = useI18n();
+  const layout = useMemo(() => buildGraphLayout(props.graph, compareText), [compareText, props.graph]);
   const stageRef = useRef<HTMLElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -242,7 +242,10 @@ export function GraphScene(props: {
   );
 }
 
-function buildGraphLayout(graph: CaseGraphEnvelope): GraphLayout {
+function buildGraphLayout(
+  graph: CaseGraphEnvelope,
+  compareText: (left: string, right: string) => number
+): GraphLayout {
   const focusId = graph.data.focusId;
   const distances = computeFocusDistances(graph, focusId);
   const laneLookup = new Map<string, number>();
@@ -274,7 +277,7 @@ function buildGraphLayout(graph: CaseGraphEnvelope): GraphLayout {
         return distanceDelta;
       }
 
-      return left.label.localeCompare(right.label);
+      return compareText(left.label, right.label);
     });
   }
 

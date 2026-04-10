@@ -93,4 +93,44 @@ describe('graph canvas focus controls', () => {
     (capturedProps?.onPaneClick as (() => void) | undefined)?.();
     expect(onSelectNode).toHaveBeenCalledWith(null);
   });
+
+  test('passes localized node badges to React Flow when the locale is Chinese', () => {
+    renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'zh-CN',
+        children: createElement(GraphCanvas, {
+          graph: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              focusId: null,
+              nodes: [
+                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 }
+              ],
+              edges: []
+            }
+          },
+          selectedNodeId: 'fact_01',
+          onSelectNode() {
+            return;
+          }
+        })
+      })
+    );
+
+    const nodes = capturedProps?.nodes as Array<{
+      data: {
+        kindLabel?: string;
+        revisionLabel?: string;
+        statusLabel?: string;
+      };
+    }> | undefined;
+
+    expect(nodes?.[0]?.data.kindLabel).toBe('事实');
+    expect(nodes?.[0]?.data.statusLabel).toBe('已记录');
+    expect(nodes?.[0]?.data.revisionLabel).toBe('修订 4');
+  });
 });

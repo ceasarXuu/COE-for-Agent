@@ -8,7 +8,10 @@ export interface GraphNodeRecord {
   revision: number;
 }
 
-export function useGraphLayout(graph: CaseGraphEnvelope) {
+export function useGraphLayout(
+  graph: CaseGraphEnvelope,
+  compareText: (left: string, right: string) => number = (left, right) => left.localeCompare(right)
+) {
   const focusId = graph.data.focusId;
   const distances = computeFocusDistances(graph, focusId);
   const laneLookup = new Map<string, number>();
@@ -55,7 +58,7 @@ export function useGraphLayout(graph: CaseGraphEnvelope) {
         return distanceDelta;
       }
 
-      return left.label.localeCompare(right.label);
+      return compareText(left.label, right.label);
     });
   }
 

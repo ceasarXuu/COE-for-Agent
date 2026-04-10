@@ -8,14 +8,18 @@ import {
 } from 'react';
 
 export type Locale = 'en' | 'zh-CN';
+export const LOCALE_STORAGE_KEY = 'investigation-console.locale';
 
 type MessageParams = Record<string, number | string>;
 
 interface I18nValue {
   locale: Locale;
+  setLocale: (locale: Locale) => void;
   t: (key: string, params?: MessageParams) => string;
   formatDateTime: (value: Date | number | string) => string;
   formatEnumLabel: (value: null | string | undefined) => string;
+  formatEventType: (value: null | string | undefined) => string;
+  compareText: (left: string, right: string) => number;
 }
 
 const MESSAGES: Record<Locale, Record<string, string>> = {
@@ -23,6 +27,9 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'root.kicker': 'COE / Investigation Console',
     'root.title': 'Investigation Console',
     'root.githubLinkLabel': 'Open the project homepage on GitHub',
+    'root.languageSwitcher': 'Language',
+    'root.switchToEnglish': 'Switch language to English',
+    'root.switchToChinese': 'Switch language to Chinese',
     'root.cases': 'Cases',
     'cases.search': 'Search transcript',
     'cases.searchPlaceholder': 'symptom, objective, title…',
@@ -196,6 +203,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'action.recordClosureDecision': 'Record closure decision',
     'action.closeReady': 'Case is ready to close',
     'action.acceptResidualRisk': 'Accept residual risk',
+    'action.generatedHypothesisTitle': '{label} hypothesis',
+    'action.generatedExperimentTitle': '{label} experiment',
     'graph.slice': 'Graph slice',
     'graph.empty': 'No nodes are available in this graph slice yet.',
     'graph.caseGraph': 'Case graph',
@@ -218,12 +227,26 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'graph.revision': 'rev {revision}',
     'graph.edge.supports': 'supports',
     'graph.edge.explains': 'explains',
-    'graph.edge.tests': 'tests'
+    'graph.edge.tests': 'tests',
+    'timeline.event.case.opened': 'Case opened',
+    'timeline.event.case.stage_advanced': 'Case stage advanced',
+    'timeline.event.decision.recorded': 'Decision recorded',
+    'timeline.event.experiment.completed': 'Experiment completed',
+    'timeline.event.fact.asserted': 'Fact asserted',
+    'timeline.event.gap.opened': 'Gap opened',
+    'timeline.event.gap.resolved': 'Gap resolved',
+    'timeline.event.hypothesis.proposed': 'Hypothesis proposed',
+    'timeline.event.hypothesis.status_updated': 'Hypothesis status updated',
+    'timeline.event.residual.updated': 'Residual updated',
+    'timeline.event.symptom.reported': 'Symptom reported'
   },
   'zh-CN': {
     'root.kicker': 'COE / 调查控制台',
     'root.title': '调查控制台',
     'root.githubLinkLabel': '在 GitHub 中打开项目主页',
+    'root.languageSwitcher': '语言',
+    'root.switchToEnglish': '切换到英文',
+    'root.switchToChinese': '切换到中文',
     'root.cases': '案件',
     'cases.search': '检索记录',
     'cases.searchPlaceholder': '症状、目标、标题…',
@@ -397,6 +420,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'action.recordClosureDecision': '记录结案决策',
     'action.closeReady': '案件可以关闭',
     'action.acceptResidualRisk': '接受残余风险',
+    'action.generatedHypothesisTitle': '{label} 假设',
+    'action.generatedExperimentTitle': '{label} 实验',
     'graph.slice': '图切片',
     'graph.empty': '当前图切片里还没有可展示的节点。',
     'graph.caseGraph': '案件图',
@@ -419,7 +444,18 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'graph.revision': '修订 {revision}',
     'graph.edge.supports': '支撑',
     'graph.edge.explains': '解释',
-    'graph.edge.tests': '验证'
+    'graph.edge.tests': '验证',
+    'timeline.event.case.opened': '案件已创建',
+    'timeline.event.case.stage_advanced': '案件阶段已推进',
+    'timeline.event.decision.recorded': '决策已记录',
+    'timeline.event.experiment.completed': '实验已完成',
+    'timeline.event.fact.asserted': '事实已记录',
+    'timeline.event.gap.opened': '缺口已创建',
+    'timeline.event.gap.resolved': '缺口已解决',
+    'timeline.event.hypothesis.proposed': '假设已提出',
+    'timeline.event.hypothesis.status_updated': '假设状态已更新',
+    'timeline.event.residual.updated': '残余风险已更新',
+    'timeline.event.symptom.reported': '症状已记录'
   }
 };
 
@@ -514,8 +550,16 @@ export function I18nProvider(props: {
   children: ReactNode;
   initialLocale?: Locale;
 }) {
-  const [locale] = useState<Locale>(() => props.initialLocale ?? resolveLocale(getBrowserLanguages()));
-  const value = useMemo(() => createI18nValue(locale), [locale]);
+  const [locale, setLocaleState] = useState<Locale>(() => props.initialLocale ?? resolveInitialLocale({
+    storedLocale: readStoredLocale(getLocaleStorage()),
+    preferred: getBrowserLanguages()
+  }));
+
+  const setLocale = (nextLocale: Locale) => {
+    setLocaleState(nextLocale);
+    persistLocale(nextLocale, getLocaleStorage());
+  };
+  const value = useMemo(() => createI18nValue(locale, setLocale), [locale]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -540,6 +584,24 @@ export function resolveLocale(preferred: readonly string[] | string | undefined)
   return candidates.some((value) => value.toLowerCase().startsWith('zh')) ? 'zh-CN' : 'en';
 }
 
+export function readStoredLocale(
+  storage: { getItem: (key: string) => null | string } | undefined
+): Locale | undefined {
+  if (!storage) {
+    return undefined;
+  }
+
+  const value = storage.getItem(LOCALE_STORAGE_KEY);
+  return isLocale(value) ? value : undefined;
+}
+
+export function resolveInitialLocale(options: {
+  storedLocale?: Locale | null | string | undefined;
+  preferred?: readonly string[] | string | undefined;
+}): Locale {
+  return isLocale(options.storedLocale) ? options.storedLocale : resolveLocale(options.preferred);
+}
+
 export function formatEnumLabel(value: null | string | undefined, locale: Locale): string {
   if (!value) {
     const unknownLabel = ENUM_LABELS[locale].unknown;
@@ -550,18 +612,27 @@ export function formatEnumLabel(value: null | string | undefined, locale: Locale
   return ENUM_LABELS[locale][normalized] ?? ENUM_LABELS.en[normalized] ?? humanizeEnum(value, locale);
 }
 
-function createI18nValue(locale: Locale): I18nValue {
+function createI18nValue(locale: Locale, setLocale: (locale: Locale) => void = () => undefined): I18nValue {
+  const languageTag = locale === 'zh-CN' ? 'zh-CN' : 'en-US';
+  const collator = new Intl.Collator(languageTag, {
+    numeric: true,
+    sensitivity: 'base'
+  });
+
   return {
     locale,
+    setLocale,
     t: (key, params) => translate(locale, key, params),
     formatDateTime: (value) => {
       const date = value instanceof Date ? value : new Date(value);
-      return new Intl.DateTimeFormat(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
+      return new Intl.DateTimeFormat(languageTag, {
         dateStyle: 'medium',
         timeStyle: 'short'
       }).format(date);
     },
-    formatEnumLabel: (value) => formatEnumLabel(value, locale)
+    formatEnumLabel: (value) => formatEnumLabel(value, locale),
+    formatEventType: (value) => formatEventType(value, locale),
+    compareText: (left, right) => collator.compare(left, right)
   };
 }
 
@@ -583,6 +654,25 @@ function humanizeEnum(value: string, locale: Locale): string {
   return normalized.replace(/\b\w/g, (segment) => segment.toUpperCase());
 }
 
+function formatEventType(value: null | string | undefined, locale: Locale): string {
+  if (!value) {
+    return formatEnumLabel(value, locale);
+  }
+
+  const key = `timeline.event.${value}`;
+  const translated = MESSAGES[locale][key] ?? MESSAGES.en[key];
+  if (translated) {
+    return translated;
+  }
+
+  const normalized = value.replace(/[._-]+/g, ' ').trim();
+  if (locale === 'zh-CN') {
+    return normalized;
+  }
+
+  return normalized.replace(/\b\w/g, (segment) => segment.toUpperCase());
+}
+
 function getBrowserLanguages(): string[] | undefined {
   if (typeof navigator === 'undefined') {
     return undefined;
@@ -593,4 +683,32 @@ function getBrowserLanguages(): string[] | undefined {
   }
 
   return typeof navigator.language === 'string' ? [navigator.language] : undefined;
+}
+
+function getLocaleStorage(): Pick<Storage, 'getItem' | 'setItem'> | undefined {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+function isLocale(value: null | string | undefined): value is Locale {
+  return value === 'en' || value === 'zh-CN';
+}
+
+function persistLocale(locale: Locale, storage: { setItem: (key: string, value: string) => void } | undefined) {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(LOCALE_STORAGE_KEY, locale);
+  } catch {
+    return;
+  }
 }

@@ -20,6 +20,7 @@ import { InquiryNode } from './nodes/InquiryNode.js';
 import { SymptomNode } from './nodes/SymptomNode.js';
 import { ArtifactNode } from './nodes/ArtifactNode.js';
 import { EntityNode } from './nodes/EntityNode.js';
+import type { GraphNodeViewData } from './nodes/GraphNodeCard.js';
 import { GlowingEdge } from './edges/GlowingEdge.js';
 
 const nodeTypes = {
@@ -47,22 +48,25 @@ interface GraphCanvasProps {
 }
 
 export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: GraphCanvasProps) {
-  const { t } = useI18n();
-  const layout = useGraphLayout(graph);
+  const { compareText, formatEnumLabel, t } = useI18n();
+  const layout = useGraphLayout(graph, compareText);
   const modeLabel = graph.historical ? t('graph.historical') : t('graph.live');
   
-  const nodes: Node<GraphNodeRecord>[] = useMemo(() => {
+  const nodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
       id: node.id,
       type: node.type,
       position: node.position,
       data: {
         ...node.data,
+        kindLabel: formatEnumLabel(node.data.kind),
+        revisionLabel: t('graph.revision', { revision: node.data.revision }),
+        statusLabel: formatEnumLabel(node.data.status ?? 'stateless'),
         isSelected: node.id === selectedNodeId,
         isFocus: node.id === focusId
       }
     }));
-  }, [layout.nodes, selectedNodeId, focusId]);
+  }, [focusId, formatEnumLabel, layout.nodes, selectedNodeId, t]);
   
   const edges: Edge[] = useMemo(() => {
     return layout.edges.map((edge) => ({
@@ -140,7 +144,7 @@ export function GraphCanvas({ graph, selectedNodeId, onSelectNode, focusId }: Gr
           nodesConnectable={false}
           elementsSelectable
           onPaneClick={() => onSelectNode(null)}
-          onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeRecord>) => onSelectNode(node.id)}
+          onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => onSelectNode(node.id)}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />
           <Controls className="graph-flow-controls" />

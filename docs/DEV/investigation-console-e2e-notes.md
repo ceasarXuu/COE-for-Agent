@@ -42,3 +42,10 @@ pnpm --filter @coe/investigation-console test:e2e
 - The case graph now needs an explicit “return to full graph” path whenever requests are made with `focusId`; otherwise the UI can get stuck on a focused slice after a node click.
 - For React Flow based interactions, keep both a visible toolbar action and a pane-click fallback so users can recover from focused state without guessing hidden gestures.
 - Regression coverage should verify both the visible control and the clear-focus callback path before changing graph selection behavior.
+
+## Locale Toggle Verification
+
+- Header locale selection follows a stable precedence order: explicit local preference first, then browser language detection.
+- The console stores manual locale overrides in `localStorage["investigation-console.locale"]`; if verification looks “stuck,” clear that key before assuming browser detection is broken.
+- Expected baseline behavior is English by default, with automatic switch to Simplified Chinese only when no stored override exists and the browser reports a `zh*` language preference.
+- When validating regressions, check both the visible header labels and `document.documentElement.lang` so copy and accessibility state stay aligned.
