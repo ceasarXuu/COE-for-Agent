@@ -25,6 +25,8 @@ pnpm --filter @coe/investigation-console test
 pnpm --filter @coe/investigation-console test:e2e
 ```
 
+- When doing ad hoc browser probes against the Vite dev server, prefer `domcontentloaded` plus an explicit short wait over `networkidle`; the latter can hang on persistent local activity and slow down quick regression checks.
+
 ## Workspace Layout Regression
 
 - When verifying `cases.$caseId.tsx` layout order, run Vitest with package-local paths such as `pnpm --filter @coe/investigation-console test -- test/case-workspace-layout.test.ts`.

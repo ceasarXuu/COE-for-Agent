@@ -152,10 +152,6 @@ export function CreateCasePanel(props: CreateCasePanelProps) {
               </select>
             </label>
 
-            <div className="case-form-callout">
-              <p className="panel-kicker">{t('caseCreate.sidecarKicker')}</p>
-              <p>{t('caseCreate.sidecarCopy')}</p>
-            </div>
           </div>
 
           <label className="case-form-field" htmlFor={environmentId}>
