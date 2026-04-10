@@ -2,15 +2,17 @@ import { expect, test } from '@playwright/test';
 
 import { FIXTURE_IDS } from './fixture-mcp-client.js';
 
-test('cases index keeps search guidance and empty-state recovery text after loading', async ({ page }) => {
+test('cases index filters the gallery without rendering an empty-state card', async ({ page }) => {
   await page.goto('/cases');
 
   await expect(page.getByLabel('Search transcript')).toHaveAttribute('placeholder', 'symptom, objective, title…');
+  await expect(page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`)).toBeVisible();
 
   await page.goto('/cases?q=no-match-token');
 
-  await expect(page.getByTestId('cases-empty-state')).toBeVisible();
-  await expect(page.getByText('Try a broader symptom or objective phrase.')).toBeVisible();
+  await expect(page.getByTestId('cases-gallery')).toBeVisible();
+  await expect(page.getByTestId('case-create-card')).toBeVisible();
+  await expect(page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`)).toHaveCount(0);
 });
 
 test('list search params survive entering a case workspace and returning to the list', async ({ page }) => {

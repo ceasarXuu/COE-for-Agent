@@ -196,14 +196,6 @@ export function CasesIndexRoute() {
             }}
             search={caseLinkSearch}
           />
-
-          {!loading && cases.length === 0 ? (
-            <article className="empty-card" data-testid="cases-empty-state">
-              <p className="panel-kicker">{t('cases.emptyKicker')}</p>
-              <h3>{t('cases.emptyTitle')}</h3>
-              <p>{t('cases.emptyCopy')}</p>
-            </article>
-          ) : null}
         </div>
       </div>
     </div>
