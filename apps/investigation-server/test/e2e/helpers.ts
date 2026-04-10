@@ -13,7 +13,8 @@ export async function openCase(app: InvestigationApp, suffix: string): Promise<O
     idempotencyKey: `e2e-case-open-${suffix}`,
     title: `E2E case ${suffix}`,
     objective: `Validate end-to-end flow ${suffix}`,
-    severity: 'critical'
+    severity: 'critical',
+    projectDirectory: `/workspace/e2e-${suffix}`
   });
 
   return {

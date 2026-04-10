@@ -57,4 +57,30 @@ describe('create case panel', () => {
     expect(css).toContain('flex-shrink: 0;');
     expect(css).toContain('white-space: nowrap;');
   });
+
+  test('replaces environment with a required project directory field', () => {
+    const html = renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'zh-CN',
+        children: createElement(CreateCasePanel, {
+          error: null,
+          open: true,
+          pending: false,
+          onClose() {
+            return;
+          },
+          async onSubmit() {
+            return;
+          }
+        })
+      })
+    );
+
+    expect(html).toContain('项目目录');
+    expect(html).toContain('data-testid="create-case-project-directory"');
+    expect(html).toContain('placeholder="/workspace/customer-a"');
+    expect(html).toContain('required=""');
+    expect(html).not.toContain('create-case-environment');
+    expect(html).not.toContain('多个环境用逗号分隔');
+  });
 });

@@ -113,7 +113,7 @@ test('cases index presents the gallery create card first and supports manual cas
   await page.getByTestId('create-case-title').fill('Manual intake from gallery');
   await page.getByTestId('create-case-objective').fill('Validate that manual intake opens a fresh case workspace.');
   await page.getByTestId('create-case-severity').selectOption('critical');
-  await page.getByTestId('create-case-environment').fill('prod-us-1, worker-cluster');
+  await page.getByTestId('create-case-project-directory').fill('/workspace/manual-intake');
   await page.getByTestId('create-case-labels').fill('manual, gallery');
   await page.getByTestId('create-case-submit').click();
 

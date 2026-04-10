@@ -3,13 +3,13 @@
   "$id": "https://schemas.coe.local/commands/v1/case.open.request.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["idempotencyKey", "title", "objective", "severity"],
+  "required": ["idempotencyKey", "title", "objective", "severity", "projectDirectory"],
   "properties": {
     "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
     "title": { "type": "string", "minLength": 1, "maxLength": 240 },
     "objective": { "type": "string", "minLength": 1, "maxLength": 2000 },
     "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
-    "environment": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "projectDirectory": { "type": "string", "minLength": 1, "maxLength": 1024 },
     "labels": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
   }
 }

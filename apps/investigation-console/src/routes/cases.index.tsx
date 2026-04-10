@@ -95,7 +95,7 @@ export function CasesIndexRoute() {
         title: draft.title.trim(),
         objective: draft.objective.trim(),
         severity: draft.severity,
-        environment: draft.environment,
+        projectDirectory: draft.projectDirectory.trim(),
         labels: draft.labels
       });
 

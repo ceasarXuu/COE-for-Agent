@@ -22,7 +22,7 @@ interface ManualCaseCreateInput {
   title?: unknown;
   objective?: unknown;
   severity?: unknown;
-  environment?: unknown;
+  projectDirectory?: unknown;
   labels?: unknown;
   idempotencyKey?: unknown;
 }
@@ -104,7 +104,7 @@ export async function registerCasesRoutes(
     const title = requireString(body.title, 'title');
     const objective = requireString(body.objective, 'objective');
     const severity = requireString(body.severity, 'severity');
-    const environment = optionalStringArray(body.environment);
+    const projectDirectory = requireString(body.projectDirectory, 'projectDirectory');
     const labels = optionalStringArray(body.labels);
     const idempotencyKey = typeof body.idempotencyKey === 'string' && body.idempotencyKey.trim().length > 0
       ? body.idempotencyKey.trim()
@@ -115,7 +115,7 @@ export async function registerCasesRoutes(
     request.log.info({
       event: 'manual_case_create.requested',
       severity,
-      environmentCount: environment.length,
+      projectDirectory,
       labelCount: labels.length
     }, 'manual case create requested');
 
@@ -124,7 +124,7 @@ export async function registerCasesRoutes(
       title,
       objective,
       severity,
-      environment,
+      projectDirectory,
       labels,
       actorContext
     }) as Record<string, unknown>;

@@ -30,7 +30,8 @@ describe.sequential('decision.record command', () => {
         idempotencyKey: 'decision-open-001',
         title: 'Citationless decision',
         objective: 'Verify decision citations are required',
-        severity: 'high'
+        severity: 'high',
+        projectDirectory: '/workspace/decision-open-001'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
 
@@ -57,7 +58,8 @@ describe.sequential('decision.record command', () => {
         idempotencyKey: 'decision-open-002',
         title: 'Patch readiness decision',
         objective: 'Capture the decision with citations',
-        severity: 'critical'
+        severity: 'critical',
+        projectDirectory: '/workspace/decision-open-002'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
 

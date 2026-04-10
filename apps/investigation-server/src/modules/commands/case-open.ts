@@ -9,7 +9,7 @@ interface CaseOpenInput {
   title: string;
   objective: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  environment?: string[];
+  projectDirectory: string;
   labels?: string[];
 }
 
@@ -46,6 +46,7 @@ export async function handleCaseOpen(
             title: payload.title,
             objective: payload.objective,
             severity: payload.severity,
+            projectDirectory: payload.projectDirectory,
             defaultInquiryId: inquiryId
           }),
           metadata: toJsonValue({
@@ -65,7 +66,7 @@ export async function handleCaseOpen(
             title: payload.title,
             objective: payload.objective,
             severity: payload.severity,
-            environment: payload.environment ?? [],
+            projectDirectory: payload.projectDirectory,
             labels: payload.labels ?? [],
             defaultInquiryId: inquiryId,
             status: 'active',

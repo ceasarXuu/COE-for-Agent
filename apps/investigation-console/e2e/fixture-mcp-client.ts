@@ -139,7 +139,7 @@ interface ManualCaseState {
   title: string;
   objective: string;
   severity: string;
-  environment: string[];
+  projectDirectory: string;
   labels: string[];
   createdAt: string;
   updatedAt: string;
@@ -1246,9 +1246,6 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
     const caseId = `case_${suffix}`;
     const inquiryId = `inquiry_${String(sequence).padStart(22, '0')}`;
     const createdAt = new Date(Date.UTC(2025, 0, 2, 8, sequence, 0)).toISOString();
-    const environment = Array.isArray(input.environment)
-      ? input.environment.filter((value): value is string => typeof value === 'string' && value.length > 0)
-      : [];
     const labels = Array.isArray(input.labels)
       ? input.labels.filter((value): value is string => typeof value === 'string' && value.length > 0)
       : [];
@@ -1259,7 +1256,7 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
       title: requireString(input, 'title'),
       objective: requireString(input, 'objective'),
       severity: typeof input.severity === 'string' ? input.severity : 'high',
-      environment,
+      projectDirectory: requireString(input, 'projectDirectory'),
       labels,
       createdAt,
       updatedAt: createdAt
@@ -1394,7 +1391,7 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
                     status: 'active',
                     stage: 'intake',
                     revision: 1,
-                    environment: manualCase.environment,
+                    projectDirectory: manualCase.projectDirectory,
                     labels: manualCase.labels,
                     defaultInquiryId: manualCase.inquiryId
                   },

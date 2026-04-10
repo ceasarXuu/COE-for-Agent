@@ -30,7 +30,8 @@ describe.sequential('stall and aggregate guardrails', () => {
         idempotencyKey: 'stall-open-001',
         title: 'Fresh guardrail aggregate',
         objective: 'Check aggregate structure',
-        severity: 'low'
+        severity: 'low',
+        projectDirectory: '/workspace/stall-open-001'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
 
@@ -55,7 +56,8 @@ describe.sequential('stall and aggregate guardrails', () => {
         idempotencyKey: 'stall-open-002',
         title: 'Hypothesis pileup',
         objective: 'Trigger a stall signal',
-        severity: 'high'
+        severity: 'high',
+        projectDirectory: '/workspace/stall-open-002'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;

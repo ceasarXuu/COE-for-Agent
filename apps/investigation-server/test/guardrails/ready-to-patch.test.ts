@@ -30,7 +30,8 @@ describe.sequential('ready_to_patch guardrail', () => {
         idempotencyKey: 'ready-open-001',
         title: 'Patch blocked by residual',
         objective: 'Verify ready_to_patch blockers',
-        severity: 'critical'
+        severity: 'critical',
+        projectDirectory: '/workspace/ready-open-001'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
@@ -135,7 +136,8 @@ describe.sequential('ready_to_patch guardrail', () => {
         idempotencyKey: 'ready-open-002',
         title: 'Patch blocked by gap',
         objective: 'Verify gap blockers are surfaced and cleared',
-        severity: 'high'
+        severity: 'high',
+        projectDirectory: '/workspace/ready-open-002'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;

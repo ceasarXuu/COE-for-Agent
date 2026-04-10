@@ -6,7 +6,7 @@ export interface ManualCaseDraft {
   title: string;
   objective: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  environment: string[];
+  projectDirectory: string;
   labels: string[];
 }
 
@@ -22,7 +22,7 @@ const INITIAL_DRAFT: ManualCaseDraft = {
   title: '',
   objective: '',
   severity: 'high',
-  environment: [],
+  projectDirectory: '',
   labels: []
 };
 
@@ -38,10 +38,9 @@ export function CreateCasePanel(props: CreateCasePanelProps) {
   const titleId = useId();
   const objectiveId = useId();
   const severityId = useId();
-  const environmentId = useId();
+  const projectDirectoryId = useId();
   const labelsId = useId();
   const [draft, setDraft] = useState(INITIAL_DRAFT);
-  const [environmentText, setEnvironmentText] = useState('');
   const [labelsText, setLabelsText] = useState('');
 
   useEffect(() => {
@@ -50,7 +49,6 @@ export function CreateCasePanel(props: CreateCasePanelProps) {
     }
 
     setDraft(INITIAL_DRAFT);
-    setEnvironmentText('');
     setLabelsText('');
   }, [props.open]);
 
@@ -152,33 +150,26 @@ export function CreateCasePanel(props: CreateCasePanelProps) {
 
           </div>
 
-          <label className="case-form-field" htmlFor={environmentId}>
-            <span>{t('caseCreate.fields.environment')}</span>
+          <label className="case-form-field" htmlFor={projectDirectoryId}>
+            <span>{t('caseCreate.fields.projectDirectory')}</span>
             <input
-              aria-label={t('caseCreate.fields.environment')}
+              aria-label={t('caseCreate.fields.projectDirectory')}
               autoComplete="off"
-              data-testid="create-case-environment"
-              id={environmentId}
-              name="environment"
+              data-testid="create-case-project-directory"
+              id={projectDirectoryId}
+              name="projectDirectory"
               onChange={(event) => {
                 const nextValue = event.currentTarget.value;
-                setEnvironmentText(nextValue);
                 setDraft((current) => ({
                   ...current,
-                  environment: tokenizeList(nextValue)
+                  projectDirectory: nextValue
                 }));
               }}
-              placeholder={t('caseCreate.placeholders.environment')}
-              value={environmentText}
+              placeholder={t('caseCreate.placeholders.projectDirectory')}
+              required
+              value={draft.projectDirectory}
             />
-            <small>{t('caseCreate.hints.environment')}</small>
-            {draft.environment.length > 0 ? (
-              <div aria-label={t('caseCreate.preview.environment')} className="case-chip-row">
-                {draft.environment.map((item) => (
-                  <span className="focus-chip" key={item}>{item}</span>
-                ))}
-              </div>
-            ) : null}
+            <small>{t('caseCreate.hints.projectDirectory')}</small>
           </label>
 
           <label className="case-form-field" htmlFor={labelsId}>

@@ -28,7 +28,8 @@ describe.sequential('fact.assert command', () => {
       idempotencyKey: 'open-001',
       title: 'Duplicate delivery',
       objective: 'Find the duplication source',
-      severity: 'high'
+      severity: 'high',
+      projectDirectory: '/workspace/open-001'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'));
 
@@ -52,7 +53,8 @@ describe.sequential('fact.assert command', () => {
       idempotencyKey: 'open-002',
       title: 'Cache invalidation',
       objective: 'Verify invalidation path',
-      severity: 'medium'
+      severity: 'medium',
+      projectDirectory: '/workspace/open-002'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'));
 
@@ -77,7 +79,8 @@ describe.sequential('fact.assert command', () => {
       idempotencyKey: 'open-003',
       title: 'Symptom missing revision',
       objective: 'Require optimistic concurrency',
-      severity: 'low'
+      severity: 'low',
+      projectDirectory: '/workspace/open-003'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'));
 
@@ -102,7 +105,8 @@ describe.sequential('fact.assert command', () => {
         idempotencyKey: 'open-004',
         title: 'Duplicate fact assertion',
         objective: 'Ensure retries do not write twice',
-        severity: 'high'
+        severity: 'high',
+        projectDirectory: '/workspace/open-004'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
 

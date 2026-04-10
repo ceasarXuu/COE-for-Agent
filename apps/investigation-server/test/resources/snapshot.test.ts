@@ -28,7 +28,8 @@ describe.sequential('snapshot and timeline resources', () => {
       idempotencyKey: 'snapshot-open',
       title: 'Login timeout',
       objective: 'Locate the blocking service',
-      severity: 'critical'
+      severity: 'critical',
+      projectDirectory: '/workspace/snapshot-open'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
     const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
@@ -42,7 +43,8 @@ describe.sequential('snapshot and timeline resources', () => {
         case: {
           id: caseId,
           title: 'Login timeout',
-          severity: 'critical'
+          severity: 'critical',
+          projectDirectory: '/workspace/snapshot-open'
         },
         counts: {
           inquiries: 1,

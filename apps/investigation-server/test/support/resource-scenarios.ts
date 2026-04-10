@@ -124,7 +124,8 @@ async function openCase(app: InvestigationApp, title: string, objective: string)
     idempotencyKey: `${title}-open`,
     title,
     objective,
-    severity: 'high'
+    severity: 'high',
+    projectDirectory: `/workspace/${title.replace(/\s+/g, '-').toLowerCase()}`
   });
 
   return {

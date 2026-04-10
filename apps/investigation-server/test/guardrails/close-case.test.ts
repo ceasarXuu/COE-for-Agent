@@ -30,7 +30,8 @@ describe.sequential('close_case guardrail', () => {
         idempotencyKey: 'close-open-001',
         title: 'Cannot close yet',
         objective: 'Verify close-case blockers',
-        severity: 'medium'
+        severity: 'medium',
+        projectDirectory: '/workspace/close-open-001'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
@@ -56,7 +57,8 @@ describe.sequential('close_case guardrail', () => {
         idempotencyKey: 'close-open-002',
         title: 'Validation still missing',
         objective: 'Advance lifecycle before running close-case guardrail',
-        severity: 'high'
+        severity: 'high',
+        projectDirectory: '/workspace/close-open-002'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;

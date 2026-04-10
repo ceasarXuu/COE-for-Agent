@@ -29,19 +29,22 @@ describe.sequential('cases collection resource', () => {
       idempotencyKey: 'case-open-a',
       title: 'Zulu duplicate',
       objective: 'Investigate Zulu flow',
-      severity: 'high'
+      severity: 'high',
+      projectDirectory: '/workspace/case-open-a'
     });
     await app.mcpServer.invokeTool('investigation.case.open', {
       idempotencyKey: 'case-open-b',
       title: 'Alpha timeout',
       objective: 'Investigate Alpha timeout',
-      severity: 'medium'
+      severity: 'medium',
+      projectDirectory: '/workspace/case-open-b'
     });
     await app.mcpServer.invokeTool('investigation.case.open', {
       idempotencyKey: 'case-open-c',
       title: 'Beta timeout',
       objective: 'Investigate Beta timeout',
-      severity: 'low'
+      severity: 'low',
+      projectDirectory: '/workspace/case-open-c'
     });
 
     const resource = await app.mcpServer.readResource(

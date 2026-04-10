@@ -59,7 +59,8 @@ async function seedRealBackendCase(mcpClient: ConsoleMcpClient) {
     idempotencyKey: `console-real-case-open-${suffix}`,
     title: `Real backend case ${suffix}`,
     objective: `Validate real backend console flow ${suffix}`,
-    severity: 'critical'
+    severity: 'critical',
+    projectDirectory: `/workspace/real-backend-${suffix}`
   });
   const caseId = requiredId(opened, 'case_');
   const inquiryId = requiredId(opened, 'inquiry_');

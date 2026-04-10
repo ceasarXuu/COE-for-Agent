@@ -69,7 +69,7 @@ describe('cases route', () => {
         title: 'Manual case from console',
         objective: 'Capture a new investigation from the gallery entry point',
         severity: 'high',
-        environment: ['prod-eu-1'],
+        projectDirectory: '/workspace/customer-a',
         labels: ['manual-entry']
       }
     });
@@ -79,7 +79,7 @@ describe('cases route', () => {
       title: 'Manual case from console',
       objective: 'Capture a new investigation from the gallery entry point',
       severity: 'high',
-      environment: ['prod-eu-1'],
+      projectDirectory: '/workspace/customer-a',
       labels: ['manual-entry'],
       idempotencyKey: expect.any(String),
       actorContext: expect.objectContaining({
@@ -91,6 +91,13 @@ describe('cases route', () => {
         sessionId: expect.any(String)
       })
     }));
+    expect(invokeTool).toHaveBeenCalledTimes(1);
+    const firstCall = invokeTool.mock.calls.at(0);
+    if (!firstCall) {
+      throw new Error('expected invokeTool to be called once');
+    }
+    const invokedPayload = (firstCall as unknown as unknown[])[1] as Record<string, unknown>;
+    expect(invokedPayload).not.toHaveProperty('environment');
     expect(response.json()).toMatchObject({
       ok: true,
       caseId: 'case_01BBBBBBBBBBBBBBBBBBBBBBBB',

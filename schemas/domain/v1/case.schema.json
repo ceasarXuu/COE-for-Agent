@@ -13,7 +13,7 @@
         "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
         "status": { "type": "string", "enum": ["active", "blocked", "ready_to_patch", "validating", "closed"] },
         "stage": { "type": "string", "enum": ["intake", "scoping", "evidence_collection", "hypothesis_competition", "discriminative_testing", "repair_preparation", "repair_validation", "closed"] },
-        "environment": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "projectDirectory": { "type": "string", "minLength": 1, "maxLength": 1024 },
         "summary": { "type": "string", "maxLength": 4000 }
       }
     }

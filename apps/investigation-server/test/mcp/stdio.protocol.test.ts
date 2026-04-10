@@ -202,7 +202,7 @@ describe.sequential('stdio MCP protocol', () => {
               title: 'Investigate local bootstrap flow',
               objective: 'Validate stdio MCP transport and local host registration flow',
               severity: 'high',
-              environment: ['dev']
+              projectDirectory: '/workspace/bootstrap-flow'
             }
           }
         },

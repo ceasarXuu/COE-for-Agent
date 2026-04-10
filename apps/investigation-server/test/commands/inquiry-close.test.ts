@@ -28,7 +28,8 @@ describe.sequential('case.open and inquiry.close', () => {
       idempotencyKey: 'open-default-inquiry',
       title: 'Payment retry loop',
       objective: 'Find why retries never stop',
-      severity: 'critical'
+      severity: 'critical',
+      projectDirectory: '/workspace/open-default-inquiry'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'));
     const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'));
@@ -57,7 +58,8 @@ describe.sequential('case.open and inquiry.close', () => {
         idempotencyKey: 'open-duplicate-001',
         title: 'Payment retry loop',
         objective: 'Find why retries never stop',
-        severity: 'critical' as const
+        severity: 'critical' as const,
+        projectDirectory: '/workspace/open-duplicate-001'
       };
 
       const first = await app.mcpServer.invokeTool('investigation.case.open', input);
@@ -77,7 +79,8 @@ describe.sequential('case.open and inquiry.close', () => {
       idempotencyKey: 'open-close-inquiry',
       title: 'Webhook duplication',
       objective: 'Close initial inquiry after confirmation',
-      severity: 'high'
+      severity: 'high',
+      projectDirectory: '/workspace/open-close-inquiry'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
     const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;

@@ -31,7 +31,7 @@ export interface CreateCaseInput {
   title: string;
   objective: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  environment?: string[];
+  projectDirectory: string;
   labels?: string[];
 }
 

@@ -30,7 +30,8 @@ describe.sequential('hypothesis and experiment commands', () => {
         idempotencyKey: 'hypothesis-open-001',
         title: 'Missing falsification criteria',
         objective: 'Test schema validation',
-        severity: 'high'
+        severity: 'high',
+        projectDirectory: '/workspace/hypothesis-open-001'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
@@ -70,7 +71,8 @@ describe.sequential('hypothesis and experiment commands', () => {
         idempotencyKey: 'experiment-open-001',
         title: 'Missing expected outcomes',
         objective: 'Test experiment schema validation',
-        severity: 'medium'
+        severity: 'medium',
+        projectDirectory: '/workspace/experiment-open-001'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
@@ -100,7 +102,8 @@ describe.sequential('hypothesis and experiment commands', () => {
         idempotencyKey: 'hypothesis-open-002',
         title: 'Duplicate webhook deliveries',
         objective: 'Find the branch that duplicates sends',
-        severity: 'critical'
+        severity: 'critical',
+        projectDirectory: '/workspace/hypothesis-open-002'
       });
       const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
       const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
