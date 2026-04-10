@@ -296,7 +296,6 @@ export function CaseWorkspaceRoute() {
       <div className="workspace-grid">
         <section className="workspace-main">
           {loading && !workspace ? <section className="panel graph-stage"><p>{t('workspace.replaying')}</p></section> : null}
-          {workspace ? <TimelineView timeline={workspace.timeline} /> : null}
           {workspace ? (
             <GraphCanvas
               graph={workspace.graph}
@@ -305,6 +304,7 @@ export function CaseWorkspaceRoute() {
               focusId={selectedNodeId}
             />
           ) : null}
+          {workspace ? <TimelineView timeline={workspace.timeline} /> : null}
         </section>
 
         <aside className="workspace-rail workspace-rail-side">

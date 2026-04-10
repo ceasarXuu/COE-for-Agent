@@ -24,3 +24,9 @@ pnpm --filter @coe/investigation-console typecheck
 pnpm --filter @coe/investigation-console test
 pnpm --filter @coe/investigation-console test:e2e
 ```
+
+## Workspace Layout Regression
+
+- When verifying `cases.$caseId.tsx` layout order, run Vitest with package-local paths such as `pnpm --filter @coe/investigation-console test -- test/case-workspace-layout.test.ts`.
+- Passing workspace-root style paths into the package test script can miss the intended file filter because the script executes from `apps/investigation-console`.
+- Keep a dedicated regression test for the main-column panel order so “案件图在上、时间线在下” does not silently flip during future workspace refactors.
