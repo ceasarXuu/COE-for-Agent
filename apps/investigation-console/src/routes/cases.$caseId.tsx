@@ -321,7 +321,6 @@ export function CaseWorkspaceRoute() {
           <InspectorPanel inspector={inspector} loading={inspectorLoading} />
           <ActionPanel
             caseId={caseId}
-            caseStage={workspace?.snapshot.data.case?.stage ?? null}
             defaultInquiryId={typeof workspace?.snapshot.data.case?.defaultInquiryId === 'string'
               ? workspace.snapshot.data.case.defaultInquiryId
               : null}

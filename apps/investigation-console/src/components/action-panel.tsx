@@ -29,7 +29,6 @@ interface ActionConfig {
 
 export function ActionPanel(props: {
   caseId: string;
-  caseStage?: string | null;
   defaultInquiryId?: string | null;
   currentRevision: number;
   historical: boolean;
@@ -38,7 +37,6 @@ export function ActionPanel(props: {
   onMutationComplete: () => Promise<void> | void;
 }) {
   const { t } = useI18n();
-  const [stageRationale, setStageRationale] = useState('');
   const [hypothesisRationale, setHypothesisRationale] = useState('');
   const [newHypothesisStatement, setNewHypothesisStatement] = useState('');
   const [newHypothesisFalsification, setNewHypothesisFalsification] = useState('');
@@ -51,7 +49,6 @@ export function ActionPanel(props: {
   const [residualStatement, setResidualStatement] = useState('');
   const [residualRationale, setResidualRationale] = useState('');
   const [decisionRationale, setDecisionRationale] = useState('');
-  const [closureDecisionRationale, setClosureDecisionRationale] = useState('');
   const [confirmAction, setConfirmAction] = useState<ActionConfig | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,63 +96,6 @@ export function ActionPanel(props: {
     }
   }
 
-  async function executeCloseCaseFlow() {
-    if (props.caseStage !== 'repair_validation') {
-      return;
-    }
-
-    const rationale = closureDecisionRationale.trim();
-    if (rationale.length === 0) {
-      return;
-    }
-
-    setPending(true);
-    setError(null);
-
-    try {
-      const closeDecisionConfirmation = await requestConfirmIntent({
-        commandName: 'investigation.decision.record',
-        caseId: props.caseId,
-        targetIds: [props.caseId],
-        rationale
-      });
-
-      const closeDecisionResult = await invokeTool<{ headRevisionAfter: number }>('investigation.decision.record', {
-        caseId: props.caseId,
-        ifCaseRevision: props.currentRevision,
-        title: t('action.closeReady'),
-        decisionKind: 'close_case',
-        statement: rationale,
-        rationale,
-        idempotencyKey: buildIdempotencyKey('decision-close-case'),
-        confirmToken: closeDecisionConfirmation.confirmToken
-      });
-
-      const closeCaseConfirmation = await requestConfirmIntent({
-        commandName: 'investigation.case.advance_stage',
-        caseId: props.caseId,
-        targetIds: [props.caseId],
-        rationale
-      });
-
-      await invokeTool('investigation.case.advance_stage', {
-        caseId: props.caseId,
-        ifCaseRevision: closeDecisionResult.headRevisionAfter,
-        stage: 'closed',
-        reason: rationale,
-        idempotencyKey: buildIdempotencyKey('case-close'),
-        confirmToken: closeCaseConfirmation.confirmToken
-      });
-
-      setClosureDecisionRationale('');
-      await props.onMutationComplete();
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : t('errors.mutationFailed'));
-    } finally {
-      setPending(false);
-    }
-  }
-
   function queueOrExecute(action: ActionConfig) {
     if (action.requiresConfirm) {
       setConfirmAction(action);
@@ -164,34 +104,6 @@ export function ActionPanel(props: {
 
     void executeAction(action);
   }
-
-  const closeCasePass = props.guardrails?.closeCase.pass === true;
-  const nextStage = props.caseStage === 'repair_preparation'
-    ? 'repair_validation'
-    : props.caseStage === 'repair_validation'
-      ? 'closed'
-      : 'repair_preparation';
-  const stageActionTitle = nextStage === 'repair_validation'
-    ? t('action.advanceValidation')
-    : nextStage === 'closed'
-      ? t('action.closeCase')
-      : t('action.advance');
-
-  const stageAction: ActionConfig = {
-    commandName: 'investigation.case.advance_stage',
-    title: stageActionTitle,
-    rationale: stageRationale,
-    requiresConfirm: true,
-    targetIds: [props.caseId],
-    payload: {
-      caseId: props.caseId,
-      ifCaseRevision: props.currentRevision,
-      stage: nextStage,
-      reason: stageRationale,
-      idempotencyKey: buildIdempotencyKey(`case-stage-${nextStage}`)
-    },
-    reset: () => setStageRationale('')
-  };
 
   const selectedNode = props.selectedNode ?? null;
   const readyToPatchPass = props.guardrails?.readyToPatch.pass === true;
@@ -409,58 +321,8 @@ export function ActionPanel(props: {
   return (
     <section className="panel panel-primary action-panel" data-testid="action-panel">
       <p className="panel-kicker">{t('action.kicker')}</p>
-      <p className="snapshot-objective">
-        {t('action.description')}
-      </p>
-      <label className="search-field">
-        <span>{t('action.confirmRationale')}</span>
-        <textarea
-          data-testid="stage-rationale"
-          disabled={props.historical || pending}
-          onChange={(event) => setStageRationale(event.currentTarget.value)}
-          placeholder={t('action.confirmPlaceholder')}
-          rows={4}
-          value={stageRationale}
-        />
-      </label>
       {props.historical ? <p className="history-banner">{t('action.historicalFrozen')}</p> : null}
       {error ? <p className="inline-error">{error}</p> : null}
-      <button
-        className="action-button"
-        data-testid="action-advance-stage"
-        disabled={props.historical
-          || pending
-          || (nextStage === 'closed'
-            ? closureDecisionRationale.trim().length === 0 || !closeCasePass
-            : stageRationale.trim().length === 0)}
-        onClick={() => {
-          if (nextStage === 'closed') {
-            void executeCloseCaseFlow();
-            return;
-          }
-
-          queueOrExecute(stageAction);
-        }}
-        type="button"
-      >
-        {stageActionTitle}
-      </button>
-
-      {props.caseStage === 'repair_validation' ? (
-        <>
-          <label className="search-field">
-            <span>{t('action.closureRationale')}</span>
-            <textarea
-              data-testid="closure-decision-rationale"
-              disabled={props.historical || pending}
-              onChange={(event) => setClosureDecisionRationale(event.currentTarget.value)}
-              placeholder={t('action.closurePlaceholder')}
-              rows={3}
-              value={closureDecisionRationale}
-            />
-          </label>
-        </>
-      ) : null}
 
       {selectedNode?.kind === 'hypothesis' ? (
         <>
