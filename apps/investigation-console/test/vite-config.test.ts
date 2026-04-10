@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import viteConfig from '../vite.config.ts';
+import viteConfig from '../vite.config.js';
 
 describe('vite dev server config', () => {
   test('binds the dev server to 127.0.0.1 so start.sh can open the same URL', () => {

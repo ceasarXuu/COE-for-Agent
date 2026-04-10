@@ -133,6 +133,18 @@ interface RevisionState {
   };
 }
 
+interface ManualCaseState {
+  caseId: string;
+  inquiryId: string;
+  title: string;
+  objective: string;
+  severity: string;
+  environment: string[];
+  labels: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 function clone<T>(value: T): T {
   return structuredClone(value);
 }
@@ -1225,6 +1237,69 @@ function readDiff(states: RevisionState[], fromRevision: number, toRevision: num
 
 export function createFixtureMcpClient(): ConsoleMcpClient {
   const revisions = buildRevisionStates();
+  const manualCases = new Map<string, ManualCaseState>();
+  let manualCaseSequence = 1;
+
+  function buildManualCaseState(input: Record<string, unknown>): ManualCaseState {
+    const sequence = manualCaseSequence++;
+    const suffix = String(sequence).padStart(24, '0');
+    const caseId = `case_${suffix}`;
+    const inquiryId = `inquiry_${String(sequence).padStart(22, '0')}`;
+    const createdAt = new Date(Date.UTC(2025, 0, 2, 8, sequence, 0)).toISOString();
+    const environment = Array.isArray(input.environment)
+      ? input.environment.filter((value): value is string => typeof value === 'string' && value.length > 0)
+      : [];
+    const labels = Array.isArray(input.labels)
+      ? input.labels.filter((value): value is string => typeof value === 'string' && value.length > 0)
+      : [];
+
+    return {
+      caseId,
+      inquiryId,
+      title: requireString(input, 'title'),
+      objective: requireString(input, 'objective'),
+      severity: typeof input.severity === 'string' ? input.severity : 'high',
+      environment,
+      labels,
+      createdAt,
+      updatedAt: createdAt
+    };
+  }
+
+  function manualGuardrails() {
+    return {
+      aggregate: {
+        kind: 'investigation.guardrail.check_result',
+        warnings: [],
+        violations: []
+      },
+      stall: {
+        kind: 'investigation.guardrail.stall_check_result',
+        stall: false,
+        reason: null,
+        inquiryIds: []
+      },
+      readyToPatch: {
+        kind: 'investigation.guardrail.ready_to_patch_result',
+        pass: false,
+        candidateHypothesisIds: [],
+        candidatePatchRefs: [],
+        blockingGapIds: [],
+        blockingResidualIds: [],
+        uncoveredCriticalSymptomIds: [],
+        incompleteExperimentIds: [],
+        reasons: ['No favored or confirmed hypothesis is available yet.']
+      },
+      closeCase: {
+        kind: 'investigation.guardrail.close_case_check_result',
+        pass: false,
+        blockingInquiryIds: [],
+        blockingResidualIds: [],
+        missingValidationRefs: [],
+        reasons: ['Case must reach repair_validation before it can be closed.']
+      }
+    };
+  }
 
   return {
     async readResource(uri: string): Promise<ResourceReadResult> {
@@ -1248,12 +1323,23 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
           {
             caseId: FIXTURE_IDS.caseId,
             title: state.caseRecord.title,
+            summary: state.caseRecord.summary,
             status: state.caseRecord.status,
             stage: state.caseRecord.stage,
             severity: state.caseRecord.severity,
             headRevision,
             updatedAt: '2025-01-01T10:16:00.000Z'
-          }
+          },
+          ...Array.from(manualCases.values()).map((manualCase) => ({
+            caseId: manualCase.caseId,
+            title: manualCase.title,
+            summary: manualCase.objective,
+            status: 'active',
+            stage: 'intake',
+            severity: manualCase.severity,
+            headRevision: 1,
+            updatedAt: manualCase.updatedAt
+          }))
         ].filter((item) => {
           if (query.length === 0) {
             return true;
@@ -1262,8 +1348,8 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
           return [
             item.caseId,
             item.title,
-            state.caseRecord.objective,
-            state.caseRecord.summary
+            item.summary,
+            ...(item.caseId === FIXTURE_IDS.caseId ? [state.caseRecord.objective] : [])
           ]
             .filter((value): value is string => typeof value === 'string')
             .some((value) => value.toLowerCase().includes(query));
@@ -1282,9 +1368,178 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
         };
       }
 
-      const [caseId, resourceName, resourceId] = parsed.segments;
-      if (caseId !== FIXTURE_IDS.caseId) {
+      const caseId = parsed.segments[0] ?? '';
+      const resourceName = parsed.segments[1];
+      const resourceId = parsed.segments[2];
+      const manualCase = manualCases.get(caseId);
+      if (caseId !== FIXTURE_IDS.caseId && !manualCase) {
         throw new Error(`Unknown case ${caseId}`);
+      }
+
+      if (manualCase) {
+        switch (resourceName) {
+          case 'snapshot':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: 1,
+                projectionRevision: 1,
+                data: {
+                  case: {
+                    id: manualCase.caseId,
+                    title: manualCase.title,
+                    objective: manualCase.objective,
+                    severity: manualCase.severity,
+                    status: 'active',
+                    stage: 'intake',
+                    revision: 1,
+                    environment: manualCase.environment,
+                    labels: manualCase.labels,
+                    defaultInquiryId: manualCase.inquiryId
+                  },
+                  counts: {
+                    inquiries: 1,
+                    symptoms: 0,
+                    artifacts: 0,
+                    facts: 0
+                  },
+                  warnings: []
+                }
+              })
+            };
+          case 'timeline':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: 1,
+                projectionRevision: 1,
+                data: {
+                  events: [
+                    {
+                      eventId: `event_${manualCase.caseId}_opened`,
+                      eventType: 'case.opened',
+                      caseRevision: 1,
+                      occurredAt: manualCase.createdAt,
+                      summary: 'Case opened with a default inquiry.'
+                    }
+                  ]
+                }
+              })
+            };
+          case 'graph':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: 1,
+                projectionRevision: 1,
+                data: {
+                  focusId: null,
+                  nodes: [
+                    {
+                      id: manualCase.caseId,
+                      kind: 'case',
+                      label: manualCase.title,
+                      status: 'active',
+                      revision: 1
+                    },
+                    {
+                      id: manualCase.inquiryId,
+                      kind: 'inquiry',
+                      label: 'Default inquiry',
+                      status: 'open',
+                      revision: 1
+                    }
+                  ],
+                  edges: [
+                    {
+                      key: `${manualCase.caseId}:${manualCase.inquiryId}:contains`,
+                      type: 'contains',
+                      fromId: manualCase.caseId,
+                      toId: manualCase.inquiryId
+                    }
+                  ]
+                }
+              })
+            };
+          case 'coverage':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: 1,
+                projectionRevision: 1,
+                data: {
+                  items: [],
+                  summary: {
+                    direct: 0,
+                    indirect: 0,
+                    none: 0
+                  }
+                }
+              })
+            };
+          case 'diff':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: 1,
+                projectionRevision: 1,
+                data: {
+                  fromRevision: 1,
+                  toRevision: 1,
+                  changedNodeIds: [],
+                  changedEdgeKeys: [],
+                  stateTransitions: [],
+                  summary: ['No diff']
+                }
+              })
+            };
+          case 'hypotheses':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: 1,
+                projectionRevision: 1,
+                data: {
+                  hypothesis: null,
+                  supportingFacts: [],
+                  linkedExperiments: [],
+                  openGaps: [],
+                  openResiduals: []
+                }
+              })
+            };
+          case 'inquiries':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: 1,
+                projectionRevision: 1,
+                data: {
+                  inquiry: resourceId === manualCase.inquiryId
+                    ? {
+                        id: manualCase.inquiryId,
+                        caseId: manualCase.caseId,
+                        title: 'Default inquiry',
+                        question: manualCase.objective,
+                        status: 'open'
+                      }
+                    : null,
+                  hypotheses: [],
+                  experiments: [],
+                  gaps: []
+                }
+              })
+            };
+          default:
+            throw new Error(`Unsupported resource ${resourceName}`);
+        }
       }
 
       switch (resourceName) {
@@ -1381,15 +1636,42 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
 
     async invokeTool(name: string, input: Record<string, unknown>) {
       const headState = revisions[revisions.length - 1]!;
+      const manualCase = typeof input.caseId === 'string' ? manualCases.get(input.caseId) : null;
 
       switch (name) {
+        case 'investigation.case.open': {
+          const created = buildManualCaseState(input);
+          manualCases.set(created.caseId, created);
+
+          return {
+            ok: true,
+            headRevisionBefore: 0,
+            headRevisionAfter: 1,
+            projectionScheduled: false,
+            createdIds: [created.caseId, created.inquiryId],
+            warnings: [],
+            violations: []
+          };
+        }
         case 'investigation.guardrail.check':
+          if (manualCase) {
+            return clone(manualGuardrails().aggregate);
+          }
           return clone(headState.guardrails.aggregate);
         case 'investigation.guardrail.stall_check':
+          if (manualCase) {
+            return clone(manualGuardrails().stall);
+          }
           return clone(headState.guardrails.stall);
         case 'investigation.guardrail.ready_to_patch_check':
+          if (manualCase) {
+            return clone(manualGuardrails().readyToPatch);
+          }
           return clone(headState.guardrails.readyToPatch);
         case 'investigation.guardrail.close_case_check':
+          if (manualCase) {
+            return clone(manualGuardrails().closeCase);
+          }
           return clone(headState.guardrails.closeCase);
         case 'investigation.case.advance_stage': {
           if (typeof input.confirmToken !== 'string' || input.confirmToken.length === 0) {

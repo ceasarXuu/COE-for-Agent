@@ -90,6 +90,27 @@ test('editing the list search query preserves unrelated list params', async ({ p
   });
 });
 
+test('cases index presents the gallery create card first and supports manual case creation', async ({ page }) => {
+  await page.goto('/cases');
+
+  const gallery = page.getByTestId('cases-gallery');
+  await expect(gallery).toBeVisible();
+  expect(await gallery.locator(':scope > *').first().getAttribute('data-testid')).toBe('case-create-card');
+
+  await page.getByTestId('case-create-card').click();
+  await expect(page.getByTestId('create-case-panel')).toBeVisible();
+
+  await page.getByTestId('create-case-title').fill('Manual intake from gallery');
+  await page.getByTestId('create-case-objective').fill('Validate that manual intake opens a fresh case workspace.');
+  await page.getByTestId('create-case-severity').selectOption('critical');
+  await page.getByTestId('create-case-environment').fill('prod-us-1, worker-cluster');
+  await page.getByTestId('create-case-labels').fill('manual, gallery');
+  await page.getByTestId('create-case-submit').click();
+
+  await expect.poll(() => new URL(page.url()).pathname).toMatch(/^\/cases\/case_/);
+  await expect(page.getByRole('heading', { level: 2 })).toContainText('Manual intake from gallery');
+});
+
 test('loads the workspace and opens a hypothesis inspector from the graph', async ({ page }) => {
   await page.goto('/cases');
 

@@ -41,4 +41,61 @@ describe('cases route', () => {
       items: [{ caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA' }]
     });
   });
+
+  test('POST /api/cases opens a case with reviewer context and returns the created identifiers', async () => {
+    const invokeTool = vi.fn(async () => ({
+      ok: true,
+      createdIds: [
+        'case_01BBBBBBBBBBBBBBBBBBBBBBBB',
+        'inquiry_01BBBBBBBBBBBBBBBBBBBBB'
+      ],
+      headRevisionAfter: 1
+    }));
+
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource: vi.fn(),
+        invokeTool,
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/cases',
+      payload: {
+        title: 'Manual case from console',
+        objective: 'Capture a new investigation from the gallery entry point',
+        severity: 'high',
+        environment: ['prod-eu-1'],
+        labels: ['manual-entry']
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(invokeTool).toHaveBeenCalledWith('investigation.case.open', expect.objectContaining({
+      title: 'Manual case from console',
+      objective: 'Capture a new investigation from the gallery entry point',
+      severity: 'high',
+      environment: ['prod-eu-1'],
+      labels: ['manual-entry'],
+      idempotencyKey: expect.any(String),
+      actorContext: expect.objectContaining({
+        actorType: 'user',
+        actorId: 'console-reviewer',
+        role: 'Reviewer',
+        issuer: 'local-console',
+        authMode: 'local',
+        sessionId: expect.any(String)
+      })
+    }));
+    expect(response.json()).toMatchObject({
+      ok: true,
+      caseId: 'case_01BBBBBBBBBBBBBBBBBBBBBBBB',
+      inquiryId: 'inquiry_01BBBBBBBBBBBBBBBBBBBBB',
+      headRevisionAfter: 1
+    });
+  });
 });

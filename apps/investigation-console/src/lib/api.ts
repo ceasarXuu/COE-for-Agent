@@ -26,6 +26,22 @@ export interface CaseListEnvelope {
   items: CaseListItem[];
 }
 
+export interface CreateCaseInput {
+  idempotencyKey: string;
+  title: string;
+  objective: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  environment?: string[];
+  labels?: string[];
+}
+
+export interface CreateCaseResult {
+  ok: boolean;
+  caseId: string | null;
+  inquiryId: string | null;
+  headRevisionAfter: number;
+}
+
 interface ResourceEnvelope<T> {
   headRevision: number;
   projectionRevision: number;
@@ -214,6 +230,18 @@ export function listCases(query?: { search?: string }): Promise<CaseListEnvelope
 
   return fetchJson<ResourceEnvelope<CaseListEnvelope>>(`/api/cases${params.toString().length > 0 ? `?${params.toString()}` : ''}`)
     .then((result) => result.data);
+}
+
+export async function createCase(input: CreateCaseInput): Promise<CreateCaseResult> {
+  const session = await ensureSession();
+
+  return fetchJson<CreateCaseResult>('/api/cases', {
+    method: 'POST',
+    headers: {
+      'x-session-token': session.sessionToken
+    },
+    body: JSON.stringify(input)
+  });
 }
 
 export function getCaseSnapshot(caseId: string, revision?: number | null): Promise<CaseSnapshotEnvelope> {

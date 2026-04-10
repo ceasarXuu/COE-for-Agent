@@ -33,7 +33,11 @@ export async function buildConsoleServer(options: BuildConsoleServerOptions = {}
 
   const app = Fastify({ logger: false });
 
-  await registerCasesRoutes(app, { mcpClient });
+  await registerCasesRoutes(app, {
+    mcpClient,
+    sessionSecret,
+    defaultSession
+  });
   await registerResourceRoutes(app, { mcpClient });
   await registerToolRoutes(app, {
     mcpClient,
