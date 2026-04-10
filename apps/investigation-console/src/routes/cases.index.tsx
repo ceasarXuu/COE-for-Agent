@@ -7,11 +7,44 @@ import { createCase, listCases, type CaseListItem } from '../lib/api.js';
 import { useI18n } from '../lib/i18n.js';
 import { buildIdempotencyKey } from '@coe/shared-utils';
 
+type CaseSortKey = 'priority' | 'recent' | 'title';
+
+function sortCases(items: CaseListItem[], sort: CaseSortKey): CaseListItem[] {
+  const severityRank: Record<string, number> = {
+    critical: 4,
+    high: 3,
+    medium: 2,
+    low: 1
+  };
+
+  return [...items].sort((left, right) => {
+    if (sort === 'title') {
+      return (left.title ?? '').localeCompare(right.title ?? '');
+    }
+
+    if (sort === 'priority') {
+      const severityDelta = (severityRank[right.severity?.toLowerCase() ?? ''] ?? 0) - (severityRank[left.severity?.toLowerCase() ?? ''] ?? 0);
+      if (severityDelta !== 0) {
+        return severityDelta;
+      }
+    }
+
+    const rightTime = right.updatedAt ? new Date(right.updatedAt).getTime() : 0;
+    const leftTime = left.updatedAt ? new Date(left.updatedAt).getTime() : 0;
+    if (rightTime !== leftTime) {
+      return rightTime - leftTime;
+    }
+
+    return (left.title ?? '').localeCompare(right.title ?? '');
+  });
+}
+
 export function CasesIndexRoute() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') ?? '';
+  const sort = (searchParams.get('sort') as CaseSortKey | null) ?? 'recent';
   const caseLinkSearch = searchParams.toString();
   const [cases, setCases] = useState<CaseListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +62,7 @@ export function CasesIndexRoute() {
     listCases(deferredQuery ? { search: deferredQuery } : undefined)
       .then((result) => {
         if (!cancelled) {
-          setCases(result.items);
+          setCases(sortCases(result.items, sort));
         }
       })
       .catch((reason: unknown) => {
@@ -46,7 +79,7 @@ export function CasesIndexRoute() {
     return () => {
       cancelled = true;
     };
-  }, [deferredQuery]);
+  }, [deferredQuery, sort, t]);
 
   async function handleCreateCase(draft: ManualCaseDraft) {
     setCreatePending(true);
@@ -97,12 +130,6 @@ export function CasesIndexRoute() {
 
       <div className="case-index-board">
         <div className="case-index-toolbar">
-          <div className="case-index-copy">
-            <p className="panel-kicker">{t('cases.galleryKicker')}</p>
-            <h2>{t('cases.galleryTitle')}</h2>
-            <p>{t('cases.galleryCopy')}</p>
-          </div>
-
           <div className="case-index-toolbar-controls">
             <label className="search-field">
               <span>{t('cases.search')}</span>
@@ -127,6 +154,29 @@ export function CasesIndexRoute() {
                 type="search"
                 value={query}
               />
+            </label>
+            <label className="sort-field">
+              <span>{t('cases.sort')}</span>
+              <select
+                aria-label={t('cases.sort')}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setSearchParams((current) => {
+                    const next = new URLSearchParams(current);
+                    if (value === 'recent') {
+                      next.delete('sort');
+                    } else {
+                      next.set('sort', value);
+                    }
+                    return next;
+                  }, { replace: true });
+                }}
+                value={sort}
+              >
+                <option value="recent">{t('cases.sortRecent')}</option>
+                <option value="priority">{t('cases.sortPriority')}</option>
+                <option value="title">{t('cases.sortTitle')}</option>
+              </select>
             </label>
             <div aria-live="polite" className="toolbar-badges">
               <span>{t('cases.loaded', { count: cases.length })}</span>

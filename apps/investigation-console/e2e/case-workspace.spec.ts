@@ -14,7 +14,7 @@ test('cases index keeps search guidance and empty-state recovery text after load
 });
 
 test('list search params survive entering a case workspace and returning to the list', async ({ page }) => {
-  await page.goto(`/cases?q=worker&status=active&page=2`);
+  await page.goto(`/cases?q=worker&status=active&page=2&sort=priority`);
 
   await expect(page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`)).toBeVisible();
   await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
@@ -26,6 +26,7 @@ test('list search params survive entering a case workspace and returning to the 
       q: url.searchParams.get('q'),
       status: url.searchParams.get('status'),
       page: url.searchParams.get('page'),
+      sort: url.searchParams.get('sort'),
       revision: url.searchParams.get('revision')
     };
   }).toEqual({
@@ -33,6 +34,7 @@ test('list search params survive entering a case workspace and returning to the 
     q: 'worker',
     status: 'active',
     page: '2',
+    sort: 'priority',
     revision: null
   });
 
@@ -44,19 +46,21 @@ test('list search params survive entering a case workspace and returning to the 
       pathname: url.pathname,
       q: url.searchParams.get('q'),
       status: url.searchParams.get('status'),
-      page: url.searchParams.get('page')
+      page: url.searchParams.get('page'),
+      sort: url.searchParams.get('sort')
     };
   }).toEqual({
     pathname: '/cases',
     q: 'worker',
     status: 'active',
-    page: '2'
+    page: '2',
+    sort: 'priority'
   });
   await expect(page.getByLabel('Search transcript')).toHaveValue('worker');
 });
 
 test('editing the list search query preserves unrelated list params', async ({ page }) => {
-  await page.goto('/cases?status=active&page=2');
+  await page.goto('/cases?status=active&page=2&sort=priority');
 
   const searchField = page.getByLabel('Search transcript');
   await searchField.fill('worker');
@@ -66,12 +70,14 @@ test('editing the list search query preserves unrelated list params', async ({ p
     return {
       q: url.searchParams.get('q'),
       status: url.searchParams.get('status'),
-      page: url.searchParams.get('page')
+      page: url.searchParams.get('page'),
+      sort: url.searchParams.get('sort')
     };
   }).toEqual({
     q: 'worker',
     status: 'active',
-    page: '2'
+    page: '2',
+    sort: 'priority'
   });
 
   await searchField.clear();
@@ -81,12 +87,14 @@ test('editing the list search query preserves unrelated list params', async ({ p
     return {
       q: url.searchParams.get('q'),
       status: url.searchParams.get('status'),
-      page: url.searchParams.get('page')
+      page: url.searchParams.get('page'),
+      sort: url.searchParams.get('sort')
     };
   }).toEqual({
     q: null,
     status: 'active',
-    page: '2'
+    page: '2',
+    sort: 'priority'
   });
 });
 
