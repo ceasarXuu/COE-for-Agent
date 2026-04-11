@@ -45,6 +45,7 @@ describe('case workspace layout', () => {
       'utf8'
     );
 
+    expect(source).toContain('className="workspace-header-copy"');
     expect(source).toContain('className="workspace-title-row"');
     expect(source).toContain('workspace?.snapshot.data.case?.severity ? (');
     expect(source).toContain('formatEnumLabel(workspace.snapshot.data.case.severity)');

@@ -539,6 +539,14 @@
   border-radius: var(--radius-xl);
 }
 
+.workspace-header-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
 .workspace-toolbar h2 {
   font-size: var(--text-lg);
   font-weight: 600;
@@ -549,8 +557,10 @@
 .workspace-title-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .workspace-rail {

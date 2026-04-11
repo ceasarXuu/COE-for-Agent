@@ -258,7 +258,7 @@ export function CaseWorkspaceRoute() {
   return (
     <section className="workspace-shell">
       <header className="workspace-toolbar">
-        <div>
+        <div className="workspace-header-copy">
           <Link
             className="ghost-link"
             to={{
