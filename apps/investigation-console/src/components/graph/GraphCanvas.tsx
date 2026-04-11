@@ -79,9 +79,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     t('snapshot.inquiries', { count: snapshot.data.counts.inquiries }),
     t('snapshot.symptoms', { count: snapshot.data.counts.symptoms }),
     t('snapshot.artifacts', { count: snapshot.data.counts.artifacts }),
-    t('snapshot.facts', { count: snapshot.data.counts.facts }),
-    t('graph.nodes', { count: nodes.length }),
-    t('graph.links', { count: edges.length })
+    t('snapshot.facts', { count: snapshot.data.counts.facts })
   ];
   
   if (nodes.length === 0) {

@@ -89,8 +89,8 @@ describe('graph canvas selection', () => {
     expect(html).toContain('症状 0');
     expect(html).toContain('证据 0');
     expect(html).toContain('事实 0');
-    expect(html).toContain('2 个节点');
-    expect(html).toContain('1 条连线');
+    expect(html).not.toContain('2 个节点');
+    expect(html).not.toContain('1 条连线');
     expect(html).toContain('支撑');
     expect(html).toContain('解释');
     expect(html).toContain('验证');
