@@ -1,37 +1,24 @@
 import { startTransition, useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-utils';
-
-import { ActionPanel } from '../components/action-panel.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
-import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
 import { TimelineView } from '../components/timeline-view.js';
 import { connectConsoleStream } from '../lib/sse.js';
 import {
-  getCaseCoverage,
   getCaseGraph,
-  getHypothesisPanel,
-  getInquiryPanel,
   getCaseSnapshot,
   getCaseTimeline,
-  getGuardrails,
-  type GraphNodeRecord,
-  type CaseCoverageEnvelope,
   type CaseGraphEnvelope,
   type CaseSnapshotEnvelope,
-  type CaseTimelineEnvelope,
-  type GuardrailBundle
+  type CaseTimelineEnvelope
 } from '../lib/api.js';
 import { useI18n } from '../lib/i18n.js';
-import { resetUIState, setRevision, setSelectedNodeId, useUIStore } from '../store/ui-store.js';
+import { resetUIState, setRevision } from '../store/ui-store.js';
 
 interface WorkspaceData {
   snapshot: CaseSnapshotEnvelope;
   timeline: CaseTimelineEnvelope;
   graph: CaseGraphEnvelope;
-  coverage: CaseCoverageEnvelope;
-  guardrails: GuardrailBundle;
 }
 
 export function CaseWorkspaceRoute() {
@@ -41,8 +28,6 @@ export function CaseWorkspaceRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [workspace, setWorkspace] = useState<WorkspaceData | null>(null);
-  const [inspector, setInspector] = useState<InspectorViewModel | null>(null);
-  const [inspectorLoading, setInspectorLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
@@ -55,8 +40,6 @@ export function CaseWorkspaceRoute() {
     const parsed = Number(rawValue);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
   }, [searchParams]);
-  const selectedNodeId = useUIStore((state) => state.selectedNodeId);
-
   const requestRefresh = useEffectEvent(() => {
     setRefreshNonce((value) => value + 1);
   });
@@ -77,20 +60,14 @@ export function CaseWorkspaceRoute() {
     Promise.all([
       getCaseSnapshot(caseId, revision),
       getCaseTimeline(caseId, revision),
-      getCaseGraph(caseId, { revision }),
-      getCaseCoverage(caseId, revision),
-      getGuardrails(caseId, revision)
+      getCaseGraph(caseId, { revision })
     ])
-      .then(([snapshot, timeline, graph, coverage, guardrails]) => ({ snapshot, timeline, graph, coverage, guardrails }))
+      .then(([snapshot, timeline, graph]) => ({ snapshot, timeline, graph }))
       .then((data) => {
         if (!cancelled) {
           startTransition(() => {
             setWorkspace(data);
           });
-
-          if (selectedNodeId && !data.graph.data.nodes.some((node) => node.id === selectedNodeId)) {
-            setSelectedNodeId(null);
-          }
         }
       })
       .catch((reason: unknown) => {
@@ -108,99 +85,6 @@ export function CaseWorkspaceRoute() {
       cancelled = true;
     };
   }, [caseId, refreshNonce, revision, t]);
-
-  useEffect(() => {
-    if (!workspace || !selectedNodeId) {
-      setInspector(null);
-      setInspectorLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    const graphNode = workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null;
-    setInspectorLoading(true);
-
-    const loadInspector = async () => {
-      if (selectedNodeId.startsWith('hypothesis_')) {
-        const panel = await getHypothesisPanel(caseId, selectedNodeId, revision);
-        const hypothesis = asObjectRecord(panel.data.hypothesis);
-        return {
-          kind: 'hypothesis',
-          title: asNonEmptyString(hypothesis.title) ?? selectedNodeId,
-          status: asNonEmptyString(hypothesis.status),
-          summary: asNonEmptyString(hypothesis.statement) ?? t('workspace.hypothesisFallback'),
-          primaryItems: panel.data.supportingFacts.map((fact) => asNonEmptyString(asObjectRecord(fact).statement) ?? formatEnumLabel('fact')),
-          secondaryItems: (panel.data.linkedExperiments ?? [])
-            .map((experiment) => asNonEmptyString(asObjectRecord(experiment).title) ?? formatEnumLabel('experiment')),
-          details: {
-            supportingFactIds: panel.data.supportingFacts
-              .map((fact) => asNonEmptyString(asObjectRecord(fact).id))
-              .filter((value): value is string => Boolean(value)),
-            linkedExperimentIds: (panel.data.linkedExperiments ?? [])
-              .map((experiment) => asNonEmptyString(asObjectRecord(experiment).id))
-              .filter((value): value is string => Boolean(value))
-          }
-        } satisfies InspectorViewModel;
-      }
-
-      if (selectedNodeId.startsWith('inquiry_')) {
-        const panel = await getInquiryPanel(caseId, selectedNodeId, revision);
-        const inquiry = asObjectRecord(panel.data.inquiry);
-        return {
-          kind: 'inquiry',
-          title: asNonEmptyString(inquiry.title) ?? selectedNodeId,
-          status: asNonEmptyString(inquiry.status),
-          summary: asNonEmptyString(inquiry.question) ?? t('workspace.inquiryFallback'),
-          primaryItems: panel.data.hypotheses.map((hypothesis) => asNonEmptyString(asObjectRecord(hypothesis).title) ?? formatEnumLabel('hypothesis')),
-          secondaryItems: panel.data.experiments.map((experiment) => asNonEmptyString(asObjectRecord(experiment).title) ?? formatEnumLabel('experiment')),
-          details: {
-            inquiryId: asNonEmptyString(inquiry.id) ?? selectedNodeId
-          }
-        } satisfies InspectorViewModel;
-      }
-
-      if (graphNode) {
-        return buildGraphBackedInspector(graphNode, workspace);
-      }
-
-      return {
-        kind: 'node',
-        title: selectedNodeId,
-        status: null,
-        summary: t('workspace.outsideSlice'),
-        primaryItems: [],
-        secondaryItems: []
-      } satisfies InspectorViewModel;
-    };
-
-    loadInspector()
-      .then((data) => {
-        if (!cancelled) {
-          setInspector(data);
-        }
-      })
-      .catch((reason: unknown) => {
-        if (!cancelled) {
-          setInspector({
-            kind: 'node',
-            title: graphNode?.label ?? selectedNodeId,
-            status: graphNode?.status ?? null,
-            summary: reason instanceof Error ? reason.message : t('errors.loadInspector'),
-            primaryItems: [],
-            secondaryItems: []
-          });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setInspectorLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [caseId, formatEnumLabel, revision, selectedNodeId, t, workspace]);
 
   useEffect(() => {
     if (revision !== null) {
@@ -223,37 +107,9 @@ export function CaseWorkspaceRoute() {
 
   const maxRevision = workspace?.snapshot.headRevision ?? 1;
   const currentRevision = revision ?? maxRevision;
-  const historical = revision !== null;
   const listSearchParams = new URLSearchParams(searchParams);
   listSearchParams.delete('revision');
   const listSearch = listSearchParams.toString();
-  const selectedNode = workspace && selectedNodeId
-    ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
-    : null;
-
-  const handleGraphSelection = useEffectEvent((nodeId: string) => {
-    console.info('[investigation-console] graph-selection', {
-      caseId,
-      revision: revision ?? 'head',
-      previousSelectedNodeId: selectedNodeId,
-      selectedNodeId: nodeId,
-      action: 'inspect-node'
-    });
-
-    setSelectedNodeId(nodeId);
-  });
-
-  async function handleMutationComplete() {
-    const nextSearch = listSearchParams.toString();
-    startTransition(() => {
-      navigate({
-        pathname: `/cases/${caseId}`,
-        search: nextSearch ? `?${nextSearch}` : ''
-      }, { replace: true });
-      setRevision(null);
-    });
-    requestRefresh();
-  }
 
   return (
     <section className="workspace-shell">
@@ -288,9 +144,12 @@ export function CaseWorkspaceRoute() {
             <GraphCanvas
               snapshot={workspace.snapshot}
               graph={workspace.graph}
-              onSelectNode={handleGraphSelection}
+              onSelectNode={() => undefined}
             />
           ) : null}
+        </section>
+
+        <aside className="workspace-rail workspace-rail-side">
           {workspace ? (
             <TimelineView
               timeline={workspace.timeline}
@@ -315,108 +174,9 @@ export function CaseWorkspaceRoute() {
               }}
             />
           ) : null}
-        </section>
-
-        <aside className="workspace-rail workspace-rail-side">
-          <InspectorPanel inspector={inspector} loading={inspectorLoading} />
-          <ActionPanel
-            caseId={caseId}
-            defaultInquiryId={typeof workspace?.snapshot.data.case?.defaultInquiryId === 'string'
-              ? workspace.snapshot.data.case.defaultInquiryId
-              : null}
-            currentRevision={currentRevision}
-            guardrails={workspace?.guardrails ?? null}
-            historical={historical}
-            onMutationComplete={handleMutationComplete}
-            selectedNode={selectedNode}
-          />
         </aside>
 
       </div>
     </section>
   );
-}
-
-function buildGraphBackedInspector(
-  node: GraphNodeRecord,
-  workspace: WorkspaceData
-): InspectorViewModel {
-  const relatedNodes = collectRelatedNodes(node.id, workspace.graph.data.nodes, workspace.graph.data.edges);
-  const coverageItems = workspace.coverage.data.items.filter((item) => item.supportingFactIds.includes(node.id));
-
-  switch (node.kind) {
-    case 'fact':
-      return {
-        kind: 'fact',
-        title: node.label,
-        status: node.status,
-        summary: '',
-        primaryItems: coverageItems.map((item) => item.statement),
-        secondaryItems: coverageItems.flatMap((item) => item.relatedHypothesisIds.map((hypothesisId) => findNodeLabel(workspace.graph.data.nodes, hypothesisId)))
-      };
-    case 'experiment':
-      return {
-        kind: 'experiment',
-        title: node.label,
-        status: node.status,
-        summary: '',
-        primaryItems: relatedNodes.filter((relatedNode) => relatedNode.kind === 'hypothesis').map((relatedNode) => relatedNode.label),
-        secondaryItems: []
-      };
-    case 'decision':
-      return {
-        kind: 'decision',
-        title: node.label,
-        status: node.status,
-        summary: '',
-        primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
-        secondaryItems: []
-      };
-    case 'gap':
-      return {
-        kind: 'gap',
-        title: node.label,
-        status: node.status,
-        summary: '',
-        primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
-        secondaryItems: []
-      };
-    case 'residual':
-      return {
-        kind: 'residual',
-        title: node.label,
-        status: node.status,
-        summary: '',
-        primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
-        secondaryItems: []
-      };
-    default:
-      return {
-        kind: 'node',
-        title: node.label,
-        status: node.status,
-        summary: '',
-        primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
-        secondaryItems: []
-      };
-  }
-}
-
-function collectRelatedNodes(
-  nodeId: string,
-  nodes: GraphNodeRecord[],
-  edges: Array<{ fromId: string; toId: string }>
-): GraphNodeRecord[] {
-  const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const relatedIds = edges
-    .filter((edge) => edge.fromId === nodeId || edge.toId === nodeId)
-    .map((edge) => edge.fromId === nodeId ? edge.toId : edge.fromId);
-
-  return uniqueStrings(relatedIds)
-    .map((relatedId) => nodeById.get(relatedId) ?? null)
-    .filter((node): node is GraphNodeRecord => node !== null);
-}
-
-function findNodeLabel(nodes: GraphNodeRecord[], nodeId: string): string {
-  return nodes.find((node) => node.id === nodeId)?.label ?? nodeId;
 }

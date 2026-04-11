@@ -53,6 +53,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - The case detail side rail no longer mounts the standalone guardrail panel or diff summary panel; keep the workspace focused on graph, timeline, inspector, and actions unless those modules regain a clear decision-making use case.
 - When pruning detail-page modules, also remove dead data fetches from the route so the page does not keep paying network and render cost for hidden panels.
 - Case-level stage advancement no longer lives in a fixed “next action” block; detail-page mutations should be driven from selected graph nodes and their related domain actions instead of a process-oriented control panel.
+- The side rail is now reserved for the timeline; when removing inspector or action panels from the workspace, also strip their selection state and resource reads so graph clicks do not keep hidden UI state alive.
 
 ## Locale Toggle Verification
 

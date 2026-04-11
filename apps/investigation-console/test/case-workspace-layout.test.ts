@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 describe('case workspace layout', () => {
-  test('renders the case graph before the timeline in the main column', () => {
+  test('renders the case graph in the main column and mounts the timeline in the side rail', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
@@ -12,10 +12,13 @@ describe('case workspace layout', () => {
 
     const graphIndex = source.indexOf('<GraphCanvas');
     const timelineIndex = source.indexOf('<TimelineView');
+    const sideRailIndex = source.indexOf('workspace-rail workspace-rail-side');
 
     expect(graphIndex).toBeGreaterThan(-1);
     expect(timelineIndex).toBeGreaterThan(-1);
-    expect(graphIndex).toBeLessThan(timelineIndex);
+    expect(sideRailIndex).toBeGreaterThan(-1);
+    expect(graphIndex).toBeLessThan(sideRailIndex);
+    expect(timelineIndex).toBeGreaterThan(sideRailIndex);
   });
 
   test('passes revision slider controls into the timeline module instead of rendering them in the header', () => {
@@ -90,5 +93,19 @@ describe('case workspace layout', () => {
     expect(source).not.toContain('<GuardrailView');
     expect(source).not.toContain('data-testid="workspace-diff-panel"');
     expect(source).not.toContain("t('workspace.diff')");
+  });
+
+  test('does not render inspector or action modules in the case detail layout', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+
+    expect(source).not.toContain('<InspectorPanel');
+    expect(source).not.toContain('<ActionPanel');
+    expect(source).not.toContain('getCaseCoverage(');
+    expect(source).not.toContain('getGuardrails(');
+    expect(source).not.toContain('getHypothesisPanel(');
+    expect(source).not.toContain('getInquiryPanel(');
   });
 });
