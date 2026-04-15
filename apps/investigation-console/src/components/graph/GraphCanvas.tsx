@@ -176,7 +176,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
             <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
           </div>
           {snapshot.historical ? (
-            <p className="history-banner graph-history-banner" data-testid="historical-mode">
+            <p className="history-banner graph-history-banner">
               {t('snapshot.historical')}
             </p>
           ) : null}
@@ -185,6 +185,9 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
               {summaryTags.map((tag) => (
                 <span key={tag}>{tag}</span>
               ))}
+            </div>
+            <div aria-label={t('graph.controls')} className="graph-controls-readout">
+              <span className="focus-chip">{snapshot.historical ? t('graph.historical') : t('graph.live')}</span>
             </div>
             <div aria-label={t('graph.legend')} className="graph-legend">
               <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
@@ -206,7 +209,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
         </div>
         {snapshot.historical ? (
-          <p className="history-banner graph-history-banner" data-testid="historical-mode">
+          <p className="history-banner graph-history-banner">
             {t('snapshot.historical')}
           </p>
         ) : null}
@@ -215,6 +218,9 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
             {summaryTags.map((tag) => (
               <span key={tag}>{tag}</span>
             ))}
+          </div>
+          <div aria-label={t('graph.controls')} className="graph-controls-readout">
+            <span className="focus-chip">{snapshot.historical ? t('graph.historical') : t('graph.live')}</span>
           </div>
           <div aria-label={t('graph.legend')} className="graph-legend">
             <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>

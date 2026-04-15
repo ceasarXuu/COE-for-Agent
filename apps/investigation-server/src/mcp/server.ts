@@ -13,6 +13,7 @@ import { investigationTelemetry } from '../telemetry.js';
 import { handleArtifactAttach } from '../modules/commands/artifact-attach.js';
 import { handleCaseAdvanceStage } from '../modules/commands/case-advance-stage.js';
 import { handleCaseOpen } from '../modules/commands/case-open.js';
+import { handleContextRegister } from '../modules/commands/context-register.js';
 import { handleDecisionRecord } from '../modules/commands/decision-record.js';
 import { handleEntityRegister } from '../modules/commands/entity-register.js';
 import { handleExperimentPlan } from '../modules/commands/experiment-plan.js';
@@ -24,6 +25,8 @@ import { handleHypothesisPropose } from '../modules/commands/hypothesis-propose.
 import { handleHypothesisUpdateStatus } from '../modules/commands/hypothesis-update-status.js';
 import { handleInquiryClose } from '../modules/commands/inquiry-close.js';
 import { handleInquiryOpen } from '../modules/commands/inquiry-open.js';
+import { handleIssueRecord } from '../modules/commands/issue-record.js';
+import { handleIssueResolve } from '../modules/commands/issue-resolve.js';
 import { handleResidualOpen } from '../modules/commands/residual-open.js';
 import { handleResidualUpdate } from '../modules/commands/residual-update.js';
 import { handleSymptomReport } from '../modules/commands/symptom-report.js';
@@ -102,6 +105,9 @@ export class InvestigationMcpServer {
       ? [
             ['investigation.case.open', (input) => handleCaseOpen(services, input)],
             ['investigation.case.advance_stage', (input) => handleCaseAdvanceStage(services, input)],
+            ['investigation.issue.record', (input) => handleIssueRecord(services, input)],
+            ['investigation.issue.resolve', (input) => handleIssueResolve(services, input)],
+            ['investigation.context.register', (input) => handleContextRegister(services, input)],
             ['investigation.inquiry.open', (input) => handleInquiryOpen(services, input)],
             ['investigation.inquiry.close', (input) => handleInquiryClose(services, input)],
             ['investigation.entity.register', (input) => handleEntityRegister(services, input)],

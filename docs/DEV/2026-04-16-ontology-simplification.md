@@ -37,6 +37,7 @@ For human operators and agents, the main graph should emphasize the reasoning pa
 ## Phase 1 implementation rules
 
 - Keep legacy commands and event names unchanged
+- Add canonical MCP aliases: `issue.record`, `issue.resolve`, `context.register`
 - Add `displayKind` and `issueKind` metadata to graph nodes
 - Filter `entity` nodes from the graph resource
 - Use `issue` as the lane and color family in the console graph
@@ -44,7 +45,7 @@ For human operators and agents, the main graph should emphasize the reasoning pa
 
 ## Follow-up work
 
-- Introduce a canonical `issue` write model and MCP aliases
+- Extend the canonical `issue` write model beyond compatibility wrappers into shared storage semantics
 - Unify issue-centric inspector and action flows
 - Revisit guardrails so they reason over normalized issue types instead of legacy symptom/gap/residual categories
 - Decide whether persistence should remain legacy-compatible or migrate to a physical `issues` table

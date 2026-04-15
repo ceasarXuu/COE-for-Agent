@@ -86,6 +86,23 @@ export function getAuthorizationRequirement(
   input: Record<string, unknown>
 ): AuthorizationRequirement {
   switch (commandName) {
+    case 'investigation.issue.resolve': {
+      const issueId = requireStringField(input, 'issueId');
+      const resolution = optionalString(input.resolution);
+      const reviewerOnly = issueId.startsWith('residual_')
+        ? resolution === 'accepted'
+        : issueId.startsWith('gap_')
+          ? resolution === 'accepted'
+          : false;
+
+      return buildRequirement(input, {
+        minimumRole: reviewerOnly ? 'Reviewer' : 'Operator',
+        reviewerOnly,
+        requiresConfirmToken: reviewerOnly,
+        targetIds: [issueId],
+        reasonText: optionalString(input.rationale) ?? ''
+      });
+    }
     case 'investigation.gap.resolve': {
       const status = optionalString(input.status);
       return buildRequirement(input, {

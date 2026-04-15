@@ -23,6 +23,7 @@
     "src/**/*.tsx",
     "test/**/*.ts",
     "vite.config.ts",
+    "playwright.config.ts",
     "e2e/**/*.ts"
   ]
 }

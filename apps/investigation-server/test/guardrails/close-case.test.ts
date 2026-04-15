@@ -42,7 +42,8 @@ describe.sequential('close_case guardrail', () => {
 
       expect(result).toMatchObject({
         pass: false,
-        blockingInquiryIds: expect.arrayContaining([inquiryId])
+        blockingInquiryIds: expect.arrayContaining([inquiryId]),
+        blockingIssueIds: expect.arrayContaining([inquiryId])
       });
     } finally {
       await app.close();
@@ -119,6 +120,7 @@ describe.sequential('close_case guardrail', () => {
         pass: false,
         blockingInquiryIds: [],
         blockingResidualIds: [],
+        blockingIssueIds: [],
         reasons: expect.arrayContaining([expect.stringMatching(/validation/i)])
       });
     } finally {

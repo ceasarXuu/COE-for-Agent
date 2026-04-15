@@ -51,7 +51,7 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             text:
               `Use the COE investigation MCP surface to open a new case for: ${problem}.\n` +
               `Treat ${environment} as the working environment label.\n` +
-              'Before proposing a fix, record symptoms, artifacts, and facts, then propose hypotheses and experiments.'
+              'Before proposing a fix, record issues, artifacts, and facts, then propose hypotheses and experiments.'
           }
         }
       ];
@@ -78,7 +78,7 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             type: 'text',
             text:
               `Review investigation case ${caseId} through MCP resources, summarize the current evidence chain, ` +
-              'run the ready_to_patch guardrail, and explain any blocking gaps or residual risks.'
+              'run the ready_to_patch guardrail, and explain any blocking issues or residual risks.'
           }
         }
       ];
@@ -105,7 +105,7 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             type: 'text',
             text:
               `Prepare a reviewer handoff for investigation case ${caseId}. ` +
-              'Summarize the case snapshot, timeline, active hypotheses, unresolved gaps, residual risks, ' +
+              'Summarize the case snapshot, timeline, active hypotheses, unresolved issues, residual risks, ' +
               'and any reviewer-only actions that still require explicit confirmation.'
           }
         }

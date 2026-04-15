@@ -10,6 +10,9 @@ export interface ToolRegistration {
 const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
   'investigation.case.open': 'commands/v1/case.open.request.schema.json',
   'investigation.case.advance_stage': 'commands/v1/case.advance_stage.request.schema.json',
+  'investigation.issue.record': 'commands/v1/issue.record.request.schema.json',
+  'investigation.issue.resolve': 'commands/v1/issue.resolve.request.schema.json',
+  'investigation.context.register': 'commands/v1/context.register.request.schema.json',
   'investigation.inquiry.open': 'commands/v1/inquiry.open.request.schema.json',
   'investigation.inquiry.close': 'commands/v1/inquiry.close.request.schema.json',
   'investigation.entity.register': 'commands/v1/entity.register.request.schema.json',
@@ -30,6 +33,9 @@ const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
 const TOOL_DESCRIPTION_BY_NAME: Record<string, string> = {
   'investigation.case.open': 'Open a new investigation case and create its default inquiry.',
   'investigation.case.advance_stage': 'Advance a case to the next investigation lifecycle stage.',
+  'investigation.issue.record': 'Record a canonical issue and route it to the compatible legacy investigation model.',
+  'investigation.issue.resolve': 'Resolve a canonical issue by routing to the compatible legacy lifecycle command.',
+  'investigation.context.register': 'Register investigation context using the simplified context terminology.',
   'investigation.inquiry.open': 'Open a follow-on inquiry inside an existing case.',
   'investigation.inquiry.close': 'Close or merge an existing inquiry.',
   'investigation.entity.register': 'Register an entity referenced by the investigation evidence graph.',

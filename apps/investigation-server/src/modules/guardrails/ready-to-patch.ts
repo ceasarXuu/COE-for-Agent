@@ -76,7 +76,9 @@ export async function handleGuardrailReadyToPatchCheck(
     candidatePatchRefs,
     blockingGapIds,
     blockingResidualIds,
+    blockingIssueIds: [...blockingGapIds, ...blockingResidualIds].sort(),
     uncoveredCriticalSymptomIds,
+    uncoveredCriticalIssueIds: [...uncoveredCriticalSymptomIds].sort(),
     incompleteExperimentIds: context.experiments
       .filter((record) => nodeStatus(record, 'planned') !== 'completed')
       .map((record) => record.id),

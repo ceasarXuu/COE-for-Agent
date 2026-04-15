@@ -63,7 +63,9 @@ export async function handleGuardrailCloseCaseCheck(
     pass: reasons.length === 0,
     blockingInquiryIds,
     blockingResidualIds,
+    blockingIssueIds: [...blockingInquiryIds, ...blockingResidualIds].sort(),
     missingValidationRefs,
+    missingValidationIssueIds: [...missingValidationRefs].sort(),
     reasons
   };
 }

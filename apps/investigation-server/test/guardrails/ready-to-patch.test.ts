@@ -121,7 +121,8 @@ describe.sequential('ready_to_patch guardrail', () => {
       expect(result).toMatchObject({
         pass: false,
         candidateHypothesisIds: expect.arrayContaining([hypothesisId]),
-        blockingResidualIds: expect.arrayContaining([residualId])
+        blockingResidualIds: expect.arrayContaining([residualId]),
+        blockingIssueIds: expect.arrayContaining([residualId])
       });
     } finally {
       await app.close();
@@ -227,7 +228,8 @@ describe.sequential('ready_to_patch guardrail', () => {
 
       expect(blocked).toMatchObject({
         pass: false,
-        blockingGapIds: expect.arrayContaining([gapId])
+        blockingGapIds: expect.arrayContaining([gapId]),
+        blockingIssueIds: expect.arrayContaining([gapId])
       });
 
       const resolved = await app.mcpServer.invokeTool('investigation.gap.resolve', {
@@ -246,7 +248,8 @@ describe.sequential('ready_to_patch guardrail', () => {
       expect(resolved.headRevisionAfter).toBeGreaterThan(revision);
       expect(unblocked).toMatchObject({
         pass: false,
-        blockingGapIds: []
+        blockingGapIds: [],
+        blockingIssueIds: []
       });
     } finally {
       await app.close();

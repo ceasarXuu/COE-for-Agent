@@ -32,7 +32,7 @@ test('high-risk stage changes require reviewer confirmation before mutation', as
   await expect(page.getByTestId('confirm-dialog')).toBeVisible();
   await page.getByTestId('confirm-submit').click();
 
-  await expect(page.getByTestId('snapshot-stage')).toHaveText('Repair preparation');
+  await expect(page.getByTestId('snapshot-stage')).toHaveText('Repair Preparation');
   await expect(page.getByTestId('revision-value')).toHaveText('6');
 });
 

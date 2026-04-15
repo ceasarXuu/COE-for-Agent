@@ -163,7 +163,7 @@ describe('action panel', () => {
     expect(experimentHtml).toContain('data-testid="action-record-experiment-result"');
   });
 
-  test('does not render case-level stage advancement controls when no node is selected', () => {
+  test('renders case-level stage advancement controls even when no node is selected', () => {
     const html = renderToStaticMarkup(
       createElement(ActionPanel, {
         caseId: 'case_01FIXTUREINVESTIGATION0001',
@@ -186,9 +186,8 @@ describe('action panel', () => {
       } as never)
     );
 
-    expect(html).not.toContain('data-testid="action-advance-stage"');
-    expect(html).not.toContain('Close case');
-    expect(html).not.toContain('推进到修复准备');
-    expect(html).not.toContain('data-testid="closure-decision-rationale"');
+    expect(html).toContain('data-testid="action-advance-stage"');
+    expect(html).toContain('Close case');
+    expect(html).toContain('data-testid="closure-decision-rationale"');
   });
 });

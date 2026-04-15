@@ -4,21 +4,26 @@ import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 describe('case workspace layout', () => {
-  test('renders the case graph in the main column and mounts the timeline in the side rail', () => {
+  test('renders the case graph in the main column and keeps the snapshot and control rails alongside it', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
     );
 
     const graphIndex = source.indexOf('<GraphCanvas');
-    const timelineIndex = source.indexOf('<TimelineView');
+    const snapshotIndex = source.indexOf('<SnapshotView');
+    const actionIndex = source.indexOf('<ActionPanel');
     const sideRailIndex = source.indexOf('workspace-rail workspace-rail-side');
+    const summaryRailIndex = source.indexOf('workspace-rail workspace-rail-summary');
 
     expect(graphIndex).toBeGreaterThan(-1);
-    expect(timelineIndex).toBeGreaterThan(-1);
+    expect(snapshotIndex).toBeGreaterThan(-1);
+    expect(actionIndex).toBeGreaterThan(-1);
     expect(sideRailIndex).toBeGreaterThan(-1);
+    expect(summaryRailIndex).toBeGreaterThan(-1);
     expect(graphIndex).toBeLessThan(sideRailIndex);
-    expect(timelineIndex).toBeGreaterThan(sideRailIndex);
+    expect(actionIndex).toBeGreaterThan(sideRailIndex);
+    expect(snapshotIndex).toBeGreaterThan(summaryRailIndex);
   });
 
   test('passes revision slider controls into the timeline module instead of rendering them in the header', () => {
@@ -74,39 +79,38 @@ describe('case workspace layout', () => {
     expect(source).not.toContain('focusId={selectedNodeId}');
   });
 
-  test('embeds snapshot tags into the graph module instead of rendering a separate snapshot panel', () => {
+  test('renders the snapshot panel in the summary rail while still feeding snapshot context into the graph', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
     );
 
     expect(source).toContain('snapshot={workspace.snapshot}');
-    expect(source).not.toContain('<SnapshotView');
+    expect(source).toContain('<SnapshotView');
   });
 
-  test('does not render guardrail or diff modules in the side rail', () => {
+  test('renders the guardrail module in the side rail and leaves the diff module removed', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
     );
 
-    expect(source).not.toContain('<GuardrailView');
+    expect(source).toContain('<GuardrailView');
     expect(source).not.toContain('data-testid="workspace-diff-panel"');
     expect(source).not.toContain("t('workspace.diff')");
   });
 
-  test('does not render inspector or action modules in the case detail layout', () => {
+  test('renders inspector and action modules and loads their data from panel resources', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
     );
 
-    expect(source).not.toContain('<InspectorPanel');
-    expect(source).not.toContain('<ActionPanel');
-    expect(source).not.toContain('getCaseCoverage(');
-    expect(source).not.toContain('getGuardrails(');
-    expect(source).not.toContain('getHypothesisPanel(');
-    expect(source).not.toContain('getInquiryPanel(');
+    expect(source).toContain('<InspectorPanel');
+    expect(source).toContain('<ActionPanel');
+    expect(source).toContain('getGuardrails(');
+    expect(source).toContain('getHypothesisPanel(');
+    expect(source).toContain('getInquiryPanel(');
   });
 
   test('stretches the graph and timeline stages to the available viewport height', () => {

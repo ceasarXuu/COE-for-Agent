@@ -5,7 +5,7 @@ import { FIXTURE_IDS } from './fixture-mcp-client.js';
 test('cases index filters the gallery without rendering an empty-state card', async ({ page }) => {
   await page.goto('/cases');
 
-  await expect(page.getByLabel('Search transcript')).toHaveAttribute('placeholder', 'symptom, objective, title…');
+  await expect(page.getByLabel('Search transcript')).toHaveAttribute('placeholder', 'issue, objective, title…');
   await expect(page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`)).toBeVisible();
 
   await page.goto('/cases?q=no-match-token');

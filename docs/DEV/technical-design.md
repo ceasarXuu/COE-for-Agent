@@ -588,6 +588,7 @@ sequenceDiagram
 MVP 工具集按 PRD 收口如下：
 
 - Case：investigation.case.open、investigation.case.advance_stage
+- Canonical compatibility layer：investigation.issue.record、investigation.issue.resolve、investigation.context.register
 - Inquiry：investigation.inquiry.open、investigation.inquiry.close
 - Entity：investigation.entity.register
 - Symptom / Evidence：investigation.symptom.report、investigation.artifact.attach、investigation.fact.assert

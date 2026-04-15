@@ -88,7 +88,7 @@ describe('graph canvas selection', () => {
     expect(html).not.toContain('data-testid="graph-clear-focus"');
     expect(html).not.toContain('焦点 hypothesis');
     expect(html).not.toContain('受理');
-    expect(html).not.toContain('实时切片');
+    expect(html).toContain('实时切片');
     expect(html).not.toContain('缩放');
     expect(html).not.toContain('graph-meta-row');
     expect(html).not.toContain('严重');
