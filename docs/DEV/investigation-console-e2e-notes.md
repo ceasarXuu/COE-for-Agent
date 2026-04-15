@@ -74,3 +74,9 @@ pnpm --filter @coe/investigation-console test:e2e
 - Timeline revision controls should stay hidden when the case has fewer than two revisions; showing a `1 -> 1` slider adds noise without adding any history navigation value.
 - The stable regression check is package-local: `pnpm --filter @coe/investigation-console test -- timeline-view.test.ts`.
 - Keep the guard in `TimelineView` itself so any caller that passes revision controls for a single-revision snapshot still renders the correct UI.
+
+## Revision Slider Dragging
+
+- Keep the revision range input on a local draft value while dragging, then let route state catch up; binding the thumb directly to async workspace revision state makes the slider feel like it snaps back before the pointer reaches the end.
+- Do not wire both `onChange` and `onInput` on the same React range input. React already normalizes range updates through `onChange`, and doubling the handler causes duplicate navigation churn during drag.
+- A quick manual regression check is enough when fixture servers are running: drag the slider to the far left and far right and confirm both the visible revision label and the URL reach `?revision=1` and head mode respectively.

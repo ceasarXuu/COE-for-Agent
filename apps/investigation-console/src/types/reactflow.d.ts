@@ -15,6 +15,14 @@ declare module 'reactflow' {
     type?: string;
     data?: Record<string, unknown>;
   }
+
+  export interface NodeChange {
+    id: string;
+    type: string;
+    dragging?: boolean;
+    position?: { x: number; y: number };
+    [key: string]: unknown;
+  }
   
   export interface NodeProps<T = unknown> {
     id: string;
@@ -63,11 +71,16 @@ declare module 'reactflow' {
     sourcePosition?: Position;
     targetPosition?: Position;
   }): [string, number, number, number, number];
+
+  export function applyNodeChanges<T = unknown>(changes: NodeChange[], nodes: Node<T>[]): Node<T>[];
   
   export const ReactFlow: ComponentType<{
     nodes: Node[];
     edges: Edge[];
     onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+    onNodeDragStop?: (event: React.MouseEvent, node: Node) => void;
+    onNodesChange?: (changes: NodeChange[]) => void;
+    onMoveEnd?: (event: MouseEvent | TouchEvent | null, viewport: { x: number; y: number; zoom: number }) => void;
     nodeTypes?: Record<string, ComponentType<NodeProps>>;
     edgeTypes?: Record<string, ComponentType<EdgeProps>>;
     fitView?: boolean;
@@ -78,6 +91,10 @@ declare module 'reactflow' {
     nodesDraggable?: boolean;
     nodesConnectable?: boolean;
     elementsSelectable?: boolean;
+    selectionOnDrag?: boolean;
+    panActivationKeyCode?: null | string;
+    panOnDrag?: boolean | number[];
+    autoPanOnNodeDrag?: boolean;
     children?: React.ReactNode;
   }>;
   

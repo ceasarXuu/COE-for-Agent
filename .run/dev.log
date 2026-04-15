@@ -39,3 +39,6 @@
 @coe/investigation-console:dev: [1] 1:01:21 AM [vite] (client) hmr update /src/styles/main.css
 @coe/investigation-console:dev: [1] 1:03:28 AM [vite] (client) hmr update /src/styles/main.css
 @coe/investigation-console:dev: [1] 2:14:48 AM [vite] (client) hmr update /src/components/timeline-view.tsx
+@coe/investigation-console:dev: [1] 2:18:42 AM [vite] (client) hmr update /src/components/graph/GraphCanvas.tsx
+@coe/investigation-console:dev: [1] 2:21:16 AM [vite] (client) hmr update /src/components/graph/GraphCanvas.tsx
+@coe/investigation-console:dev: [1] 2:26:37 AM [vite] (client) hmr update /src/components/revision-slider.tsx

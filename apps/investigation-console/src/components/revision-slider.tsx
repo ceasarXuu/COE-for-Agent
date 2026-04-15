@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import { useI18n } from '../lib/i18n.js';
 
 export function RevisionSlider(props: {
@@ -6,9 +8,16 @@ export function RevisionSlider(props: {
   onChange: (revision: number) => void;
 }) {
   const { t } = useI18n();
+  const [draftRevision, setDraftRevision] = useState(props.currentRevision);
+
+  useEffect(() => {
+    setDraftRevision(props.currentRevision);
+  }, [props.currentRevision]);
 
   const handleRevisionChange = (revisionValue: string) => {
-    props.onChange(Number(revisionValue));
+    const revision = Number(revisionValue);
+    setDraftRevision(revision);
+    props.onChange(revision);
   };
 
   return (
@@ -19,14 +28,13 @@ export function RevisionSlider(props: {
         max={props.maxRevision}
         min={1}
         onChange={(event) => handleRevisionChange(event.currentTarget.value)}
-        onInput={(event) => handleRevisionChange((event.currentTarget as HTMLInputElement).value)}
         step={1}
         type="range"
-        value={props.currentRevision}
+        value={draftRevision}
       />
       <div className="revision-scale">
         <span>1</span>
-        <span data-testid="revision-value">{props.currentRevision}</span>
+        <span data-testid="revision-value">{draftRevision}</span>
         <span>{props.maxRevision}</span>
       </div>
     </label>

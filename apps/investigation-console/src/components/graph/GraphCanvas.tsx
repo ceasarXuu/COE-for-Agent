@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
-import ReactFlow, { 
-  Background, 
-  Controls, 
+import { useEffect, useMemo, useState } from 'react';
+import ReactFlow, {
+  Background,
+  Controls,
   MiniMap,
+  applyNodeChanges,
   type Node,
+  type NodeChange,
   type Edge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -48,10 +50,11 @@ interface GraphCanvasProps {
 
 export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps) {
   const { compareText, formatEnumLabel, t } = useI18n();
-  const layout = useGraphLayout(graph, compareText);
+  const layout = useMemo(() => useGraphLayout(graph, compareText), [compareText, graph]);
   const caseRecord = snapshot.data.case;
-  
-  const nodes: Node<GraphNodeViewData>[] = useMemo(() => {
+  const caseId = caseRecord?.id ?? null;
+
+  const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
       id: node.id,
       type: node.type,
@@ -64,7 +67,13 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       }
     }));
   }, [formatEnumLabel, layout.nodes, t]);
-  
+
+  const [nodes, setNodes] = useState<Node<GraphNodeViewData>[]>(() => baseNodes);
+
+  useEffect(() => {
+    setNodes(baseNodes);
+  }, [baseNodes]);
+
   const edges: Edge[] = useMemo(() => {
     return layout.edges.map((edge) => ({
       id: edge.id,
@@ -74,6 +83,27 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       data: edge.data ?? {}
     }));
   }, [layout.edges]);
+
+  const handleNodesChange = (changes: NodeChange[]) => {
+    setNodes((currentNodes) => applyNodeChanges(changes, currentNodes));
+  };
+
+  const handleNodeDragStop = (_event: React.MouseEvent, node: Node<GraphNodeViewData>) => {
+    console.info('[investigation-console] graph-node-repositioned', {
+      caseId,
+      nodeId: node.id,
+      position: node.position,
+      source: 'graph-canvas'
+    });
+  };
+
+  const handleMoveEnd = (_event: MouseEvent | TouchEvent | null, viewport: { x: number; y: number; zoom: number }) => {
+    console.info('[investigation-console] graph-viewport-updated', {
+      caseId,
+      source: 'graph-canvas',
+      viewport
+    });
+  };
 
   const summaryTags = [
     t('snapshot.inquiries', { count: snapshot.data.counts.inquiries }),
@@ -151,9 +181,16 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           minZoom={0.5}
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-          nodesDraggable={false}
+          nodesDraggable
           nodesConnectable={false}
           elementsSelectable
+          selectionOnDrag={false}
+          panOnDrag={[0]}
+          panActivationKeyCode="Space"
+          autoPanOnNodeDrag={false}
+          onNodesChange={handleNodesChange}
+          onNodeDragStop={handleNodeDragStop}
+          onMoveEnd={handleMoveEnd}
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => onSelectNode(node.id)}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />

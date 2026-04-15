@@ -163,4 +163,140 @@ describe('graph canvas selection', () => {
     expect(capturedProps?.onPaneClick).toBeUndefined();
     expect(typeof capturedProps?.onNodeClick).toBe('function');
   });
+
+  test('lets nodes drag while limiting canvas panning to blank-pane drags or holding space', () => {
+    renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'en',
+        children: createElement(GraphCanvas, {
+          snapshot: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              case: {
+                id: 'case_01',
+                title: 'debug',
+                severity: 'critical',
+                status: 'active',
+                stage: 'intake',
+                revision: 5,
+                objective: 'debug'
+              },
+              counts: {
+                inquiries: 1,
+                symptoms: 0,
+                artifacts: 0,
+                facts: 0
+              },
+              warnings: []
+            }
+          },
+          graph: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              focusId: null,
+              nodes: [
+                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
+                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
+              ],
+              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
+            }
+          },
+          onSelectNode() {
+            return;
+          }
+        })
+      })
+    );
+
+    expect(capturedProps?.nodesDraggable).toBe(true);
+    expect(capturedProps?.panOnDrag).toEqual([0]);
+    expect(capturedProps?.panActivationKeyCode).toBe('Space');
+    expect(capturedProps?.selectionOnDrag).toBe(false);
+    expect(capturedProps?.autoPanOnNodeDrag).toBe(false);
+    expect(typeof capturedProps?.onNodesChange).toBe('function');
+  });
+
+  test('logs node repositioning and viewport moves for graph interaction debugging', () => {
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+    renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'en',
+        children: createElement(GraphCanvas, {
+          snapshot: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              case: {
+                id: 'case_01',
+                title: 'debug',
+                severity: 'critical',
+                status: 'active',
+                stage: 'intake',
+                revision: 5,
+                objective: 'debug'
+              },
+              counts: {
+                inquiries: 1,
+                symptoms: 0,
+                artifacts: 0,
+                facts: 0
+              },
+              warnings: []
+            }
+          },
+          graph: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              focusId: null,
+              nodes: [
+                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
+                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
+              ],
+              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
+            }
+          },
+          onSelectNode() {
+            return;
+          }
+        })
+      })
+    );
+
+    const onNodeDragStop = capturedProps?.onNodeDragStop as ((event: unknown, node: { id: string; position: { x: number; y: number } }) => void) | undefined;
+    const onMoveEnd = capturedProps?.onMoveEnd as ((event: unknown, viewport: { x: number; y: number; zoom: number }) => void) | undefined;
+
+    expect(typeof onNodeDragStop).toBe('function');
+    expect(typeof onMoveEnd).toBe('function');
+
+    onNodeDragStop?.({}, { id: 'fact_01', position: { x: 144, y: 233 } });
+    onMoveEnd?.({}, { x: -28, y: 64, zoom: 1.25 });
+
+    expect(infoSpy).toHaveBeenCalledWith('[investigation-console] graph-node-repositioned', {
+      caseId: 'case_01',
+      nodeId: 'fact_01',
+      position: { x: 144, y: 233 },
+      source: 'graph-canvas'
+    });
+    expect(infoSpy).toHaveBeenCalledWith('[investigation-console] graph-viewport-updated', {
+      caseId: 'case_01',
+      source: 'graph-canvas',
+      viewport: { x: -28, y: 64, zoom: 1.25 }
+    });
+  });
 });

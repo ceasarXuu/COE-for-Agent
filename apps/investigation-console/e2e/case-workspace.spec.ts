@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { FIXTURE_IDS } from './fixture-mcp-client.js';
 
@@ -193,3 +193,78 @@ test('workspace graph surface includes orientation copy for graph state and cont
   await expect(graphStage.getByLabel('Graph controls')).toBeVisible();
   await expect(graphStage.getByLabel('Graph controls').getByText('live slice')).toBeVisible();
 });
+
+test('workspace graph pans only from blank-pane drags or space-drag and keeps plain node drags for repositioning', async ({ page }) => {
+  await page.goto('/cases');
+  await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
+
+  const pane = page.locator('.react-flow__pane');
+  const viewport = page.locator('.react-flow__viewport');
+  const node = page.locator(`.react-flow__node[data-id="${FIXTURE_IDS.hypothesisId}"]`);
+
+  await expect(pane).toBeVisible();
+  await expect(viewport).toBeVisible();
+  await expect(node).toBeVisible();
+
+  const viewportBeforePaneDrag = await readTransform(viewport);
+  const nodeBeforePaneDrag = await readTransform(node);
+
+  await dragPointer(page, await pointInLocator(pane, 72, 72), { x: 144, y: 96 });
+
+  await expect.poll(() => readTransform(viewport)).not.toBe(viewportBeforePaneDrag);
+  const viewportAfterPaneDrag = await readTransform(viewport);
+  expect(await readTransform(node)).toBe(nodeBeforePaneDrag);
+
+  const nodeBeforeNodeDrag = await readTransform(node);
+
+  await dragPointer(page, await centerOf(node), { x: 128, y: 0 });
+
+  await expect.poll(() => readTransform(node)).not.toBe(nodeBeforeNodeDrag);
+  await expect.poll(() => readTransform(viewport)).toBe(viewportAfterPaneDrag);
+  const nodeAfterNodeDrag = await readTransform(node);
+
+  const viewportBeforeSpaceDrag = await readTransform(viewport);
+
+  await page.keyboard.down('Space');
+  try {
+    await dragPointer(page, await centerOf(node), { x: -108, y: 84 });
+  } finally {
+    await page.keyboard.up('Space');
+  }
+
+  await expect.poll(() => readTransform(viewport)).not.toBe(viewportBeforeSpaceDrag);
+  await expect.poll(() => readTransform(node)).toBe(nodeAfterNodeDrag);
+});
+
+async function readTransform(locator: Locator) {
+  return locator.evaluate((element) => getComputedStyle(element).transform);
+}
+
+async function centerOf(locator: Locator) {
+  const box = await locator.boundingBox();
+
+  expect(box).not.toBeNull();
+
+  return {
+    x: (box?.x ?? 0) + (box?.width ?? 0) / 2,
+    y: (box?.y ?? 0) + (box?.height ?? 0) / 2
+  };
+}
+
+async function pointInLocator(locator: Locator, offsetX: number, offsetY: number) {
+  const box = await locator.boundingBox();
+
+  expect(box).not.toBeNull();
+
+  return {
+    x: (box?.x ?? 0) + offsetX,
+    y: (box?.y ?? 0) + offsetY
+  };
+}
+
+async function dragPointer(page: Page, start: { x: number; y: number }, delta: { x: number; y: number }) {
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + delta.x, start.y + delta.y, { steps: 12 });
+  await page.mouse.up();
+}
