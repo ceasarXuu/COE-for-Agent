@@ -195,6 +195,7 @@ test('workspace graph surface includes orientation copy for graph state and cont
 });
 
 test('workspace graph pans only from blank-pane drags or space-drag and keeps plain node drags for repositioning', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 1400 });
   await page.goto('/cases');
   await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
 
@@ -206,24 +207,26 @@ test('workspace graph pans only from blank-pane drags or space-drag and keeps pl
   await expect(viewport).toBeVisible();
   await expect(node).toBeVisible();
 
-  const viewportBeforePaneDrag = await readTransform(viewport);
-  const nodeBeforePaneDrag = await readTransform(node);
-
-  await dragPointer(page, await pointInLocator(pane, 72, 72), { x: 144, y: 96 });
-
-  await expect.poll(() => readTransform(viewport)).not.toBe(viewportBeforePaneDrag);
-  const viewportAfterPaneDrag = await readTransform(viewport);
-  expect(await readTransform(node)).toBe(nodeBeforePaneDrag);
-
   const nodeBeforeNodeDrag = await readTransform(node);
+  const viewportBeforeNodeDrag = await readTransform(viewport);
 
   await dragPointer(page, await centerOf(node), { x: 128, y: 0 });
 
   await expect.poll(() => readTransform(node)).not.toBe(nodeBeforeNodeDrag);
-  await expect.poll(() => readTransform(viewport)).toBe(viewportAfterPaneDrag);
+  await expect.poll(() => readTransform(viewport)).toBe(viewportBeforeNodeDrag);
   const nodeAfterNodeDrag = await readTransform(node);
 
+  const viewportBeforePaneDrag = await readTransform(viewport);
+  const nodeBeforePaneDrag = await readTransform(node);
+
+  await dragPointer(page, await pointInLocator(pane, 72, 72), { x: 96, y: 72 });
+
+  await expect.poll(() => readTransform(viewport)).not.toBe(viewportBeforePaneDrag);
+  const viewportAfterPaneDrag = await readTransform(viewport);
+  await expect.poll(() => readTransform(node)).toBe(nodeBeforePaneDrag);
+
   const viewportBeforeSpaceDrag = await readTransform(viewport);
+  const nodeBeforeSpaceDrag = await readTransform(node);
 
   await page.keyboard.down('Space');
   try {
@@ -233,7 +236,7 @@ test('workspace graph pans only from blank-pane drags or space-drag and keeps pl
   }
 
   await expect.poll(() => readTransform(viewport)).not.toBe(viewportBeforeSpaceDrag);
-  await expect.poll(() => readTransform(node)).toBe(nodeAfterNodeDrag);
+  await expect.poll(() => readTransform(node)).toBe(nodeBeforeSpaceDrag);
 });
 
 async function readTransform(locator: Locator) {

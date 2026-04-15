@@ -53,6 +53,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   const layout = useMemo(() => useGraphLayout(graph, compareText), [compareText, graph]);
   const caseRecord = snapshot.data.case;
   const caseId = caseRecord?.id ?? null;
+  const [isSpacePanning, setIsSpacePanning] = useState(false);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
@@ -73,6 +74,59 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   useEffect(() => {
     setNodes(baseNodes);
   }, [baseNodes]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      return (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target.isContentEditable
+      );
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' || isEditableTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      setIsSpacePanning(true);
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code !== 'Space') {
+        return;
+      }
+
+      if (!isEditableTarget(event.target)) {
+        event.preventDefault();
+      }
+      setIsSpacePanning(false);
+    };
+
+    const handleWindowBlur = () => {
+      setIsSpacePanning(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, []);
 
   const edges: Edge[] = useMemo(() => {
     return layout.edges.map((edge) => ({
@@ -181,7 +235,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           minZoom={0.5}
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-          nodesDraggable
+          nodesDraggable={!isSpacePanning}
           nodesConnectable={false}
           elementsSelectable
           selectionOnDrag={false}
