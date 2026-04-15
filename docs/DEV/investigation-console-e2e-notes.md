@@ -61,3 +61,16 @@ pnpm --filter @coe/investigation-console test:e2e
 - The console stores manual locale overrides in `localStorage["investigation-console.locale"]`; if verification looks “stuck,” clear that key before assuming browser detection is broken.
 - Expected baseline behavior is English by default, with automatic switch to Simplified Chinese only when no stored override exists and the browser reports a `zh*` language preference.
 - When validating regressions, check both the visible header labels and `document.documentElement.lang` so copy and accessibility state stay aligned.
+
+## Workspace Height Chain
+
+- For the case detail page, full-height graph and timeline panels depend on the entire chain staying shrinkable: `layout-main -> workspace-shell -> workspace-grid -> workspace-main/workspace-rail`.
+- The root `.layout` must also be pinned to the viewport with an explicit height, not just `min-height`; otherwise the workspace can still grow the whole page past the browser bottom after graph content loads.
+- If either the parent flex container loses `min-height: 0`, or the grid keeps `align-items: start`, the right-hand timeline will collapse back to content height and the graph will stop consuming the remaining viewport.
+- Keep the timeline panel itself as a flex column with the event list scrolling internally; that preserves a full-height shell without forcing the whole page to grow with long histories.
+
+## Revision Slider Visibility
+
+- Timeline revision controls should stay hidden when the case has fewer than two revisions; showing a `1 -> 1` slider adds noise without adding any history navigation value.
+- The stable regression check is package-local: `pnpm --filter @coe/investigation-console test -- timeline-view.test.ts`.
+- Keep the guard in `TimelineView` itself so any caller that passes revision controls for a single-revision snapshot still renders the correct UI.

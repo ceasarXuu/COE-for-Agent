@@ -139,7 +139,7 @@ export function CaseWorkspaceRoute() {
 
       <div className="workspace-grid">
         <section className="workspace-main">
-          {loading && !workspace ? <section className="panel graph-stage"><p>{t('workspace.replaying')}</p></section> : null}
+          {loading && !workspace ? <section className="panel graph-stage workspace-stage-fill"><p>{t('workspace.replaying')}</p></section> : null}
           {workspace ? (
             <GraphCanvas
               snapshot={workspace.snapshot}

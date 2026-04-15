@@ -44,4 +44,43 @@ describe('timeline view', () => {
     expect(html).toContain('修订同步');
     expect(html).toContain('data-testid="revision-slider"');
   });
+
+  test('hides revision sync controls when fewer than two revisions exist', () => {
+    const html = renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'zh-CN',
+        children: createElement(TimelineView, {
+          timeline: {
+            headRevision: 1,
+            projectionRevision: 1,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              events: [
+                {
+                  eventId: 'event_01',
+                  eventType: 'case.opened',
+                  caseRevision: 1,
+                  occurredAt: '2026-04-11T00:00:00.000Z',
+                  summary: 'case opened'
+                }
+              ]
+            }
+          },
+          revisionControls: {
+            currentRevision: 1,
+            maxRevision: 1,
+            onChange() {
+              return;
+            }
+          }
+        })
+      })
+    );
+
+    expect(html).toContain('时间线');
+    expect(html).not.toContain('修订同步');
+    expect(html).not.toContain('data-testid="revision-slider"');
+  });
 });

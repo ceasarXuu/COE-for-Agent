@@ -84,7 +84,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   
   if (nodes.length === 0) {
     return (
-      <section className="panel panel-primary graph-stage" data-testid="graph-stage">
+      <section className="panel panel-primary graph-stage workspace-stage-fill" data-testid="graph-stage">
         <div className="graph-header">
           <div className="graph-title-block">
             <p className="panel-kicker">{t('graph.caseGraph')}</p>
@@ -114,7 +114,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   }
   
   return (
-    <section className="panel panel-primary graph-stage" data-testid="graph-stage">
+    <section className="panel panel-primary graph-stage workspace-stage-fill" data-testid="graph-stage">
       <div className="graph-header">
         <div className="graph-title-block">
           <p className="panel-kicker">{t('graph.caseGraph')}</p>

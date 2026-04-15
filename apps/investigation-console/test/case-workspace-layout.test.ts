@@ -108,4 +108,29 @@ describe('case workspace layout', () => {
     expect(source).not.toContain('getHypothesisPanel(');
     expect(source).not.toContain('getInquiryPanel(');
   });
+
+  test('stretches the graph and timeline stages to the available viewport height', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
+      'utf8'
+    );
+    const css = readFileSync(
+      resolve(import.meta.dirname, '../src/styles/app.css'),
+      'utf8'
+    );
+    const layoutCss = readFileSync(
+      resolve(import.meta.dirname, '../src/styles/molecules/layout.css'),
+      'utf8'
+    );
+
+    expect(source).toContain('className="workspace-grid"');
+    expect(source).toContain('className="panel graph-stage workspace-stage-fill"');
+    expect(css).toContain('grid-template-rows: minmax(0, 1fr);');
+    expect(css).toContain('align-items: stretch;');
+    expect(css).toContain('.workspace-stage-fill');
+    expect(css).toContain('.timeline-stage');
+    expect(css).toContain('overflow: auto;');
+    expect(layoutCss).toContain('height: 100vh;');
+    expect(layoutCss).toContain('overflow: hidden;');
+  });
 });

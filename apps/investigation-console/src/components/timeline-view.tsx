@@ -11,11 +11,12 @@ export function TimelineView(props: {
   };
 }) {
   const { formatEventType, t } = useI18n();
+  const shouldShowRevisionControls = (props.revisionControls?.maxRevision ?? 0) >= 2;
 
   return (
-    <section className="panel panel-diagnostic workspace-stage">
+    <section className="panel panel-diagnostic workspace-stage timeline-stage workspace-stage-fill">
       <p className="panel-kicker">{t('timeline.kicker')}</p>
-      {props.revisionControls ? (
+      {shouldShowRevisionControls && props.revisionControls ? (
         <RevisionSlider
           currentRevision={props.revisionControls.currentRevision}
           maxRevision={props.revisionControls.maxRevision}
