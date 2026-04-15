@@ -97,6 +97,8 @@ export interface CaseTimelineEnvelope {
 export interface GraphNodeRecord {
   id: string;
   kind: string;
+  displayKind?: string;
+  issueKind?: string | null;
   label: string;
   status: string | null;
   revision: number;

@@ -62,11 +62,19 @@ describe('graph canvas selection', () => {
             data: {
               focusId: null,
               nodes: [
-                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
+                {
+                  id: 'symptom_01',
+                  kind: 'symptom',
+                  displayKind: 'issue',
+                  issueKind: 'symptom',
+                  label: 'queue depth spikes',
+                  status: 'open',
+                  revision: 4
+                },
                 { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
               ],
               edges: [
-                { key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }
+                { key: 'explains-1', type: 'explains', fromId: 'hypothesis_01', toId: 'symptom_01' }
               ]
             }
           },
@@ -85,10 +93,10 @@ describe('graph canvas selection', () => {
     expect(html).not.toContain('graph-meta-row');
     expect(html).not.toContain('严重');
     expect(html).toContain('graph-summary-row');
-    expect(html).toContain('问题 1');
-    expect(html).toContain('症状 0');
+    expect(html).toContain('事项 1');
     expect(html).toContain('证据 0');
     expect(html).toContain('事实 0');
+    expect(html).toContain('假设 1');
     expect(html).not.toContain('2 个节点');
     expect(html).not.toContain('1 条连线');
     expect(html).toContain('支撑');
@@ -104,6 +112,7 @@ describe('graph canvas selection', () => {
 
     expect(nodes?.every((node) => node.data.isSelected === undefined)).toBe(true);
     expect(nodes?.every((node) => node.data.isFocus === undefined)).toBe(true);
+    expect(nodes?.some((node) => (node as { type?: string }).type === 'issue')).toBe(true);
   });
 
   test('only selects nodes through node click callbacks and does not clear on pane clicks', () => {

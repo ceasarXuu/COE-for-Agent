@@ -596,6 +596,16 @@ MVP 工具集按 PRD 收口如下：
 - Decision：investigation.decision.record
 - Guardrails：investigation.guardrail.check、investigation.guardrail.stall_check、investigation.guardrail.ready_to_patch_check、investigation.guardrail.close_case_check
 
+#### Graph presentation simplification
+
+为降低人和 agent 在 Console 中使用案件图的认知负担，当前实现增加了一层兼容式图展示语义：
+
+- `inquiry`、`symptom`、`gap`、`residual` 在 graph resource 中统一标记为 `displayKind=issue`
+- `entity` 不再进入主图节点集合，转为上下文语义
+- legacy `kind` 仍保留在 graph node payload 中，供 action、inspector、export 和兼容逻辑继续使用
+
+这意味着当前的“简化”发生在 projection / console 层，而不是命令和事件层；写模型仍兼容 MVP 的原始词汇。
+
 MVP 不新增独立的 `investigation.case.close` tool。结案流程固定为三步：
 
 1. `investigation.guardrail.close_case_check`

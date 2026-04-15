@@ -22,10 +22,13 @@ import { InquiryNode } from './nodes/InquiryNode.js';
 import { SymptomNode } from './nodes/SymptomNode.js';
 import { ArtifactNode } from './nodes/ArtifactNode.js';
 import { EntityNode } from './nodes/EntityNode.js';
+import { IssueNode } from './nodes/IssueNode.js';
 import type { GraphNodeViewData } from './nodes/GraphNodeCard.js';
 import { GlowingEdge } from './edges/GlowingEdge.js';
+import { getDisplayKind, getIssueSubtypeLabel, summarizeGraphNodes } from './graph-node-presentation.js';
 
 const nodeTypes = {
+  issue: IssueNode,
   hypothesis: HypothesisNode,
   fact: FactNode,
   experiment: ExperimentNode,
@@ -62,7 +65,10 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       position: node.position,
       data: {
         ...node.data,
-        kindLabel: formatEnumLabel(node.data.kind),
+        kindLabel: formatEnumLabel(getDisplayKind(node.data)),
+        kindDetailLabel: getIssueSubtypeLabel(node.data)
+          ? formatEnumLabel(getIssueSubtypeLabel(node.data) ?? '')
+          : null,
         revisionLabel: t('graph.revision', { revision: node.data.revision }),
         statusLabel: formatEnumLabel(node.data.status ?? 'stateless')
       }
@@ -159,12 +165,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     });
   };
 
-  const summaryTags = [
-    t('snapshot.inquiries', { count: snapshot.data.counts.inquiries }),
-    t('snapshot.symptoms', { count: snapshot.data.counts.symptoms }),
-    t('snapshot.artifacts', { count: snapshot.data.counts.artifacts }),
-    t('snapshot.facts', { count: snapshot.data.counts.facts })
-  ];
+  const summaryTags = summarizeGraphNodes(graph.data.nodes).map((item) => `${formatEnumLabel(item.kind)} ${item.count}`);
   
   if (nodes.length === 0) {
     return (
@@ -262,6 +263,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
 
 function getNodeColor(nodeType: string | undefined): string {
   const colors: Record<string, string> = {
+    issue: '#3b82f6',
     hypothesis: '#a855f7',
     fact: '#00f0ff',
     experiment: '#22c55e',

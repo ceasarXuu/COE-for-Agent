@@ -52,6 +52,7 @@ describe('schema registry', () => {
     expect(existsSync(join(schemasRoot, 'common/base-node.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'domain/v1/fact.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'domain/v1/hypothesis.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'domain/v1/issue.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'domain/v1/decision.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'resources/v1/cases.collection.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'resources/v1/case.diff.schema.json'))).toBe(true);

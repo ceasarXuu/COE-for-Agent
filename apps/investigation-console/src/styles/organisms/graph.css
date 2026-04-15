@@ -90,6 +90,12 @@
   margin-bottom: var(--space-2);
 }
 
+.node-type-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .node-type {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -127,6 +133,12 @@
   color: var(--fg-4);
 }
 
+.node-type-detail {
+  color: var(--fg-3);
+  font-size: var(--text-xs);
+  text-transform: none;
+}
+
 .node-handle {
   width: 12px;
   height: 12px;
@@ -143,6 +155,16 @@
 .graph-node-hypothesis:hover {
   border-color: var(--accent-purple);
   box-shadow: var(--shadow-lg), var(--glow-purple);
+}
+
+.graph-node-issue {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), var(--bg-2));
+}
+
+.graph-node-issue:hover {
+  border-color: #3b82f6;
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 .graph-node-fact {

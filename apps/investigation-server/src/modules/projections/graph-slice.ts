@@ -4,6 +4,8 @@ import { listProjectedNodes, type ProjectedCaseState } from './replay.js';
 export interface GraphNode {
   id: string;
   kind: string;
+  displayKind?: string;
+  issueKind?: string | null;
   label: string;
   status: string | null;
   revision: number;
@@ -44,6 +46,8 @@ export function buildGraphSlice(
     nodes.set(state.caseRecord.id, {
       id: state.caseRecord.id,
       kind: 'case',
+      displayKind: 'case',
+      issueKind: null,
       label: state.caseRecord.title ?? state.caseRecord.id,
       status: state.caseRecord.status,
       revision: state.caseRecord.revision
@@ -51,17 +55,24 @@ export function buildGraphSlice(
   }
 
   for (const record of listProjectedNodes(state)) {
+    const display = classifyGraphNode(record.kind);
+    if (!display.include) {
+      continue;
+    }
+
     const payload = asObject(record.payload);
     nodes.set(record.id, {
       id: record.id,
       kind: record.kind,
+      displayKind: display.displayKind,
+      issueKind: display.issueKind,
       label: graphNodeLabel(payload, record.id),
       status: record.status,
       revision: record.revision
     });
   }
 
-  const edges = deriveProjectionEdges(state);
+  const edges = deriveProjectionEdges(state).filter((edge) => nodes.has(edge.fromId) && nodes.has(edge.toId));
   const focusId = options.focusId ?? null;
   const depth = Math.max(options.depth ?? 1, 1);
 
@@ -104,4 +115,49 @@ export function buildGraphSlice(
       .sort((left, right) => left.id.localeCompare(right.id)),
     edges: edges.filter((edge) => selectedEdgeKeys.has(edge.key))
   };
+}
+
+function classifyGraphNode(kind: string): {
+  include: boolean;
+  displayKind: string;
+  issueKind: string | null;
+} {
+  switch (kind) {
+    case 'entity':
+      return {
+        include: false,
+        displayKind: 'context',
+        issueKind: null
+      };
+    case 'inquiry':
+      return {
+        include: true,
+        displayKind: 'issue',
+        issueKind: 'question'
+      };
+    case 'symptom':
+      return {
+        include: true,
+        displayKind: 'issue',
+        issueKind: 'symptom'
+      };
+    case 'gap':
+      return {
+        include: true,
+        displayKind: 'issue',
+        issueKind: 'blocking_issue'
+      };
+    case 'residual':
+      return {
+        include: true,
+        displayKind: 'issue',
+        issueKind: 'residual_risk'
+      };
+    default:
+      return {
+        include: true,
+        displayKind: kind,
+        issueKind: null
+      };
+  }
 }

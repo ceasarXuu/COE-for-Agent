@@ -3,9 +3,15 @@ import type { CaseGraphEnvelope } from '../../lib/api.js';
 export interface GraphNodeRecord {
   id: string;
   kind: string;
+  displayKind?: string;
+  issueKind?: string | null;
   label: string;
   status: string | null;
   revision: number;
+}
+
+function getDisplayKind(node: Pick<GraphNodeRecord, 'kind' | 'displayKind'>): string {
+  return node.displayKind ?? node.kind;
 }
 
 export function useGraphLayout(
@@ -17,11 +23,11 @@ export function useGraphLayout(
   const laneLookup = new Map<string, number>();
 
   const LANE_ORDER = [
-    ['case', 'inquiry'],
-    ['symptom', 'entity', 'artifact'],
+    ['case'],
+    ['issue', 'artifact'],
     ['fact'],
     ['hypothesis'],
-    ['experiment', 'gap', 'residual'],
+    ['experiment'],
     ['decision']
   ] as const;
 
@@ -35,7 +41,7 @@ export function useGraphLayout(
   const lanes = Array.from({ length: laneCount }, () => [] as GraphNodeRecord[]);
 
   for (const node of graph.data.nodes) {
-    const lane = laneLookup.get(node.kind) ?? laneCount - 1;
+    const lane = laneLookup.get(getDisplayKind(node)) ?? laneCount - 1;
     const laneNodes = lanes[lane];
 
     if (!laneNodes) {
@@ -45,6 +51,8 @@ export function useGraphLayout(
     laneNodes.push({
       id: node.id,
       kind: node.kind,
+      displayKind: node.displayKind,
+      issueKind: node.issueKind,
       label: node.label,
       status: node.status ?? null,
       revision: node.revision
@@ -103,7 +111,7 @@ export function useGraphLayout(
     lane.forEach((node, index) => {
       nodes.push({
         id: node.id,
-        type: node.kind,
+        type: getDisplayKind(node),
         position: {
           x,
           y: laneOffset + index * (NODE_HEIGHT + ROW_GAP)

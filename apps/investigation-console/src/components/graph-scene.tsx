@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 import type { CaseGraphEnvelope, GraphNodeRecord } from '../lib/api.js';
 import { useI18n } from '../lib/i18n.js';
+import { getDisplayKind } from './graph/graph-node-presentation.js';
 
 const NODE_WIDTH = 190;
 const NODE_HEIGHT = 118;
@@ -13,11 +14,11 @@ const ZOOM_LEVELS = [0.75, 1, 1.25, 1.5, 2] as const;
 const MIN_ZOOM = ZOOM_LEVELS[0];
 const MAX_ZOOM = ZOOM_LEVELS[ZOOM_LEVELS.length - 1] ?? 2;
 const LANE_ORDER = [
-  ['case', 'inquiry'],
-  ['symptom', 'entity', 'artifact'],
+  ['case'],
+  ['issue', 'artifact'],
   ['fact'],
   ['hypothesis'],
-  ['experiment', 'gap', 'residual'],
+  ['experiment'],
   ['decision']
 ] as const;
 
@@ -216,8 +217,8 @@ export function GraphScene(props: {
 
             {layout.nodes.map((node) => (
               <button
-                aria-label={`${formatEnumLabel(node.kind)} ${node.label}`}
-                className={`graph-node graph-node-${toCssToken(node.kind)}${props.selectedNodeId === node.id ? ' graph-node-active' : ''}${props.graph.data.focusId === node.id ? ' graph-node-focus' : ''}`}
+                aria-label={`${formatEnumLabel(getDisplayKind(node))} ${node.label}`}
+                className={`graph-node graph-node-${toCssToken(getDisplayKind(node))}${props.selectedNodeId === node.id ? ' graph-node-active' : ''}${props.graph.data.focusId === node.id ? ' graph-node-focus' : ''}`}
                 data-testid={`graph-node-${node.id}`}
                 key={node.id}
                 onClick={() => props.onSelectNode(node.id)}
@@ -227,7 +228,7 @@ export function GraphScene(props: {
                 } satisfies CSSProperties}
                 type="button"
               >
-                <p>{formatEnumLabel(node.kind)}</p>
+                <p>{formatEnumLabel(getDisplayKind(node))}</p>
                 <h4>{node.label}</h4>
                 <div className="graph-node-meta">
                   <span>{formatEnumLabel(node.status ?? 'stateless')}</span>
@@ -260,7 +261,7 @@ function buildGraphLayout(
   const lanes = Array.from({ length: laneCount }, () => [] as GraphNodeRecord[]);
 
   for (const node of graph.data.nodes) {
-    const lane = laneLookup.get(node.kind) ?? laneCount - 1;
+    const lane = laneLookup.get(getDisplayKind(node)) ?? laneCount - 1;
     const laneNodes = lanes[lane];
 
     if (!laneNodes) {

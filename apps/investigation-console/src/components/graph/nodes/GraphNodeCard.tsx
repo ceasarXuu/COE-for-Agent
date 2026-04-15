@@ -5,6 +5,7 @@ import type { GraphNodeRecord } from '../useGraphLayout.js';
 export interface GraphNodeViewData extends GraphNodeRecord {
   isSelected?: boolean;
   kindLabel?: string;
+  kindDetailLabel?: string | null;
   revisionLabel?: string;
   statusLabel?: string;
 }
@@ -20,7 +21,10 @@ export function GraphNodeCard(props: {
       <Handle type="target" position={Position.Left} className="node-handle" />
 
       <div className="node-header">
-        <span className="node-type">{data.kindLabel ?? data.kind.toUpperCase()}</span>
+        <div className="node-type-group">
+          <span className="node-type">{data.kindLabel ?? data.kind.toUpperCase()}</span>
+          {data.kindDetailLabel ? <span className="node-type-detail">{data.kindDetailLabel}</span> : null}
+        </div>
         {data.statusLabel ? <span className="node-status">{data.statusLabel}</span> : null}
       </div>
 

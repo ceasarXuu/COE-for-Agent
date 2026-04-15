@@ -37,7 +37,12 @@ describe.sequential('graph resource', () => {
           focusId: scenario.focusHypothesisId,
           nodes: expect.arrayContaining([
             expect.objectContaining({ id: scenario.focusHypothesisId, kind: 'hypothesis' }),
-            expect.objectContaining({ id: scenario.focusSymptomId, kind: 'symptom' }),
+            expect.objectContaining({
+              id: scenario.focusSymptomId,
+              kind: 'symptom',
+              displayKind: 'issue',
+              issueKind: 'symptom'
+            }),
             expect.objectContaining({ id: scenario.focusExperimentId, kind: 'experiment' })
           ]),
           edges: expect.arrayContaining([
