@@ -24,7 +24,7 @@ export function useGraphLayout(
 
   const LANE_ORDER = [
     ['case'],
-    ['issue', 'artifact'],
+    ['symptom', 'blocking_issue', 'residual_risk', 'artifact'],
     ['fact'],
     ['hypothesis'],
     ['experiment'],

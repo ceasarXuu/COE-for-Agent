@@ -25,7 +25,7 @@ import { EntityNode } from './nodes/EntityNode.js';
 import { IssueNode } from './nodes/IssueNode.js';
 import type { GraphNodeViewData } from './nodes/GraphNodeCard.js';
 import { GlowingEdge } from './edges/GlowingEdge.js';
-import { getDisplayKind, getIssueSubtypeLabel, summarizeGraphNodes } from './graph-node-presentation.js';
+import { getDisplayKind, getPresentationKind, summarizeGraphNodes } from './graph-node-presentation.js';
 
 const nodeTypes = {
   issue: IssueNode,
@@ -65,10 +65,8 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       position: node.position,
       data: {
         ...node.data,
-        kindLabel: formatEnumLabel(getDisplayKind(node.data)),
-        kindDetailLabel: getIssueSubtypeLabel(node.data)
-          ? formatEnumLabel(getIssueSubtypeLabel(node.data) ?? '')
-          : null,
+        kindLabel: formatEnumLabel(getPresentationKind(node.data)),
+        kindDetailLabel: null,
         revisionLabel: t('graph.revision', { revision: node.data.revision }),
         statusLabel: formatEnumLabel(node.data.status ?? 'stateless')
       }

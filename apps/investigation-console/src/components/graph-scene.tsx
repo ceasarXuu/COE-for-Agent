@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 import type { CaseGraphEnvelope, GraphNodeRecord } from '../lib/api.js';
 import { useI18n } from '../lib/i18n.js';
-import { getDisplayKind } from './graph/graph-node-presentation.js';
+import { getDisplayKind, getPresentationKind } from './graph/graph-node-presentation.js';
 
 const NODE_WIDTH = 190;
 const NODE_HEIGHT = 118;
@@ -15,7 +15,7 @@ const MIN_ZOOM = ZOOM_LEVELS[0];
 const MAX_ZOOM = ZOOM_LEVELS[ZOOM_LEVELS.length - 1] ?? 2;
 const LANE_ORDER = [
   ['case'],
-  ['issue', 'artifact'],
+  ['symptom', 'blocking_issue', 'residual_risk', 'artifact'],
   ['fact'],
   ['hypothesis'],
   ['experiment'],
@@ -217,7 +217,7 @@ export function GraphScene(props: {
 
             {layout.nodes.map((node) => (
               <button
-                aria-label={`${formatEnumLabel(getDisplayKind(node))} ${node.label}`}
+                aria-label={`${formatEnumLabel(getPresentationKind(node))} ${node.label}`}
                 className={`graph-node graph-node-${toCssToken(getDisplayKind(node))}${props.selectedNodeId === node.id ? ' graph-node-active' : ''}${props.graph.data.focusId === node.id ? ' graph-node-focus' : ''}`}
                 data-testid={`graph-node-${node.id}`}
                 key={node.id}
@@ -228,7 +228,7 @@ export function GraphScene(props: {
                 } satisfies CSSProperties}
                 type="button"
               >
-                <p>{formatEnumLabel(getDisplayKind(node))}</p>
+                <p>{formatEnumLabel(getPresentationKind(node))}</p>
                 <h4>{node.label}</h4>
                 <div className="graph-node-meta">
                   <span>{formatEnumLabel(node.status ?? 'stateless')}</span>

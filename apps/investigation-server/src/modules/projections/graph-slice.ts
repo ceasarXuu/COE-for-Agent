@@ -131,26 +131,26 @@ function classifyGraphNode(kind: string): {
       };
     case 'inquiry':
       return {
-        include: true,
-        displayKind: 'issue',
-        issueKind: 'question'
+        include: false,
+        displayKind: 'symptom',
+        issueKind: 'symptom'
       };
     case 'symptom':
       return {
         include: true,
-        displayKind: 'issue',
+        displayKind: 'symptom',
         issueKind: 'symptom'
       };
     case 'gap':
       return {
         include: true,
-        displayKind: 'issue',
+        displayKind: 'blocking_issue',
         issueKind: 'blocking_issue'
       };
     case 'residual':
       return {
         include: true,
-        displayKind: 'issue',
+        displayKind: 'residual_risk',
         issueKind: 'residual_risk'
       };
     default:

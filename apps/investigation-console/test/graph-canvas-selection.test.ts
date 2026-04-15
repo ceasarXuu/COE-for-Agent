@@ -93,9 +93,8 @@ describe('graph canvas selection', () => {
     expect(html).not.toContain('graph-meta-row');
     expect(html).not.toContain('严重');
     expect(html).toContain('graph-summary-row');
-    expect(html).toContain('事项 1');
-    expect(html).toContain('证据 0');
-    expect(html).toContain('事实 0');
+    expect(html).toContain('症状 1');
+    expect(html).not.toContain('事项');
     expect(html).toContain('假设 1');
     expect(html).not.toContain('2 个节点');
     expect(html).not.toContain('1 条连线');
