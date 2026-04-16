@@ -17,5 +17,7 @@ yarn-error.log*
 artifacts/
 postgres-data/
 .var/
+apps/investigation-console/.tmp/
+apps/investigation-console/test-results/
 opencode.json
 .mcp.json

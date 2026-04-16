@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { ConsoleMcpClient } from './mcp-types.js';
 import { buildConsoleServer } from './index.js';
 import { createLocalMcpClient } from './mcp-client.js';
+import { prepareRealE2ERuntime } from './real-e2e-runtime.js';
 
 const PORT = Number(process.env.CONSOLE_BFF_PORT ?? '4318');
 const SEED_STATE_FILE = process.env.REAL_E2E_SEED_FILE ?? path.join(process.cwd(), 'test-results', 'real-backend-seed.json');
@@ -20,12 +21,35 @@ const ACTOR_CONTEXT = {
 
 async function main() {
   process.env.LOCAL_ISSUER_SECRET = E2E_SECRET;
-  const mcpClient = await createLocalMcpClient();
+  const runtime = await prepareRealE2ERuntime();
+  process.env.COE_DATA_DIR = runtime.dataDir;
+  process.env.ARTIFACT_ROOT = runtime.artifactRoot;
+
+  console.info('[investigation-console] real-backend-e2e-runtime', {
+    event: 'real_backend_e2e.runtime_prepared',
+    runtimeRoot: runtime.runtimeRoot,
+    dataDir: runtime.dataDir,
+    artifactRoot: runtime.artifactRoot,
+    shouldCleanup: runtime.shouldCleanup
+  });
+
+  let mcpClient: ConsoleMcpClient | null = null;
 
   try {
+    mcpClient = await createLocalMcpClient();
+
     const seed = await seedRealBackendCase(mcpClient);
     await mkdir(path.dirname(SEED_STATE_FILE), { recursive: true });
     await writeFile(SEED_STATE_FILE, JSON.stringify(seed, null, 2));
+    console.info('[investigation-console] real-backend-e2e-seeded', {
+      event: 'real_backend_e2e.case_seeded',
+      caseId: seed.caseId,
+      inquiryId: seed.inquiryId,
+      hypothesisId: seed.hypothesisId,
+      searchTerm: seed.searchTerm,
+      headRevision: seed.headRevision,
+      seedFile: SEED_STATE_FILE
+    });
 
     const app = await buildConsoleServer({
       mcpClient,
@@ -34,6 +58,7 @@ async function main() {
 
     const shutdown = async () => {
       await app.close();
+      await runtime.cleanup();
     };
 
     process.once('SIGINT', () => {
@@ -48,7 +73,8 @@ async function main() {
       port: PORT
     });
   } catch (error) {
-    await mcpClient.close();
+    await mcpClient?.close();
+    await runtime.cleanup();
     throw error;
   }
 }
