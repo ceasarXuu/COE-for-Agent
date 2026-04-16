@@ -26,7 +26,7 @@ test('real backend reviewer flow confirms a favored hypothesis end-to-end', asyn
   await expect(page.getByTestId(`case-card-${seed.caseId}`)).toBeVisible();
   await page.getByTestId(`case-card-${seed.caseId}`).click();
 
-  await expect(page.getByTestId('snapshot-stage')).toHaveText('Discriminative Testing');
+  await expect(page.getByTestId('snapshot-panel')).toHaveCount(0);
   await page.getByTestId(`graph-node-${seed.hypothesisId}`).click();
   await expect(page.getByTestId('inspector-status')).toHaveText('Favored');
 

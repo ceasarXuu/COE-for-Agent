@@ -7,7 +7,6 @@ import { ActionPanel } from '../components/action-panel.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
 import { GuardrailView } from '../components/guardrail-view.js';
 import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
-import { SnapshotView } from '../components/snapshot-view.js';
 import { TimelineView } from '../components/timeline-view.js';
 import { connectConsoleStream } from '../lib/sse.js';
 import {
@@ -296,10 +295,6 @@ export function CaseWorkspaceRoute() {
               }}
             />
           ) : null}
-        </aside>
-
-        <aside className="workspace-rail workspace-rail-summary">
-          {workspace ? <SnapshotView historical={historical} snapshot={workspace.snapshot} /> : null}
         </aside>
 
       </div>

@@ -127,7 +127,7 @@ test('loads the workspace and opens a hypothesis inspector from the graph', asyn
   await expect(page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`)).toBeVisible();
   await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
 
-  await expect(page.getByTestId('snapshot-stage')).toHaveText('Discriminative Testing');
+  await expect(page.getByTestId('snapshot-panel')).toHaveCount(0);
   await page.getByTestId(`graph-node-${FIXTURE_IDS.hypothesisId}`).click();
 
   await expect(page.getByTestId('inspector-panel')).toBeVisible();
@@ -148,37 +148,34 @@ test('workspace prioritizes the main graph surface on tablet widths and keeps ac
   await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
 
   const graphStage = page.getByTestId('graph-stage');
-  const snapshotPanel = page.getByTestId('snapshot-panel');
+  const actionPanel = page.getByTestId('action-panel');
 
   await expect(graphStage).toBeVisible();
-  await expect(snapshotPanel).toBeVisible();
+  await expect(actionPanel).toBeVisible();
 
   const tabletGraphBox = await graphStage.boundingBox();
-  const tabletSnapshotBox = await snapshotPanel.boundingBox();
+  const tabletActionBox = await actionPanel.boundingBox();
 
   expect(tabletGraphBox).not.toBeNull();
-  expect(tabletSnapshotBox).not.toBeNull();
+  expect(tabletActionBox).not.toBeNull();
   expect((tabletGraphBox?.width ?? 0) > 500).toBeTruthy();
-  expect((tabletSnapshotBox?.y ?? 0) > (tabletGraphBox?.y ?? 0)).toBeTruthy();
+  expect((tabletActionBox?.x ?? 0) > (tabletGraphBox?.x ?? 0)).toBeTruthy();
 
   await page.setViewportSize({ width: 390, height: 844 });
 
-  const actionPanel = page.getByTestId('action-panel');
   const guardrailPanel = page.getByTestId('guardrail-panel');
   const mobileSnapshotPanel = page.getByTestId('snapshot-panel');
 
   await expect(actionPanel).toBeVisible();
   await expect(guardrailPanel).toBeVisible();
+  await expect(mobileSnapshotPanel).toHaveCount(0);
 
   const actionBox = await actionPanel.boundingBox();
   const guardrailBox = await guardrailPanel.boundingBox();
-  const mobileSnapshotBox = await mobileSnapshotPanel.boundingBox();
 
   expect(actionBox).not.toBeNull();
   expect(guardrailBox).not.toBeNull();
-  expect(mobileSnapshotBox).not.toBeNull();
   expect((actionBox?.y ?? 0) < (guardrailBox?.y ?? 0)).toBeTruthy();
-  expect((actionBox?.y ?? 0) < (mobileSnapshotBox?.y ?? 0)).toBeTruthy();
 });
 
 test('workspace graph surface includes orientation copy for graph state and controls', async ({ page }) => {

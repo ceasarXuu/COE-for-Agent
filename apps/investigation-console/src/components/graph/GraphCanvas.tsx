@@ -175,7 +175,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           </div>
           {snapshot.historical ? (
             <p className="history-banner graph-history-banner">
-              {t('snapshot.historical')}
+              <span data-testid="historical-mode">{t('snapshot.historical')}</span>
             </p>
           ) : null}
           <div className="graph-summary-row">
@@ -208,7 +208,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
         </div>
         {snapshot.historical ? (
           <p className="history-banner graph-history-banner">
-            {t('snapshot.historical')}
+            <span data-testid="historical-mode">{t('snapshot.historical')}</span>
           </p>
         ) : null}
         <div className="graph-summary-row">

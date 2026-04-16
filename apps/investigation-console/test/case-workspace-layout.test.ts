@@ -4,26 +4,23 @@ import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 describe('case workspace layout', () => {
-  test('renders the case graph in the main column and keeps the snapshot and control rails alongside it', () => {
+  test('renders the case graph in the main column and keeps only the control rail alongside it', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
     );
 
     const graphIndex = source.indexOf('<GraphCanvas');
-    const snapshotIndex = source.indexOf('<SnapshotView');
     const actionIndex = source.indexOf('<ActionPanel');
     const sideRailIndex = source.indexOf('workspace-rail workspace-rail-side');
-    const summaryRailIndex = source.indexOf('workspace-rail workspace-rail-summary');
 
     expect(graphIndex).toBeGreaterThan(-1);
-    expect(snapshotIndex).toBeGreaterThan(-1);
     expect(actionIndex).toBeGreaterThan(-1);
     expect(sideRailIndex).toBeGreaterThan(-1);
-    expect(summaryRailIndex).toBeGreaterThan(-1);
+    expect(source).not.toContain('<SnapshotView');
+    expect(source).not.toContain('workspace-rail workspace-rail-summary');
     expect(graphIndex).toBeLessThan(sideRailIndex);
     expect(actionIndex).toBeGreaterThan(sideRailIndex);
-    expect(snapshotIndex).toBeGreaterThan(summaryRailIndex);
   });
 
   test('passes revision slider controls into the timeline module instead of rendering them in the header', () => {
@@ -79,14 +76,15 @@ describe('case workspace layout', () => {
     expect(source).not.toContain('focusId={selectedNodeId}');
   });
 
-  test('renders the snapshot panel in the summary rail while still feeding snapshot context into the graph', () => {
+  test('does not render the snapshot panel while still feeding snapshot context into the graph and action rail', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
     );
 
     expect(source).toContain('snapshot={workspace.snapshot}');
-    expect(source).toContain('<SnapshotView');
+    expect(source).not.toContain('<SnapshotView');
+    expect(source).not.toContain('data-testid="snapshot-panel"');
   });
 
   test('renders the guardrail module in the side rail and leaves the diff module removed', () => {
