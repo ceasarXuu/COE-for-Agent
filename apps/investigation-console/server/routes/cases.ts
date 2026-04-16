@@ -87,7 +87,7 @@ export async function registerCasesRoutes(
   options: {
     mcpClient: ConsoleMcpClient;
     sessionSecret: string;
-    defaultSession: SessionBundle;
+    getDefaultSession: () => SessionBundle;
   }
 ) {
   app.get('/api/cases', async (request) => {
@@ -109,7 +109,7 @@ export async function registerCasesRoutes(
     const idempotencyKey = typeof body.idempotencyKey === 'string' && body.idempotencyKey.trim().length > 0
       ? body.idempotencyKey.trim()
       : `console-case-open-${randomUUID()}`;
-    const sessionToken = headerSessionToken(request.headers as Record<string, unknown>) ?? options.defaultSession.sessionToken;
+    const sessionToken = headerSessionToken(request.headers as Record<string, unknown>) ?? options.getDefaultSession().sessionToken;
     const actorContext = resolveLocalSession(sessionToken, options.sessionSecret);
 
     request.log.info({

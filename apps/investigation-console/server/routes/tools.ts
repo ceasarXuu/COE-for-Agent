@@ -37,13 +37,23 @@ export async function registerToolRoutes(
   options: {
     mcpClient: ConsoleMcpClient;
     sessionSecret: string;
-    defaultSession: SessionBundle;
+    getDefaultSession: () => SessionBundle;
   }
 ) {
-  app.get('/api/session', async () => options.defaultSession);
+  app.get('/api/session', async () => {
+    const session = options.getDefaultSession();
+
+    console.info('[investigation-console] session-issued', {
+      event: 'session.issued',
+      sessionId: session.actorContext.sessionId,
+      expiresAt: session.expiresAt
+    });
+
+    return session;
+  });
 
   app.post('/api/confirm-intent', async (request) => {
-    const sessionToken = headerSessionToken(request) ?? options.defaultSession.sessionToken;
+    const sessionToken = headerSessionToken(request) ?? options.getDefaultSession().sessionToken;
     const body = asPayload(request.body);
 
     return handleConfirmIntentRequest({
@@ -62,7 +72,7 @@ export async function registerToolRoutes(
     const params = request.params as { toolName: string };
     const body = asPayload(request.body);
     const isGuardrailTool = params.toolName.startsWith('investigation.guardrail.');
-    const sessionToken = headerSessionToken(request) ?? options.defaultSession.sessionToken;
+    const sessionToken = headerSessionToken(request) ?? options.getDefaultSession().sessionToken;
     const actorContext = isGuardrailTool ? null : resolveLocalSession(sessionToken, options.sessionSecret);
 
     const result = await options.mcpClient.invokeTool(params.toolName, {

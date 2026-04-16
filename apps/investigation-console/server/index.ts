@@ -20,7 +20,7 @@ export async function buildConsoleServer(options: BuildConsoleServerOptions = {}
   const mcpClient = options.mcpClient
     ? options.mcpClient
     : await import('./mcp-client.js').then((module) => module.createLocalMcpClient());
-  const defaultSession = createLocalSession(
+  const getDefaultSession = () => createLocalSession(
     {
       actorType: 'user',
       actorId: 'console-reviewer',
@@ -36,13 +36,13 @@ export async function buildConsoleServer(options: BuildConsoleServerOptions = {}
   await registerCasesRoutes(app, {
     mcpClient,
     sessionSecret,
-    defaultSession
+    getDefaultSession
   });
   await registerResourceRoutes(app, { mcpClient });
   await registerToolRoutes(app, {
     mcpClient,
     sessionSecret,
-    defaultSession
+    getDefaultSession
   });
   await registerStreamRoutes(app);
 

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { resolveLocalSession } from '../../server/auth/session.js';
 import { buildConsoleServer } from '../../server/index.js';
 
 describe('cases route', () => {
@@ -9,6 +10,7 @@ describe('cases route', () => {
     while (servers.length > 0) {
       await servers.pop()?.close();
     }
+    vi.useRealTimers();
   });
 
   test('GET /api/cases proxies the collection resource with query params', async () => {
@@ -103,6 +105,41 @@ describe('cases route', () => {
       caseId: 'case_01BBBBBBBBBBBBBBBBBBBBBBBB',
       inquiryId: 'inquiry_01BBBBBBBBBBBBBBBBBBBBB',
       headRevisionAfter: 1
+    });
+  });
+
+  test('GET /api/session issues a still-valid session after the server has been running past the session TTL', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-16T00:00:00.000Z'));
+
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource: vi.fn(),
+        invokeTool: vi.fn(),
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    vi.advanceTimersByTime(9 * 60 * 60 * 1000);
+
+    const sessionResponse = await app.inject({
+      method: 'GET',
+      url: '/api/session'
+    });
+    const session = sessionResponse.json() as {
+      sessionToken: string;
+      expiresAt: string;
+    };
+
+    expect(new Date(session.expiresAt).getTime()).toBeGreaterThan(Date.now());
+    expect(resolveLocalSession(session.sessionToken, 'local-test-secret')).toMatchObject({
+      actorType: 'user',
+      actorId: 'console-reviewer',
+      role: 'Reviewer',
+      issuer: 'local-console',
+      authMode: 'local'
     });
   });
 });

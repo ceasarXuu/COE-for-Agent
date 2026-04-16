@@ -192,7 +192,10 @@ export interface GuardrailBundle {
   closeCase: Record<string, unknown> & { pass?: boolean };
 }
 
-let cachedSession: Promise<SessionBundle> | null = null;
+const SESSION_REFRESH_WINDOW_MS = 60 * 1000;
+
+let cachedSession: SessionBundle | null = null;
+let inflightSession: Promise<SessionBundle> | null = null;
 
 async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
@@ -210,9 +213,37 @@ async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function sessionExpiresSoon(session: SessionBundle, now: number = Date.now()): boolean {
+  return new Date(session.expiresAt).getTime() <= now + SESSION_REFRESH_WINDOW_MS;
+}
+
+async function fetchSession(reason: 'missing' | 'expired'): Promise<SessionBundle> {
+  if (!inflightSession) {
+    inflightSession = fetchJson<SessionBundle>('/api/session')
+      .then((session) => {
+        cachedSession = session;
+        console.info('[investigation-console] session-refreshed', {
+          event: 'session.refreshed',
+          reason,
+          sessionId: session.actorContext.sessionId,
+          expiresAt: session.expiresAt
+        });
+        return session;
+      })
+      .finally(() => {
+        inflightSession = null;
+      });
+  }
+
+  return inflightSession;
+}
+
 async function ensureSession(): Promise<SessionBundle> {
-  cachedSession ??= fetchJson<SessionBundle>('/api/session');
-  return cachedSession;
+  if (cachedSession && !sessionExpiresSoon(cachedSession)) {
+    return cachedSession;
+  }
+
+  return fetchSession(cachedSession ? 'expired' : 'missing');
 }
 
 function withRevision(path: string, revision?: number | null): string {
