@@ -37,3 +37,25 @@
 - 不要直接在默认 `.var/data` 上做不可恢复删除
 - 如果历史上已经把 E2E 种子写入默认数据目录，先备份再清理
 - 优先修复测试隔离，再处理存量脏数据，避免删完后再次被旧脚本写回
+
+## 存量清理步骤
+
+如果默认 `.var/data/store.json` 里已经混入历史 E2E 案件，建议按下面顺序处理：
+
+1. 先把当前 `store.json` 复制到 `.var/backups/<timestamp>/store.json.bak`
+2. 通过以下特征定位脏案件：
+   - `title` 以 `Real backend case ` 开头
+   - `payload.objective` 以 `Validate real backend console flow ` 开头
+3. 按 `caseId` 级联清理以下区域：
+   - `cases`
+   - `eventsByCase`
+   - `currentState.*`
+   - `caseListProjection`
+   - `checkpointsByCase`
+   - `outbox`
+   - `dedup`
+4. 清理后至少做两次校验：
+   - `rg "Validate real backend console flow|Real backend case" .var/data/store.json` 不再命中
+   - `GET /api/cases?search=...` 返回空列表
+
+注意：接口过滤参数使用 `search=`，不要误用前端路由上的 `q=` 做服务端验证。
