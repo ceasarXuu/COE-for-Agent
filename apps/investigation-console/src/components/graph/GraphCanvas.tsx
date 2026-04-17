@@ -6,7 +6,8 @@ import ReactFlow, {
   applyNodeChanges,
   type Node,
   type NodeChange,
-  type Edge
+  type Edge,
+  type ReactFlowInstance
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { CaseGraphEnvelope, CaseSnapshotEnvelope } from '../../lib/api.js';
@@ -57,6 +58,8 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   const caseRecord = snapshot.data.case;
   const caseId = caseRecord?.id ?? null;
   const [isSpacePanning, setIsSpacePanning] = useState(false);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
@@ -163,6 +166,39 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     });
   };
 
+  const handleContextMenu = (event: React.MouseEvent, { x, y }: { x: number; y: number }) => {
+    event.preventDefault();
+    setContextMenu({ x, y });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const handleAddNode = (type: string, label: string) => {
+    if (!reactFlowInstance) return;
+    
+    const newNode: Node<GraphNodeViewData> = {
+      id: `node_${Date.now()}`,
+      type,
+      position: { x: contextMenu?.x || 0, y: contextMenu?.y || 0 },
+      data: {
+        id: `node_${Date.now()}`,
+        label,
+        kind: type as any,
+        status: 'proposed',
+        revision: 1,
+        kindLabel: formatEnumLabel(type as any),
+        kindDetailLabel: null,
+        revisionLabel: t('graph.revision', { revision: 1 }),
+        statusLabel: formatEnumLabel('proposed')
+      }
+    };
+
+    setNodes((prevNodes) => [...prevNodes, newNode]);
+    setContextMenu(null);
+  };
+
   const summaryTags = summarizeGraphNodes(graph.data.nodes).map((item) => `${formatEnumLabel(item.kind)} ${item.count}`);
   
   if (nodes.length === 0) {
@@ -223,6 +259,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       <div className="graph-canvas-container">
         {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
         <ReactFlow
+          ref={setReactFlowInstance}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -243,6 +280,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           onNodeDragStop={handleNodeDragStop}
           onMoveEnd={handleMoveEnd}
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => onSelectNode(node.id)}
+          onContextMenu={handleContextMenu}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />
           <Controls className="graph-flow-controls" />
@@ -252,6 +290,47 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
             className="graph-minimap"
           />
         </ReactFlow>
+
+        {contextMenu && (
+          <div 
+            className="context-menu"
+            style={{
+              position: 'absolute',
+              top: contextMenu.y,
+              left: contextMenu.x,
+              zIndex: 1000
+            }}
+            onClick={handleCloseContextMenu}
+          >
+            <div className="context-menu-header">
+              {t('graph.addNode')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('hypothesis', 'New Hypothesis')}>
+              {t('graph.node.hypothesis')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('fact', 'New Fact')}>
+              {t('graph.node.fact')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('experiment', 'New Experiment')}>
+              {t('graph.node.experiment')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('decision', 'New Decision')}>
+              {t('graph.node.decision')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('gap', 'New Gap')}>
+              {t('graph.node.gap')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('residual', 'New Residual')}>
+              {t('graph.node.residual')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('inquiry', 'New Inquiry')}>
+              {t('graph.node.inquiry')}
+            </div>
+            <div className="context-menu-item" onClick={() => handleAddNode('symptom', 'New Symptom')}>
+              {t('graph.node.symptom')}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

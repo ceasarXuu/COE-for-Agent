@@ -1142,3 +1142,35 @@ input::placeholder {
     min-height: 360px;
   }
 }
+
+/* Context Menu Styles */
+.context-menu {
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: 180px;
+  overflow: hidden;
+  z-index: 1000;
+  position: absolute;
+}
+
+.context-menu-header {
+  padding: var(--space-3) var(--space-4);
+  font-weight: 600;
+  color: var(--fg-1);
+  border-bottom: 1px solid var(--border-1);
+  background: color-mix(in srgb, var(--bg-3) 80%, transparent);
+}
+
+.context-menu-item {
+  padding: var(--space-2) var(--space-4);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+}
+
+.context-menu-item:hover {
+  background: color-mix(in srgb, var(--accent-2) 10%, var(--bg-2));
+  color: var(--fg-1);
+}
