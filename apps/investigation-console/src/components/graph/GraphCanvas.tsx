@@ -179,11 +179,12 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
 
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
-    if (event.currentTarget instanceof HTMLElement) {
+    if (reactFlowInstance && event.currentTarget instanceof HTMLElement) {
       const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      setContextMenu({ x, y });
+      const screenX = event.clientX - rect.left;
+      const screenY = event.clientY - rect.top;
+      const canvasPos = reactFlowInstance.screenToFlowPosition({ x: screenX, y: screenY });
+      setContextMenu({ x: canvasPos.x, y: canvasPos.y });
     }
   };
 
