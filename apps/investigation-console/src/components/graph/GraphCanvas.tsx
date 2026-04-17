@@ -166,9 +166,14 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     });
   };
 
-  const handleContextMenu = (event: React.MouseEvent, { x, y }: { x: number; y: number }) => {
+  const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
-    setContextMenu({ x, y });
+    if (event.currentTarget instanceof HTMLElement) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      setContextMenu({ x, y });
+    }
   };
 
   const handleCloseContextMenu = () => {
@@ -280,7 +285,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           onNodeDragStop={handleNodeDragStop}
           onMoveEnd={handleMoveEnd}
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => onSelectNode(node.id)}
-          onContextMenu={handleContextMenu}
+          onContextMenu={(event) => handleContextMenu(event)}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />
           <Controls className="graph-flow-controls" />
