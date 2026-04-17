@@ -101,6 +101,22 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     setNodes(baseNodes);
   }, [baseNodes]);
 
+  const baseEdges: Edge[] = useMemo(() => {
+    return layout.edges.map((edge) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      type: edge.type,
+      data: edge.data ?? {}
+    }));
+  }, [layout.edges]);
+
+  const [edges, setEdges] = useState<Edge[]>(() => baseEdges);
+
+  useEffect(() => {
+    setEdges(baseEdges);
+  }, [baseEdges]);
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -175,18 +191,43 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     };
   }, [contextMenu]);
 
-  const edges: Edge[] = useMemo(() => {
-    return layout.edges.map((edge) => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      type: edge.type,
-      data: edge.data ?? {}
-    }));
-  }, [layout.edges]);
-
   const handleNodesChange = (changes: NodeChange[]) => {
     setNodes((currentNodes) => applyNodeChanges(changes, currentNodes));
+  };
+
+  const handleConnect = (connection: { source: null | string; target: null | string }) => {
+    if (!connection.source || !connection.target) {
+      return;
+    }
+
+    const edgeId = `${connection.source}->${connection.target}:manual`;
+    const nextEdge: Edge = {
+      id: edgeId,
+      source: connection.source,
+      target: connection.target,
+      type: 'glowing',
+      data: { type: 'related' }
+    };
+
+    let edgeAdded = false;
+    setEdges((currentEdges) => {
+      if (currentEdges.some((edge) => edge.source === connection.source && edge.target === connection.target)) {
+        return currentEdges;
+      }
+
+      edgeAdded = true;
+      return [...currentEdges, nextEdge];
+    });
+
+    if (edgeAdded) {
+      console.info('[investigation-console] graph-edge-added', {
+        caseId,
+        edgeId,
+        source: 'graph-canvas',
+        sourceNodeId: connection.source,
+        targetNodeId: connection.target
+      });
+    }
   };
 
   const handleNodeDragStop = (_event: React.MouseEvent, node: Node<GraphNodeViewData>) => {
@@ -340,12 +381,13 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
           nodesDraggable={!isSpacePanning}
-          nodesConnectable={false}
+          nodesConnectable
           elementsSelectable
           selectionOnDrag={false}
           panOnDrag={[0]}
           panActivationKeyCode="Space"
           autoPanOnNodeDrag={false}
+          onConnect={handleConnect}
           onNodesChange={handleNodesChange}
           onNodeDragStop={handleNodeDragStop}
           onMoveEnd={handleMoveEnd}

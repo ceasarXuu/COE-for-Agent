@@ -240,6 +240,30 @@ test('workspace closes the graph context menu when the canvas is clicked elsewhe
   await expect(contextMenu).toHaveCount(0);
 });
 
+test('workspace connects nodes when dragging from one handle to another', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 1400 });
+  await page.goto('/cases');
+  await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
+
+  const sourceHandle = page.locator(`.react-flow__node[data-id="${FIXTURE_IDS.hypothesisId}"] .react-flow__handle-right`);
+  const targetHandle = page.locator(`.react-flow__node[data-id="${FIXTURE_IDS.experimentId}"] .react-flow__handle-left`);
+  const edges = page.locator('.react-flow__edge');
+
+  await expect(sourceHandle).toBeVisible();
+  await expect(targetHandle).toBeVisible();
+
+  const edgeCountBefore = await edges.count();
+  const sourcePoint = await centerOf(sourceHandle);
+  const targetPoint = await centerOf(targetHandle);
+
+  await page.mouse.move(sourcePoint.x, sourcePoint.y);
+  await page.mouse.down();
+  await page.mouse.move(targetPoint.x, targetPoint.y, { steps: 12 });
+  await page.mouse.up();
+
+  await expect.poll(() => edges.count()).toBe(edgeCountBefore + 1);
+});
+
 test('workspace graph pans only from blank-pane drags or space-drag and keeps plain node drags for repositioning', async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 1400 });
   await page.goto('/cases');

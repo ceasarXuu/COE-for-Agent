@@ -289,6 +289,62 @@ describe('graph canvas selection', () => {
     expect(typeof capturedProps?.onNodesChange).toBe('function');
   });
 
+  test('enables node-to-node connections through React Flow', () => {
+    renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'en',
+        children: createElement(GraphCanvas, {
+          snapshot: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              case: {
+                id: 'case_01',
+                title: 'debug',
+                severity: 'critical',
+                status: 'active',
+                stage: 'intake',
+                revision: 5,
+                objective: 'debug'
+              },
+              counts: {
+                inquiries: 1,
+                symptoms: 0,
+                artifacts: 0,
+                facts: 0
+              },
+              warnings: []
+            }
+          },
+          graph: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              focusId: null,
+              nodes: [
+                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
+                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
+              ],
+              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
+            }
+          },
+          onSelectNode() {
+            return;
+          }
+        })
+      })
+    );
+
+    expect(capturedProps?.nodesConnectable).toBe(true);
+    expect(typeof capturedProps?.onConnect).toBe('function');
+  });
+
   test('logs node repositioning and viewport moves for graph interaction debugging', () => {
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 

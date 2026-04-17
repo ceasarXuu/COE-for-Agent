@@ -47,6 +47,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - For graph context-menu regressions, verify both sides of the React Flow contract: the canvas menu must bind through `onPaneContextMenu`, and the flow instance used for `screenToFlowPosition` must come from `onInit` instead of the wrapper `ref`.
 - For graph context-menu dismissal, do not restrict outside-click detection to `HTMLElement` targets or bubble-phase listeners. React Flow can route canvas clicks through SVG elements and internal handlers, so the stable fix is a capture-phase listener that treats any non-`.context-menu` `Element` as an outside click.
 - The graph context menu should expose only the canonical main-graph concepts: `issue`, `artifact`, `fact`, `hypothesis`, `experiment`, and `decision`. Do not reintroduce legacy `inquiry/symptom/gap/residual` shortcuts there; those concepts are presentation-layer aliases under `issue`.
+- For graph edge-creation regressions, check both the React Flow contract and the physical layout. `nodesConnectable` plus `onConnect` must both be wired on the controlled canvas, and the rendered card width in CSS must stay aligned with `useGraphLayout` lane width; otherwise adjacent nodes can visually overlap and cover each other's handles even when connection logic is enabled.
 
 ## Snapshot Placement
 

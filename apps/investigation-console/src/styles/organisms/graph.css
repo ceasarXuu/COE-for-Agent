@@ -63,7 +63,11 @@
 }
 
 .graph-node {
+  position: relative;
+  box-sizing: border-box;
+  width: 220px;
   min-width: 180px;
+  max-width: 220px;
   padding: var(--space-4);
   background: linear-gradient(135deg, var(--bg-2), var(--bg-3));
   border: 1px solid var(--border-2);
@@ -118,6 +122,7 @@
   font-weight: 600;
   color: var(--fg-2);
   margin-bottom: var(--space-2);
+  overflow-wrap: anywhere;
 }
 
 .node-meta {
@@ -140,11 +145,23 @@
 }
 
 .node-handle {
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   background: var(--accent-cyan);
-  border: 2px solid var(--bg-1);
+  border: 3px solid var(--bg-1);
   border-radius: var(--radius-full);
+  box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.16);
+  cursor: crosshair;
+  pointer-events: all;
+  z-index: 4;
+}
+
+.react-flow__handle-left.node-handle {
+  left: -9px;
+}
+
+.react-flow__handle-right.node-handle {
+  right: -9px;
 }
 
 .graph-node-hypothesis {

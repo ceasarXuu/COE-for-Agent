@@ -70,7 +70,7 @@ export function useGraphLayout(
     });
   }
 
-  const NODE_WIDTH = 200;
+  const NODE_WIDTH = 220;
   const NODE_HEIGHT = 120;
   const COLUMN_GAP = 72;
   const ROW_GAP = 32;
