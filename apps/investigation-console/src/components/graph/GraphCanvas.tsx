@@ -9,7 +9,7 @@ import ReactFlow, {
   type Edge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { allowedCanonicalChildKinds } from '@coe/domain';
+import { allowedCanonicalChildKinds } from '@coe/domain/canonical-case-graph';
 import { buildIdempotencyKey } from '@coe/shared-utils';
 
 import {
@@ -308,16 +308,16 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
       paneX: 0,
       paneY: 0
     });
+    console.info('[investigation-console] graph-connect-started', {
+      caseId,
+      parentKind,
+      parentNodeId: sourceNode.id,
+      source: 'graph-canvas'
+    });
   };
 
   const handleConnectEnd = (event: MouseEvent | TouchEvent) => {
     if (!isCanonicalGraph || !pendingCanonicalCreate) {
-      return;
-    }
-
-    const target = 'target' in event ? event.target : null;
-    if (target instanceof Element && target.closest('.react-flow__handle')) {
-      setPendingCanonicalCreate(null);
       return;
     }
 
@@ -338,6 +338,12 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
           paneY: point.clientY - rect.top
         }
       : current);
+    console.info('[investigation-console] graph-canonical-create-requested', {
+      caseId,
+      parentNodeId: pendingCanonicalCreate.parentNodeId,
+      parentKind: pendingCanonicalCreate.parentKind,
+      source: 'graph-canvas'
+    });
   };
 
   const handleNodeDragStop = (_event: React.MouseEvent, node: Node<GraphNodeViewData>) => {

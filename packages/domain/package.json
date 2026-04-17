@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./canonical-case-graph": "./src/canonical-case-graph.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

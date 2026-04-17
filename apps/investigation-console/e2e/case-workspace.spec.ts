@@ -289,7 +289,7 @@ test('workspace preserves dragged node positions across reloads', async ({ page 
   }).toBe(Math.round(after?.x ?? 0));
 });
 
-test('workspace persists manually added issue nodes across reloads', async ({ page }) => {
+test('workspace persists canonical hypothesis nodes across reloads', async ({ page }) => {
   await page.goto('/cases');
   await page.getByTestId('case-create-card').click();
 
@@ -302,26 +302,34 @@ test('workspace persists manually added issue nodes across reloads', async ({ pa
   await expect.poll(() => new URL(page.url()).pathname).toMatch(/^\/cases\/case_/);
 
   const pane = page.locator('.react-flow__pane');
-  const contextMenu = page.locator('.context-menu');
   const graphNodes = page.locator('.react-flow__node');
+  const sourceHandle = page.locator('.react-flow__node .react-flow__handle-right').first();
 
-  await expect(graphNodes).toHaveCount(2);
+  await expect(graphNodes).toHaveCount(1);
+  await expect(sourceHandle).toBeVisible();
 
-  await pane.click({
-    button: 'right',
-    position: { x: 96, y: 96 }
-  });
+  const start = await centerOf(sourceHandle);
+  const end = await pointInLocator(pane, 360, 120);
 
-  await expect(contextMenu).toBeVisible();
-  await contextMenu.getByText('Issue').click();
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(end.x, end.y, { steps: 12 });
+  await page.mouse.up();
 
-  await expect.poll(() => graphNodes.count()).toBe(3);
+  await page.getByText('Hypothesis').click();
+  const createMenu = page.locator('.graph-create-form');
+  await expect(createMenu).toBeVisible();
+  await createMenu.locator('textarea').nth(0).fill('The canonical branch should be persisted.');
+  await createMenu.locator('textarea').nth(1).fill('The branch should be disproved if the follow-up evidence fails.');
+  await createMenu.getByRole('button', { name: 'Create' }).click();
+
+  await expect.poll(() => graphNodes.count()).toBe(2);
   const workspaceUrl = page.url();
 
   await page.getByRole('link', { name: 'Cases' }).click();
   await page.goto(workspaceUrl);
 
-  await expect.poll(() => graphNodes.count()).toBe(3);
+  await expect.poll(() => graphNodes.count()).toBe(2);
 });
 
 test('workspace preserves action-panel draft edits across reloads', async ({ page }) => {

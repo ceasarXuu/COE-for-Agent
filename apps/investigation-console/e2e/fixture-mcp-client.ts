@@ -136,6 +136,7 @@ interface RevisionState {
 interface ManualCaseState {
   caseId: string;
   inquiryId: string;
+  problemId: string;
   title: string;
   objective: string;
   severity: string;
@@ -155,6 +156,16 @@ interface ManualCaseState {
   timeline: TimelineEvent[];
   nextArtifactSequence: number;
   nextIssueSequence: number;
+  nextHypothesisSequence: number;
+  nextBlockerSequence: number;
+  nextRepairAttemptSequence: number;
+  nextEvidenceSequence: number;
+  nextEvidenceRefSequence: number;
+  evidencePool: Array<{
+    id: string;
+    title: string;
+    summary: string | null;
+  }>;
 }
 
 function clone<T>(value: T): T {
@@ -1257,6 +1268,7 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
     const suffix = String(sequence).padStart(24, '0');
     const caseId = `case_${suffix}`;
     const inquiryId = `inquiry_${String(sequence).padStart(22, '0')}`;
+    const problemId = `problem_${String(sequence).padStart(22, '0')}`;
     const createdAt = new Date(Date.UTC(2025, 0, 2, 8, sequence, 0)).toISOString();
     const labels = Array.isArray(input.labels)
       ? input.labels.filter((value): value is string => typeof value === 'string' && value.length > 0)
@@ -1265,6 +1277,7 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
     return {
       caseId,
       inquiryId,
+      problemId,
       title: requireString(input, 'title'),
       objective: requireString(input, 'objective'),
       severity: typeof input.severity === 'string' ? input.severity : 'high',
@@ -1274,35 +1287,21 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
       updatedAt: createdAt,
       headRevision: 1,
       counts: {
-        inquiries: 1,
+        inquiries: 0,
         symptoms: 0,
         artifacts: 0,
         facts: 0
       },
       nodes: [
         {
-          id: caseId,
-          kind: 'case',
+          id: problemId,
+          kind: 'problem',
           label: requireString(input, 'title'),
-          status: 'active',
-          revision: 1
-        },
-        {
-          id: inquiryId,
-          kind: 'inquiry',
-          label: 'Default inquiry',
           status: 'open',
           revision: 1
         }
       ],
-      edges: [
-        {
-          key: `${caseId}:${inquiryId}:contains`,
-          type: 'contains',
-          fromId: caseId,
-          toId: inquiryId
-        }
-      ],
+      edges: [],
       timeline: [
         {
           eventId: `event_${caseId}_opened`,
@@ -1313,7 +1312,13 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
         }
       ],
       nextArtifactSequence: 1,
-      nextIssueSequence: 1
+      nextIssueSequence: 1,
+      nextHypothesisSequence: 1,
+      nextBlockerSequence: 1,
+      nextRepairAttemptSequence: 1,
+      nextEvidenceSequence: 1,
+      nextEvidenceRefSequence: 1,
+      evidencePool: []
     };
   }
 
@@ -1355,6 +1360,289 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
       headRevisionAfter: revision,
       projectionScheduled: false,
       createdIds: [symptomId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function recordManualHypothesis(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const hypothesisId = `hypothesis_${manualCase.caseId}_${String(manualCase.nextHypothesisSequence++).padStart(4, '0')}`;
+    const parentNodeId = requireString(input, 'parentNodeId');
+    const statement = requireString(input, 'statement');
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.nodes.push({
+      id: hypothesisId,
+      kind: 'hypothesis',
+      label: statement,
+      status: 'unverified',
+      revision
+    });
+    manualCase.edges.push({
+      key: `structural:${parentNodeId}:${hypothesisId}`,
+      type: 'structural',
+      fromId: parentNodeId,
+      toId: hypothesisId
+    });
+    manualCase.timeline.push({
+      eventId: `event_${hypothesisId}_created`,
+      eventType: 'canonical.hypothesis.created',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical hypothesis created.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      createdIds: [hypothesisId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function updateManualHypothesisStatus(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const hypothesisId = requireString(input, 'hypothesisId');
+    const newStatus = requireString(input, 'newStatus');
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.nodes = manualCase.nodes.map((node) => node.id === hypothesisId
+      ? { ...node, status: newStatus, revision }
+      : node);
+    manualCase.timeline.push({
+      eventId: `event_${hypothesisId}_status`,
+      eventType: 'canonical.hypothesis.status_updated',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical hypothesis status updated.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      updatedIds: [hypothesisId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function recordManualBlocker(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const blockerId = `blocker_${manualCase.caseId}_${String(manualCase.nextBlockerSequence++).padStart(4, '0')}`;
+    const hypothesisId = requireString(input, 'hypothesisId');
+    const description = requireString(input, 'description');
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.nodes.push({
+      id: blockerId,
+      kind: 'blocker',
+      label: description,
+      status: 'active',
+      revision
+    });
+    manualCase.edges.push({
+      key: `structural:${hypothesisId}:${blockerId}`,
+      type: 'structural',
+      fromId: hypothesisId,
+      toId: blockerId
+    });
+    manualCase.timeline.push({
+      eventId: `event_${blockerId}_opened`,
+      eventType: 'canonical.blocker.opened',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical blocker opened.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      createdIds: [blockerId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function closeManualBlocker(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const blockerId = requireString(input, 'blockerId');
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.nodes = manualCase.nodes.map((node) => node.id === blockerId
+      ? { ...node, status: 'closed', revision }
+      : node);
+    manualCase.timeline.push({
+      eventId: `event_${blockerId}_closed`,
+      eventType: 'canonical.blocker.closed',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical blocker closed.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      updatedIds: [blockerId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function recordManualRepairAttempt(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const repairAttemptId = `repair_attempt_${manualCase.caseId}_${String(manualCase.nextRepairAttemptSequence++).padStart(4, '0')}`;
+    const parentNodeId = requireString(input, 'parentNodeId');
+    const changeSummary = requireString(input, 'changeSummary');
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.nodes.push({
+      id: repairAttemptId,
+      kind: 'repair_attempt',
+      label: changeSummary,
+      status: 'proposed',
+      revision
+    });
+    manualCase.edges.push({
+      key: `structural:${parentNodeId}:${repairAttemptId}`,
+      type: 'structural',
+      fromId: parentNodeId,
+      toId: repairAttemptId
+    });
+    manualCase.timeline.push({
+      eventId: `event_${repairAttemptId}_created`,
+      eventType: 'canonical.repair_attempt.created',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical repair attempt created.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      createdIds: [repairAttemptId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function updateManualRepairAttemptStatus(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const repairAttemptId = requireString(input, 'repairAttemptId');
+    const newStatus = requireString(input, 'newStatus');
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.nodes = manualCase.nodes.map((node) => node.id === repairAttemptId
+      ? { ...node, status: newStatus, revision }
+      : node);
+    manualCase.timeline.push({
+      eventId: `event_${repairAttemptId}_status`,
+      eventType: 'canonical.repair_attempt.status_updated',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical repair attempt status updated.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      updatedIds: [repairAttemptId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function captureManualEvidence(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const evidenceId = `evidence_${manualCase.caseId}_${String(manualCase.nextEvidenceSequence++).padStart(4, '0')}`;
+    const title = requireString(input, 'title');
+    const summary = typeof input.summary === 'string' ? input.summary : null;
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.evidencePool.push({ id: evidenceId, title, summary });
+    manualCase.timeline.push({
+      eventId: `event_${evidenceId}_captured`,
+      eventType: 'canonical.evidence.captured',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical evidence captured.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      createdIds: [evidenceId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function attachManualEvidence(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const evidenceRefId = `evidence_ref_${manualCase.caseId}_${String(manualCase.nextEvidenceRefSequence++).padStart(4, '0')}`;
+    const parentNodeId = requireString(input, 'parentNodeId');
+    const evidenceId = requireString(input, 'evidenceId');
+    const evidence = manualCase.evidencePool.find((item) => item.id === evidenceId);
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.nodes.push({
+      id: evidenceRefId,
+      kind: 'evidence_ref',
+      label: evidence?.title ?? 'Evidence',
+      status: null,
+      revision
+    });
+    manualCase.edges.push({
+      key: `structural:${parentNodeId}:${evidenceRefId}`,
+      type: 'structural',
+      fromId: parentNodeId,
+      toId: evidenceRefId
+    });
+    manualCase.timeline.push({
+      eventId: `event_${evidenceRefId}_attached`,
+      eventType: 'canonical.evidence.attached',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Canonical evidence attached.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      createdIds: [evidenceRefId],
       warnings: [],
       violations: []
     };
@@ -1525,7 +1813,8 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
                     revision: manualCase.headRevision,
                     projectDirectory: manualCase.projectDirectory,
                     labels: manualCase.labels,
-                    defaultInquiryId: manualCase.inquiryId
+                    defaultInquiryId: null,
+                    defaultProblemId: manualCase.problemId
                   },
                   counts: clone(manualCase.counts),
                   warnings: []
@@ -1750,7 +2039,7 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             headRevisionBefore: 0,
             headRevisionAfter: 1,
             projectionScheduled: false,
-            createdIds: [created.caseId, created.inquiryId],
+            createdIds: [created.caseId, created.inquiryId, created.problemId],
             warnings: [],
             violations: []
           };
@@ -1775,6 +2064,71 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             return clone(manualGuardrails().closeCase);
           }
           return clone(headState.guardrails.closeCase);
+        case 'investigation.hypothesis.create':
+          if (manualCase) {
+            return recordManualHypothesis(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical hypothesis.create for manual cases');
+        case 'investigation.hypothesis.set_status':
+          if (manualCase) {
+            return updateManualHypothesisStatus(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical hypothesis.set_status for manual cases');
+        case 'investigation.blocker.open':
+          if (manualCase) {
+            return recordManualBlocker(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical blocker.open for manual cases');
+        case 'investigation.blocker.close':
+          if (manualCase) {
+            return closeManualBlocker(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical blocker.close for manual cases');
+        case 'investigation.repair_attempt.create':
+          if (manualCase) {
+            return recordManualRepairAttempt(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical repair_attempt.create for manual cases');
+        case 'investigation.repair_attempt.set_status':
+          if (manualCase) {
+            return updateManualRepairAttemptStatus(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical repair_attempt.set_status for manual cases');
+        case 'investigation.evidence.capture':
+          if (manualCase) {
+            return captureManualEvidence(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical evidence.capture for manual cases');
+        case 'investigation.evidence.attach_existing':
+          if (manualCase) {
+            return attachManualEvidence(manualCase, input);
+          }
+          throw new Error('fixture only supports canonical evidence.attach_existing for manual cases');
+        case 'investigation.evidence.capture_and_attach':
+          if (manualCase) {
+            const capture = captureManualEvidence(manualCase, input);
+            const evidenceId = capture.createdIds?.[0];
+            if (!evidenceId) {
+              throw new Error('fixture canonical evidence capture failed');
+            }
+
+            const attach = attachManualEvidence(manualCase, {
+              ...input,
+              ifCaseRevision: capture.headRevisionAfter,
+              evidenceId
+            });
+
+            return {
+              ok: true,
+              headRevisionBefore: capture.headRevisionBefore,
+              headRevisionAfter: attach.headRevisionAfter,
+              projectionScheduled: false,
+              createdIds: [...(capture.createdIds ?? []), ...(attach.createdIds ?? [])],
+              warnings: [],
+              violations: []
+            };
+          }
+          throw new Error('fixture only supports canonical evidence.capture_and_attach for manual cases');
         case 'investigation.issue.record':
           if (manualCase) {
             return recordManualIssue(manualCase, input);
