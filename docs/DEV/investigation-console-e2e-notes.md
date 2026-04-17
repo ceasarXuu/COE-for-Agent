@@ -45,6 +45,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - Keep `getCaseGraph` requests revision-aware only in the workspace route unless the product explicitly reintroduces subgraph behavior.
 - Regression coverage should verify both the route contract and the React Flow props so future graph work does not silently reintroduce focus chips, pane-clear behavior, or selection-driven layout changes.
 - For graph context-menu regressions, verify both sides of the React Flow contract: the canvas menu must bind through `onPaneContextMenu`, and the flow instance used for `screenToFlowPosition` must come from `onInit` instead of the wrapper `ref`.
+- For graph context-menu dismissal, do not restrict outside-click detection to `HTMLElement` targets or bubble-phase listeners. React Flow can route canvas clicks through SVG elements and internal handlers, so the stable fix is a capture-phase listener that treats any non-`.context-menu` `Element` as an outside click.
 
 ## Snapshot Placement
 
