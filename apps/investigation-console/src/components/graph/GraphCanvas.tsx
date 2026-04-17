@@ -169,21 +169,12 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     return (
       <section className="panel panel-primary graph-stage workspace-stage-fill" data-testid="graph-stage">
         <div className="graph-header">
-          <div className="graph-title-block">
-            <p className="panel-kicker">{t('graph.caseGraph')}</p>
-            <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
-          </div>
-          {snapshot.historical ? (
-            <p className="history-banner graph-history-banner">
-              <span data-testid="historical-mode">{t('snapshot.historical')}</span>
-            </p>
-          ) : null}
           <div className="graph-summary-row">
-            <div className="metric-strip graph-context-tags">
-              {summaryTags.map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
-            </div>
+            {snapshot.historical ? (
+              <p className="history-banner graph-history-banner">
+                <span data-testid="historical-mode">{t('snapshot.historical')}</span>
+              </p>
+            ) : null}
             <div aria-label={t('graph.controls')} className="graph-controls-readout">
               <span className="focus-chip">{snapshot.historical ? t('graph.historical') : t('graph.live')}</span>
             </div>
@@ -191,6 +182,11 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
               <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
               <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
               <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
+            </div>
+            <div className="metric-strip graph-context-tags">
+              {summaryTags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
             </div>
           </div>
         </div>
@@ -202,21 +198,12 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   return (
     <section className="panel panel-primary graph-stage workspace-stage-fill" data-testid="graph-stage">
       <div className="graph-header">
-        <div className="graph-title-block">
-          <p className="panel-kicker">{t('graph.caseGraph')}</p>
-          <p className="graph-context-copy">{caseRecord?.objective ?? t('snapshot.defaultObjective')}</p>
-        </div>
-        {snapshot.historical ? (
-          <p className="history-banner graph-history-banner">
-            <span data-testid="historical-mode">{t('snapshot.historical')}</span>
-          </p>
-        ) : null}
         <div className="graph-summary-row">
-          <div className="metric-strip graph-context-tags">
-            {summaryTags.map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
+          {snapshot.historical ? (
+            <p className="history-banner graph-history-banner">
+              <span data-testid="historical-mode">{t('snapshot.historical')}</span>
+            </p>
+          ) : null}
           <div aria-label={t('graph.controls')} className="graph-controls-readout">
             <span className="focus-chip">{snapshot.historical ? t('graph.historical') : t('graph.live')}</span>
           </div>
@@ -224,6 +211,11 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
             <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
             <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
             <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
+          </div>
+          <div className="metric-strip graph-context-tags">
+            {summaryTags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
           </div>
         </div>
       </div>
