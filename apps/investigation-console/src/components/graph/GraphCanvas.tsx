@@ -124,16 +124,27 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       setIsSpacePanning(false);
     };
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenu && event.target instanceof HTMLElement) {
+        const contextMenuElement = event.target.closest('.context-menu');
+        if (!contextMenuElement) {
+          setContextMenu(null);
+        }
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [contextMenu]);
 
   const edges: Edge[] = useMemo(() => {
     return layout.edges.map((edge) => ({
