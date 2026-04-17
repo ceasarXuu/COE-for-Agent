@@ -14,7 +14,7 @@ import { useActionPanelState } from './useActionPanelState.js';
 
 export function ActionPanel(props: ActionPanelProps) {
   const { t } = useI18n();
-  const state = useActionPanelState();
+  const state = useActionPanelState(props.caseId, props.selectedNode?.id ?? null);
 
   const handlers = useActionHandlers({
     ...props,

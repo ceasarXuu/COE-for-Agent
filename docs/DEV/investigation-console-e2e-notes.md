@@ -48,6 +48,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - For graph context-menu dismissal, do not restrict outside-click detection to `HTMLElement` targets or bubble-phase listeners. React Flow can route canvas clicks through SVG elements and internal handlers, so the stable fix is a capture-phase listener that treats any non-`.context-menu` `Element` as an outside click.
 - The blank-canvas graph context menu should expose only context-free concepts that can be persisted immediately: `issue` and `artifact`. Keep `fact`, `hypothesis`, `experiment`, and `decision` on context-aware flows such as the Action Panel, where the required supporting refs already exist.
 - For graph edge-creation regressions, check both the React Flow contract and the physical layout. `nodesConnectable` plus `onConnect` must both be wired on the controlled canvas, and the rendered card width in CSS must stay aligned with `useGraphLayout` lane width; otherwise adjacent nodes can visually overlap and cover each other's handles even when connection logic is enabled.
+- Case detail edits are now split across two persistence lanes: domain-safe mutations such as blank-canvas `issue` / `artifact` creation must go through backend tools immediately, while case-detail drafts and graph-only overlay edits such as textarea input, node repositioning, and manual edges must autosave to case-scoped local storage and survive reloads.
 
 ## Snapshot Placement
 

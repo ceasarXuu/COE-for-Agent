@@ -11,6 +11,11 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { buildIdempotencyKey } from '@coe/shared-utils';
 
+import {
+  loadGraphOverlayState,
+  persistGraphOverlayState,
+  type GraphOverlayEdge
+} from '../../lib/case-workspace-storage.js';
 import { invokeTool, type CaseGraphEnvelope, type CaseSnapshotEnvelope } from '../../lib/api.js';
 import { useI18n } from '../../lib/i18n.js';
 import { useGraphLayout, type GraphNodeRecord } from './useGraphLayout.js';
@@ -79,14 +84,22 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   const [isSpacePanning, setIsSpacePanning] = useState(false);
   const [reactFlowInstance, setReactFlowInstance] = useState<FlowPositionProjector | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
+  const [manualEdges, setManualEdges] = useState<GraphOverlayEdge[]>([]);
   const [mutationPending, setMutationPending] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const overlay = loadGraphOverlayState(caseId);
+    setPositionOverrides(overlay.positionOverrides);
+    setManualEdges(overlay.manualEdges);
+  }, [caseId]);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
       id: node.id,
       type: node.type,
-      position: node.position,
+      position: positionOverrides[node.id] ?? node.position,
       data: {
         ...node.data,
         kindLabel: formatEnumLabel(getPresentationKind(node.data)),
@@ -95,7 +108,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
         statusLabel: formatEnumLabel(node.data.status ?? 'stateless')
       }
     }));
-  }, [formatEnumLabel, layout.nodes, t]);
+  }, [formatEnumLabel, layout.nodes, positionOverrides, t]);
 
   const [nodes, setNodes] = useState<Node<GraphNodeViewData>[]>(() => baseNodes);
 
@@ -104,20 +117,26 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   }, [baseNodes]);
 
   const baseEdges: Edge[] = useMemo(() => {
-    return layout.edges.map((edge) => ({
+    const projectedEdges = layout.edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
       type: edge.type,
       data: edge.data ?? {}
     }));
-  }, [layout.edges]);
+    const knownPairs = new Set(projectedEdges.map((edge) => `${edge.source}->${edge.target}`));
+    const overlayEdges = manualEdges
+      .filter((edge) => !knownPairs.has(`${edge.source}->${edge.target}`))
+      .map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type,
+        data: edge.data ?? {}
+      }));
 
-  const [edges, setEdges] = useState<Edge[]>(() => baseEdges);
-
-  useEffect(() => {
-    setEdges(baseEdges);
-  }, [baseEdges]);
+    return [...projectedEdges, ...overlayEdges];
+  }, [layout.edges, manualEdges]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -203,7 +222,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
     }
 
     const edgeId = `${connection.source}->${connection.target}:manual`;
-    const nextEdge: Edge = {
+    const nextEdge: GraphOverlayEdge = {
       id: edgeId,
       source: connection.source,
       target: connection.target,
@@ -211,28 +230,40 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
       data: { type: 'related' }
     };
 
-    let edgeAdded = false;
-    setEdges((currentEdges) => {
-      if (currentEdges.some((edge) => edge.source === connection.source && edge.target === connection.target)) {
-        return currentEdges;
-      }
+    if (manualEdges.some((edge) => edge.source === connection.source && edge.target === connection.target)) {
+      return;
+    }
 
-      edgeAdded = true;
-      return [...currentEdges, nextEdge];
-    });
-
-    if (edgeAdded) {
-      console.info('[investigation-console] graph-edge-added', {
-        caseId,
-        edgeId,
-        source: 'graph-canvas',
-        sourceNodeId: connection.source,
-        targetNodeId: connection.target
+    const nextManualEdges = [...manualEdges, nextEdge];
+    setManualEdges(nextManualEdges);
+    if (caseId) {
+      persistGraphOverlayState(caseId, {
+        positionOverrides,
+        manualEdges: nextManualEdges
       });
     }
+
+    console.info('[investigation-console] graph-edge-added', {
+      caseId,
+      edgeId,
+      source: 'graph-canvas',
+      sourceNodeId: connection.source,
+      targetNodeId: connection.target
+    });
   };
 
   const handleNodeDragStop = (_event: React.MouseEvent, node: Node<GraphNodeViewData>) => {
+    const nextOverrides = {
+      ...positionOverrides,
+      [node.id]: node.position
+    };
+    setPositionOverrides(nextOverrides);
+    if (caseId) {
+      persistGraphOverlayState(caseId, {
+        positionOverrides: nextOverrides,
+        manualEdges
+      });
+    }
     console.info('[investigation-console] graph-node-repositioned', {
       caseId,
       nodeId: node.id,
@@ -409,7 +440,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
         <ReactFlow
           onInit={setReactFlowInstance}
           nodes={nodes}
-          edges={edges}
+          edges={baseEdges}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView

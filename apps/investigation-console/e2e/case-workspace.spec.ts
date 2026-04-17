@@ -258,6 +258,35 @@ test('workspace connects nodes when dragging from one handle to another', async 
   await page.mouse.up();
 
   await expect.poll(() => edges.count()).toBe(edgeCountBefore + 1);
+  await page.reload();
+  await expect.poll(() => page.locator('.react-flow__edge').count()).toBe(edgeCountBefore + 1);
+});
+
+test('workspace preserves dragged node positions across reloads', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 1400 });
+  await page.goto('/cases');
+  await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
+
+  const node = page.locator(`.react-flow__node[data-id="${FIXTURE_IDS.hypothesisId}"]`);
+  await expect(node).toBeVisible();
+
+  const before = await node.boundingBox();
+  const dragStart = await centerOf(node);
+
+  expect(before).not.toBeNull();
+
+  await dragPointer(page, dragStart, { x: 128, y: 0 });
+
+  const after = await node.boundingBox();
+  expect(after).not.toBeNull();
+  expect((after?.x ?? 0) > (before?.x ?? 0)).toBeTruthy();
+
+  await page.reload();
+
+  await expect.poll(async () => {
+    const current = await page.locator(`.react-flow__node[data-id="${FIXTURE_IDS.hypothesisId}"]`).boundingBox();
+    return Math.round(current?.x ?? 0);
+  }).toBe(Math.round(after?.x ?? 0));
 });
 
 test('workspace persists manually added issue nodes across reloads', async ({ page }) => {
@@ -293,6 +322,23 @@ test('workspace persists manually added issue nodes across reloads', async ({ pa
   await page.goto(workspaceUrl);
 
   await expect.poll(() => graphNodes.count()).toBe(3);
+});
+
+test('workspace preserves action-panel draft edits across reloads', async ({ page }) => {
+  await page.goto(`/cases/${FIXTURE_IDS.caseId}`);
+  await page.getByTestId(`graph-node-${FIXTURE_IDS.hypothesisId}`).click();
+
+  const stageRationale = page.getByTestId('stage-rationale');
+  const hypothesisRationale = page.getByTestId('hypothesis-rationale');
+
+  await stageRationale.fill('Case-level draft should survive a reload.');
+  await hypothesisRationale.fill('Draft rationale should survive a reload.');
+
+  await page.reload();
+  await page.getByTestId(`graph-node-${FIXTURE_IDS.hypothesisId}`).click();
+
+  await expect(stageRationale).toHaveValue('Case-level draft should survive a reload.');
+  await expect(hypothesisRationale).toHaveValue('Draft rationale should survive a reload.');
 });
 
 test('workspace graph pans only from blank-pane drags or space-drag and keeps plain node drags for repositioning', async ({ page }) => {
