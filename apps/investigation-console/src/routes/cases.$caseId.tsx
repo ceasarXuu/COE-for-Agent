@@ -225,14 +225,6 @@ export function CaseWorkspaceRoute() {
             { label: t('breadcrumb.cases'), href: `/cases${listSearch ? `?${listSearch}` : ''}` },
             { label: workspace?.snapshot.data.case?.title ?? caseId }
           ]} />
-          <div className="workspace-title-row">
-            <h2>{workspace?.snapshot.data.case?.title ?? caseId}</h2>
-            {workspace?.snapshot.data.case?.severity ? (
-              <span className={`pill pill-${(workspace.snapshot.data.case.severity ?? 'medium').toLowerCase()}`}>
-                {formatEnumLabel(workspace.snapshot.data.case.severity)}
-              </span>
-            ) : null}
-          </div>
         </div>
       </header>
 
