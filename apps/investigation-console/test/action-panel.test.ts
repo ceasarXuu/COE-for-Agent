@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 
-import { ActionPanel } from '../src/components/action-panel.js';
+import { ActionPanel } from '../src/components/action-panel/index.js';
 
 describe('action panel', () => {
   test('offers hypothesis escalation, gap creation, and readiness decision actions when a favored hypothesis is selected', () => {
