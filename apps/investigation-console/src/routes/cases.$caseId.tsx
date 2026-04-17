@@ -275,7 +275,7 @@ export function CaseWorkspaceRoute() {
               selectedNode={selectedNode}
             />
           ) : null}
-          {workspace ? <GuardrailView guardrails={workspace.guardrails} /> : null}
+          {workspace && !isCanonicalGraph ? <GuardrailView guardrails={workspace.guardrails} /> : null}
           {workspace ? (
             <TimelineView
               timeline={workspace.timeline}
