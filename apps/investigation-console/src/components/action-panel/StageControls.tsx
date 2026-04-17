@@ -1,4 +1,4 @@
-import { useI18n } from '../lib/i18n.js';
+import { useI18n } from '../../lib/i18n.js';
 
 interface StageControlsProps {
   caseStage: string | null | undefined;

@@ -2,9 +2,9 @@ import { useCallback } from 'react';
 
 import { buildIdempotencyKey } from '@coe/shared-utils';
 
-import type { GraphNodeRecord, GuardrailBundle } from '../lib/api.js';
-import { invokeTool, requestConfirmIntent } from '../lib/api.js';
-import { useI18n } from '../lib/i18n.js';
+import type { GraphNodeRecord, GuardrailBundle } from '../../lib/api.js';
+import { invokeTool, requestConfirmIntent } from '../../lib/api.js';
+import { useI18n } from '../../lib/i18n.js';
 
 import type { ActionConfig } from './types.js';
 

@@ -1,4 +1,4 @@
-import type { GraphNodeRecord, GuardrailBundle } from '../lib/api.js';
+import type { GraphNodeRecord, GuardrailBundle } from '../../lib/api.js';
 
 export interface ActionConfig {
   commandName:

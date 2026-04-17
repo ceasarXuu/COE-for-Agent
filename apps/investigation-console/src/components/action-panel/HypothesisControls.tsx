@@ -1,5 +1,5 @@
-import type { GraphNodeRecord } from '../lib/api.js';
-import { useI18n } from '../lib/i18n.js';
+import type { GraphNodeRecord } from '../../lib/api.js';
+import { useI18n } from '../../lib/i18n.js';
 
 interface HypothesisControlsProps {
   hypothesis: Pick<GraphNodeRecord, 'id' | 'kind' | 'label' | 'status'>;

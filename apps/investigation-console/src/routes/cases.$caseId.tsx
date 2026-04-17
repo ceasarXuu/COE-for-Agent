@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-utils';
 
-import { ActionPanel } from '../components/action-panel.js';
+import { ActionPanel } from '../components/action-panel/index.js';
 import { Breadcrumb } from '../components/breadcrumb.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
 import { GuardrailView } from '../components/guardrail-view.js';
