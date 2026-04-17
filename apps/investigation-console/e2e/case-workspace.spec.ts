@@ -206,7 +206,17 @@ test('workspace opens the graph context menu on right click', async ({ page }) =
   });
 
   await expect(contextMenu).toBeVisible();
-  await expect(contextMenu.locator('.context-menu-item')).toHaveCount(8);
+  await expect(contextMenu.locator('.context-menu-item')).toHaveCount(6);
+  await expect(contextMenu).toContainText('Issue');
+  await expect(contextMenu).toContainText('Artifact');
+  await expect(contextMenu).toContainText('Fact');
+  await expect(contextMenu).toContainText('Hypothesis');
+  await expect(contextMenu).toContainText('Experiment');
+  await expect(contextMenu).toContainText('Decision');
+  await expect(contextMenu).not.toContainText('Gap');
+  await expect(contextMenu).not.toContainText('Residual');
+  await expect(contextMenu).not.toContainText('Inquiry');
+  await expect(contextMenu).not.toContainText('Symptom');
 });
 
 test('workspace closes the graph context menu when the canvas is clicked elsewhere', async ({ page }) => {

@@ -62,6 +62,15 @@ interface FlowPositionProjector {
   screenToFlowPosition: (position: { x: number; y: number }) => { x: number; y: number };
 }
 
+const contextMenuNodeOptions = [
+  { type: 'issue', labelKey: 'graph.node.issue', defaultLabel: 'New Issue' },
+  { type: 'artifact', labelKey: 'graph.node.artifact', defaultLabel: 'New Artifact' },
+  { type: 'fact', labelKey: 'graph.node.fact', defaultLabel: 'New Fact' },
+  { type: 'hypothesis', labelKey: 'graph.node.hypothesis', defaultLabel: 'New Hypothesis' },
+  { type: 'experiment', labelKey: 'graph.node.experiment', defaultLabel: 'New Experiment' },
+  { type: 'decision', labelKey: 'graph.node.decision', defaultLabel: 'New Decision' }
+] as const;
+
 export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps) {
   const { compareText, formatEnumLabel, t } = useI18n();
   const layout = useMemo(() => useGraphLayout(graph, compareText), [compareText, graph]);
@@ -366,30 +375,15 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
             <div className="context-menu-header">
               {t('graph.addNode')}
             </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('hypothesis', 'New Hypothesis')}>
-              {t('graph.node.hypothesis')}
-            </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('fact', 'New Fact')}>
-              {t('graph.node.fact')}
-            </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('experiment', 'New Experiment')}>
-              {t('graph.node.experiment')}
-            </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('decision', 'New Decision')}>
-              {t('graph.node.decision')}
-            </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('gap', 'New Gap')}>
-              {t('graph.node.gap')}
-            </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('residual', 'New Residual')}>
-              {t('graph.node.residual')}
-            </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('inquiry', 'New Inquiry')}>
-              {t('graph.node.inquiry')}
-            </div>
-            <div className="context-menu-item" onClick={() => handleAddNode('symptom', 'New Symptom')}>
-              {t('graph.node.symptom')}
-            </div>
+            {contextMenuNodeOptions.map((option) => (
+              <div
+                key={option.type}
+                className="context-menu-item"
+                onClick={() => handleAddNode(option.type, option.defaultLabel)}
+              >
+                {t(option.labelKey)}
+              </div>
+            ))}
           </div>
         )}
       </div>
