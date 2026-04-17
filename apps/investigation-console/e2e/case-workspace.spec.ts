@@ -191,6 +191,24 @@ test('workspace graph surface includes orientation copy for graph state and cont
   await expect(graphStage.getByLabel('Graph controls').getByText('live slice')).toBeVisible();
 });
 
+test('workspace opens the graph context menu on right click', async ({ page }) => {
+  await page.goto('/cases');
+  await page.getByTestId(`case-card-${FIXTURE_IDS.caseId}`).click();
+
+  const pane = page.locator('.react-flow__pane');
+  const contextMenu = page.locator('.context-menu');
+
+  await expect(pane).toBeVisible();
+
+  await pane.click({
+    button: 'right',
+    position: { x: 96, y: 96 }
+  });
+
+  await expect(contextMenu).toBeVisible();
+  await expect(contextMenu.locator('.context-menu-item')).toHaveCount(8);
+});
+
 test('workspace graph pans only from blank-pane drags or space-drag and keeps plain node drags for repositioning', async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 1400 });
   await page.goto('/cases');

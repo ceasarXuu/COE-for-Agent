@@ -172,6 +172,63 @@ describe('graph canvas selection', () => {
     expect(typeof capturedProps?.onNodeClick).toBe('function');
   });
 
+  test('wires canvas context menus through the pane handler ReactFlow actually supports', () => {
+    renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: 'en',
+        children: createElement(GraphCanvas, {
+          snapshot: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              case: {
+                id: 'case_01',
+                title: 'debug',
+                severity: 'critical',
+                status: 'active',
+                stage: 'intake',
+                revision: 5,
+                objective: 'debug'
+              },
+              counts: {
+                inquiries: 1,
+                symptoms: 0,
+                artifacts: 0,
+                facts: 0
+              },
+              warnings: []
+            }
+          },
+          graph: {
+            headRevision: 5,
+            projectionRevision: 5,
+            requestedRevision: null,
+            stale: false,
+            historical: false,
+            data: {
+              focusId: null,
+              nodes: [
+                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
+                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
+              ],
+              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
+            }
+          },
+          onSelectNode() {
+            return;
+          }
+        })
+      })
+    );
+
+    expect(typeof capturedProps?.onPaneContextMenu).toBe('function');
+    expect(typeof capturedProps?.onInit).toBe('function');
+    expect(capturedProps?.onContextMenu).toBeUndefined();
+  });
+
   test('lets nodes drag while limiting canvas panning to blank-pane drags or holding space', () => {
     renderToStaticMarkup(
       createElement(I18nProvider, {

@@ -6,8 +6,7 @@ import ReactFlow, {
   applyNodeChanges,
   type Node,
   type NodeChange,
-  type Edge,
-  type ReactFlowInstance
+  type Edge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { CaseGraphEnvelope, CaseSnapshotEnvelope } from '../../lib/api.js';
@@ -52,14 +51,25 @@ interface GraphCanvasProps {
   onSelectNode: (nodeId: string) => void;
 }
 
+interface ContextMenuState {
+  flowX: number;
+  flowY: number;
+  paneX: number;
+  paneY: number;
+}
+
+interface FlowPositionProjector {
+  screenToFlowPosition: (position: { x: number; y: number }) => { x: number; y: number };
+}
+
 export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps) {
   const { compareText, formatEnumLabel, t } = useI18n();
   const layout = useMemo(() => useGraphLayout(graph, compareText), [compareText, graph]);
   const caseRecord = snapshot.data.case;
   const caseId = caseRecord?.id ?? null;
   const [isSpacePanning, setIsSpacePanning] = useState(false);
-  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState<FlowPositionProjector | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
@@ -177,14 +187,30 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     });
   };
 
-  const handleContextMenu = (event: React.MouseEvent) => {
+  const handlePaneContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     if (reactFlowInstance && event.currentTarget instanceof HTMLElement) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const screenX = event.clientX - rect.left;
-      const screenY = event.clientY - rect.top;
-      const canvasPos = reactFlowInstance.screenToFlowPosition({ x: screenX, y: screenY });
-      setContextMenu({ x: canvasPos.x, y: canvasPos.y });
+      const container = event.currentTarget.closest('.graph-canvas-container');
+      const menuAnchor = container instanceof HTMLElement ? container : event.currentTarget;
+      const rect = menuAnchor.getBoundingClientRect();
+      const flowPosition = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY
+      });
+
+      setContextMenu({
+        flowX: flowPosition.x,
+        flowY: flowPosition.y,
+        paneX: event.clientX - rect.left,
+        paneY: event.clientY - rect.top
+      });
+
+      console.info('[investigation-console] graph-context-menu-opened', {
+        caseId,
+        source: 'graph-canvas',
+        clientPosition: { x: event.clientX, y: event.clientY },
+        flowPosition
+      });
     }
   };
 
@@ -193,14 +219,15 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
   };
 
   const handleAddNode = (type: string, label: string) => {
-    if (!reactFlowInstance) return;
-    
+    if (!reactFlowInstance || !contextMenu) return;
+
+    const nodeId = `node_${Date.now()}`;
     const newNode: Node<GraphNodeViewData> = {
-      id: `node_${Date.now()}`,
+      id: nodeId,
       type,
-      position: { x: contextMenu?.x || 0, y: contextMenu?.y || 0 },
+      position: { x: contextMenu.flowX, y: contextMenu.flowY },
       data: {
-        id: `node_${Date.now()}`,
+        id: nodeId,
         label,
         kind: type as any,
         status: 'proposed',
@@ -213,6 +240,13 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     };
 
     setNodes((prevNodes) => [...prevNodes, newNode]);
+    console.info('[investigation-console] graph-node-added', {
+      caseId,
+      source: 'graph-canvas',
+      nodeId,
+      nodeType: type,
+      position: newNode.position
+    });
     setContextMenu(null);
   };
 
@@ -276,7 +310,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
       <div className="graph-canvas-container">
         {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
         <ReactFlow
-          ref={setReactFlowInstance}
+          onInit={setReactFlowInstance}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -297,7 +331,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           onNodeDragStop={handleNodeDragStop}
           onMoveEnd={handleMoveEnd}
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => onSelectNode(node.id)}
-          onContextMenu={(event) => handleContextMenu(event)}
+          onPaneContextMenu={handlePaneContextMenu}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />
           <Controls className="graph-flow-controls" />
@@ -313,8 +347,8 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
             className="context-menu"
             style={{
               position: 'absolute',
-              top: contextMenu.y,
-              left: contextMenu.x,
+              top: contextMenu.paneY,
+              left: contextMenu.paneX,
               zIndex: 1000
             }}
             onClick={handleCloseContextMenu}

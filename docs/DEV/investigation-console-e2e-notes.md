@@ -10,6 +10,8 @@ lsof -nP -iTCP:4318 -sTCP:LISTEN
 kill <pid>
 ```
 
+- When you only need a targeted browser regression and the default ports are already in use, do not kill unknown processes just to make the happy path work. Start the Vite app and fixture BFF on temporary ports instead, for example `CONSOLE_WEB_PORT=4175` with `CONSOLE_BFF_PORT=4319`, and pass the same pair into the Playwright command.
+
 ## Form Stability
 
 - Manual create form handlers must read `event.currentTarget.value` before entering `setState` callbacks.
@@ -42,6 +44,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - The case graph in `cases.$caseId.tsx` is now a stable full-graph view; node selection should only refresh the inspector and must not alter graph query params or enter a focused slice mode.
 - Keep `getCaseGraph` requests revision-aware only in the workspace route unless the product explicitly reintroduces subgraph behavior.
 - Regression coverage should verify both the route contract and the React Flow props so future graph work does not silently reintroduce focus chips, pane-clear behavior, or selection-driven layout changes.
+- For graph context-menu regressions, verify both sides of the React Flow contract: the canvas menu must bind through `onPaneContextMenu`, and the flow instance used for `screenToFlowPosition` must come from `onInit` instead of the wrapper `ref`.
 
 ## Snapshot Placement
 
