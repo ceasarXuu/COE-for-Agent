@@ -17,7 +17,7 @@ import {
   persistGraphOverlayState,
   type GraphOverlayEdge
 } from '../../lib/case-workspace-storage.js';
-import { invokeTool, type CaseGraphEnvelope, type CaseSnapshotEnvelope } from '../../lib/api.js';
+import { getCaseEvidencePool, invokeTool, type CaseGraphEnvelope, type CaseSnapshotEnvelope } from '../../lib/api.js';
 import { useI18n } from '../../lib/i18n.js';
 import { useGraphLayout, type GraphNodeRecord } from './useGraphLayout.js';
 import { HypothesisNode } from './nodes/HypothesisNode.js';
@@ -105,6 +105,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const [manualEdges, setManualEdges] = useState<GraphOverlayEdge[]>([]);
+  const [evidenceOptions, setEvidenceOptions] = useState<Array<{ evidenceId: string; title: string }>>([]);
   const [mutationPending, setMutationPending] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingCanonicalCreate, setPendingCanonicalCreate] = useState<PendingCanonicalCreate | null>(null);
@@ -114,6 +115,33 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
     setPositionOverrides(overlay.positionOverrides);
     setManualEdges(overlay.manualEdges);
   }, [caseId]);
+
+  useEffect(() => {
+    if (!caseId || !isCanonicalGraph) {
+      setEvidenceOptions([]);
+      return;
+    }
+
+    let cancelled = false;
+    void getCaseEvidencePool(caseId)
+      .then((resource) => {
+        if (!cancelled) {
+          setEvidenceOptions(resource.data.items.map((item) => ({
+            evidenceId: item.evidenceId,
+            title: item.title
+          })));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEvidenceOptions([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [caseId, isCanonicalGraph, graph.headRevision]);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
@@ -513,22 +541,39 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
           });
           break;
         case 'evidence_ref':
-          await invokeTool('investigation.evidence.capture_and_attach', {
-            caseId,
-            ifCaseRevision: currentRevision,
-            parentNodeId: pendingCanonicalCreate.parentNodeId,
-            kind: 'other',
-            title: submission.title,
-            summary: submission.summary,
-            provenance: submission.provenance,
-            effectOnParent: submission.effectOnParent,
-            interpretation: submission.interpretation,
-            idempotencyKey: buildIdempotencyKey('canonical-evidence-capture-and-attach')
-          });
+          if (submission.evidenceId) {
+            await invokeTool('investigation.evidence.attach_existing', {
+              caseId,
+              ifCaseRevision: currentRevision,
+              parentNodeId: pendingCanonicalCreate.parentNodeId,
+              evidenceId: submission.evidenceId,
+              effectOnParent: submission.effectOnParent,
+              interpretation: submission.interpretation,
+              idempotencyKey: buildIdempotencyKey('canonical-evidence-attach-existing')
+            });
+          } else {
+            await invokeTool('investigation.evidence.capture_and_attach', {
+              caseId,
+              ifCaseRevision: currentRevision,
+              parentNodeId: pendingCanonicalCreate.parentNodeId,
+              kind: 'other',
+              title: submission.title,
+              summary: submission.summary,
+              provenance: submission.provenance,
+              effectOnParent: submission.effectOnParent,
+              interpretation: submission.interpretation,
+              idempotencyKey: buildIdempotencyKey('canonical-evidence-capture-and-attach')
+            });
+          }
           break;
       }
 
       setPendingCanonicalCreate(null);
+      const pool = await getCaseEvidencePool(caseId);
+      setEvidenceOptions(pool.data.items.map((item) => ({
+        evidenceId: item.evidenceId,
+        title: item.title
+      })));
       await onMutationComplete?.();
     } catch (reason: unknown) {
       setMutationError(reason instanceof Error ? reason.message : t('errors.mutationFailed'));
@@ -664,6 +709,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
               parentKind: pendingCanonicalCreate.parentKind,
               parentStatus: pendingCanonicalCreate.parentStatus
             }).filter((kind): kind is 'hypothesis' | 'blocker' | 'repair_attempt' | 'evidence_ref' => kind !== 'problem')}
+            evidenceOptions={evidenceOptions}
             parentKind={pendingCanonicalCreate.parentKind}
             pending={mutationPending}
             position={{ left: pendingCanonicalCreate.paneX, top: pendingCanonicalCreate.paneY }}

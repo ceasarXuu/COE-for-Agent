@@ -7,6 +7,7 @@ import type { InvestigationServerServices } from '../services.js';
 import { readCasesResource } from '../modules/resources/cases.js';
 import { readCoverageResource } from '../modules/resources/coverage.js';
 import { readDiffResource } from '../modules/resources/diff.js';
+import { readEvidencePoolResource } from '../modules/resources/evidence-pool.js';
 import { readGraphResource } from '../modules/resources/graph.js';
 import { readHypothesisPanelResource } from '../modules/resources/hypothesis-panel.js';
 import { readInquiryPanelResource } from '../modules/resources/inquiry-panel.js';
@@ -137,6 +138,23 @@ export function registerResourceDefinitions(
             focusId: null,
             nodes: [],
             edges: []
+          })
+        };
+      }
+    },
+    {
+      template: RESOURCE_URI_TEMPLATES.evidencePool,
+      async read(url) {
+        if (services) {
+          return readEvidencePoolResource(services, url);
+        }
+
+        const atRevision = parseOptionalInteger(url.searchParams.get('atRevision'));
+        return {
+          uri: url.toString(),
+          mimeType: 'application/json',
+          data: createEmptyEnvelope(atRevision, {
+            items: []
           })
         };
       }

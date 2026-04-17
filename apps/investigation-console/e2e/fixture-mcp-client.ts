@@ -1847,6 +1847,26 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
                 }
               })
             };
+          case 'evidence-pool':
+            return {
+              uri,
+              mimeType: 'application/json',
+              data: createResourceEnvelope({
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
+                data: {
+                  items: manualCase.evidencePool.map((item) => ({
+                    evidenceId: item.id,
+                    kind: 'other',
+                    title: item.title,
+                    summary: item.summary,
+                    provenance: 'manual://graph-canvas',
+                    confidence: null,
+                    revision: manualCase.headRevision
+                  }))
+                }
+              })
+            };
           case 'coverage':
             return {
               uri,

@@ -71,6 +71,11 @@ const RESOURCE_METADATA_BY_TEMPLATE: Record<string, { name: string; title: strin
     title: 'Case Graph',
     description: 'Graph slice of entities, evidence, and relationships.'
   },
+  [RESOURCE_URI_TEMPLATES.evidencePool]: {
+    name: 'case-evidence-pool',
+    title: 'Case Evidence Pool',
+    description: 'Reusable canonical evidence entities captured for a case.'
+  },
   [RESOURCE_URI_TEMPLATES.coverage]: {
     name: 'case-coverage',
     title: 'Case Coverage',

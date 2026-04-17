@@ -8,6 +8,7 @@ export interface CanonicalCreateSubmission {
   childKind: CanonicalChildKind;
   changeSummary?: string;
   description?: string;
+  evidenceId?: string;
   effectOnParent?: 'supports' | 'refutes' | 'neutral' | 'validates' | 'invalidates';
   falsificationCriteria?: string[];
   interpretation?: string;
@@ -21,6 +22,10 @@ export interface CanonicalCreateSubmission {
 
 export function CanonicalGraphCreatePopover(props: {
   allowedKinds: CanonicalChildKind[];
+  evidenceOptions: Array<{
+    evidenceId: string;
+    title: string;
+  }>;
   parentKind: string;
   pending: boolean;
   position: { left: number; top: number };
@@ -31,6 +36,7 @@ export function CanonicalGraphCreatePopover(props: {
   const [selectedKind, setSelectedKind] = useState<CanonicalChildKind | null>(null);
   const [primaryText, setPrimaryText] = useState('');
   const [secondaryText, setSecondaryText] = useState('');
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState('');
   const [effectOnParent, setEffectOnParent] = useState<'supports' | 'refutes' | 'neutral' | 'validates' | 'invalidates'>(
     props.parentKind === 'repair_attempt' ? 'validates' : 'supports'
   );
@@ -138,6 +144,25 @@ export function CanonicalGraphCreatePopover(props: {
 
           {selectedKind === 'evidence_ref' ? (
             <>
+              {props.evidenceOptions.length > 0 ? (
+                <label className="search-field">
+                  <span>Existing Evidence</span>
+                  <select
+                    disabled={props.pending}
+                    onChange={(event) => setSelectedEvidenceId(event.currentTarget.value)}
+                    value={selectedEvidenceId}
+                  >
+                    <option value="">Capture new evidence</option>
+                    {props.evidenceOptions.map((option) => (
+                      <option key={option.evidenceId} value={option.evidenceId}>
+                        {option.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {selectedEvidenceId.length === 0 ? (
+                <>
               <label className="search-field">
                 <span>Evidence Title</span>
                 <textarea
@@ -156,6 +181,8 @@ export function CanonicalGraphCreatePopover(props: {
                   value={secondaryText}
                 />
               </label>
+                </>
+              ) : null}
               <label className="search-field">
                 <span>Effect</span>
                 <select
@@ -176,8 +203,13 @@ export function CanonicalGraphCreatePopover(props: {
           <div className="confirm-actions">
             <button
               className="action-button"
-              disabled={props.pending || primaryText.trim().length === 0}
-              onClick={() => props.onSubmit(buildSubmission(selectedKind, primaryText, secondaryText, effectOnParent))}
+              disabled={
+                props.pending ||
+                (selectedKind === 'evidence_ref'
+                  ? selectedEvidenceId.length === 0 && primaryText.trim().length === 0
+                  : primaryText.trim().length === 0)
+              }
+              onClick={() => props.onSubmit(buildSubmission(selectedKind, primaryText, secondaryText, effectOnParent, selectedEvidenceId))}
               type="button"
             >
               Create
@@ -196,7 +228,8 @@ function buildSubmission(
   childKind: CanonicalChildKind,
   primaryText: string,
   secondaryText: string,
-  effectOnParent: 'supports' | 'refutes' | 'neutral' | 'validates' | 'invalidates'
+  effectOnParent: 'supports' | 'refutes' | 'neutral' | 'validates' | 'invalidates',
+  selectedEvidenceId: string
 ): CanonicalCreateSubmission {
   switch (childKind) {
     case 'hypothesis':
@@ -220,8 +253,9 @@ function buildSubmission(
     case 'evidence_ref':
       return {
         childKind,
-        title: primaryText.trim(),
-        summary: secondaryText.trim(),
+        evidenceId: selectedEvidenceId || undefined,
+        title: selectedEvidenceId ? undefined : primaryText.trim(),
+        summary: selectedEvidenceId ? undefined : secondaryText.trim(),
         provenance: 'manual://graph-canvas',
         effectOnParent,
         interpretation: secondaryText.trim() || primaryText.trim()

@@ -60,6 +60,19 @@ export async function registerResourceRoutes(app: FastifyInstance, options: { mc
     return resource.data;
   });
 
+  app.get('/api/cases/:caseId/evidence-pool', async (request) => {
+    const params = request.params as { caseId: string };
+    const query = request.query as Record<string, unknown>;
+    const search = new URLSearchParams();
+    const revision = queryValue(query, 'revision');
+    if (revision) {
+      search.set('atRevision', revision);
+    }
+
+    const resource = await options.mcpClient.readResource(buildCaseResourceUri(params.caseId, 'evidence-pool', search));
+    return resource.data;
+  });
+
   app.get('/api/cases/:caseId/coverage', async (request) => {
     const params = request.params as { caseId: string };
     const query = request.query as Record<string, unknown>;

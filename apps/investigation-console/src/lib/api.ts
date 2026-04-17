@@ -124,6 +124,25 @@ export interface CaseGraphEnvelope {
   };
 }
 
+export interface CaseEvidencePoolEnvelope {
+  headRevision: number;
+  projectionRevision: number;
+  requestedRevision: number | null;
+  stale: boolean;
+  historical: boolean;
+  data: {
+    items: Array<{
+      evidenceId: string;
+      kind: string;
+      title: string;
+      summary: string | null;
+      provenance: string | null;
+      confidence: number | null;
+      revision: number;
+    }>;
+  };
+}
+
 export interface CaseCoverageEnvelope {
   headRevision: number;
   projectionRevision: number;
@@ -303,6 +322,10 @@ export function getCaseGraph(
   }
 
   return fetchJson<CaseGraphEnvelope>(`/api/cases/${caseId}/graph${params.toString().length > 0 ? `?${params.toString()}` : ''}`);
+}
+
+export function getCaseEvidencePool(caseId: string, revision?: number | null): Promise<CaseEvidencePoolEnvelope> {
+  return fetchJson<CaseEvidencePoolEnvelope>(withRevision(`/api/cases/${caseId}/evidence-pool`, revision));
 }
 
 export function getCaseCoverage(caseId: string, revision?: number | null): Promise<CaseCoverageEnvelope> {

@@ -4,6 +4,7 @@ export const RESOURCE_URI_TEMPLATES = {
   snapshot: 'investigation://cases/{caseId}/snapshot',
   timeline: 'investigation://cases/{caseId}/timeline',
   graph: 'investigation://cases/{caseId}/graph',
+  evidencePool: 'investigation://cases/{caseId}/evidence-pool',
   coverage: 'investigation://cases/{caseId}/coverage',
   hypothesisPanel: 'investigation://cases/{caseId}/hypotheses/{hypothesisId}',
   inquiryPanel: 'investigation://cases/{caseId}/inquiries/{inquiryId}',
