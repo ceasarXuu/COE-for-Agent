@@ -534,10 +534,10 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-6);
-  padding: var(--space-5);
-  background: var(--bg-2);
-  border: 1px solid var(--border-1);
-  border-radius: var(--radius-xl);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 .workspace-header-copy {
