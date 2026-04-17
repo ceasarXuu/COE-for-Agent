@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-utils';
 
 import { ActionPanel } from '../components/action-panel.js';
+import { Breadcrumb } from '../components/breadcrumb.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
 import { GuardrailView } from '../components/guardrail-view.js';
 import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
@@ -220,15 +221,10 @@ export function CaseWorkspaceRoute() {
     <section className="workspace-shell">
       <header className="workspace-toolbar">
         <div className="workspace-header-copy">
-          <Link
-            className="ghost-link"
-            to={{
-              pathname: '/cases',
-              search: listSearch ? `?${listSearch}` : ''
-            }}
-          >
-            {t('workspace.back')}
-          </Link>
+          <Breadcrumb items={[
+            { label: t('breadcrumb.cases'), href: `/cases${listSearch ? `?${listSearch}` : ''}` },
+            { label: workspace?.snapshot.data.case?.title ?? caseId }
+          ]} />
           <div className="workspace-title-row">
             <h2>{workspace?.snapshot.data.case?.title ?? caseId}</h2>
             {workspace?.snapshot.data.case?.severity ? (
