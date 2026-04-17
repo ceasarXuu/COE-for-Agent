@@ -1,4 +1,4 @@
-import { deriveProjectionEdges, type ProjectionEdge } from './edges.js';
+import { deriveProjectionEdges, isCanonicalGraphState, type ProjectionEdge } from './edges.js';
 import { listProjectedNodes, type ProjectedCaseState } from './replay.js';
 
 export interface GraphNode {
@@ -7,6 +7,8 @@ export interface GraphNode {
   displayKind?: string;
   issueKind?: string | null;
   label: string;
+  payload?: Record<string, unknown>;
+  summary?: null | string;
   status: string | null;
   revision: number;
 }
@@ -36,7 +38,39 @@ function graphNodeLabel(payload: Record<string, unknown>, fallback: string): str
     ?? fallback;
 }
 
+function graphNodeSummary(kind: string, payload: Record<string, unknown>): string | null {
+  return asString(payload.description)
+    ?? asString(payload.statement)
+    ?? asString(payload.interpretation)
+    ?? asString(payload.changeSummary)
+    ?? (kind === 'problem' ? asString(payload.environment) ?? null : null);
+}
+
+function canonicalGraphNodeLabel(kind: string, payload: Record<string, unknown>, state: ProjectedCaseState): string {
+  if (kind === 'evidence_ref') {
+    const evidenceId = asString(payload.evidenceId);
+    const evidenceRecord = evidenceId ? state.tables.evidence_pool.get(evidenceId) : null;
+    const evidencePayload = asObject(evidenceRecord?.payload);
+
+    return asString(evidencePayload.title)
+      ?? asString(payload.interpretation)
+      ?? evidenceId
+      ?? kind;
+  }
+
+  return graphNodeLabel(payload, kind);
+}
+
 export function buildGraphSlice(
+  state: ProjectedCaseState,
+  options: { focusId?: string | null; depth?: number } = {}
+): GraphSlice {
+  return isCanonicalGraphState(state)
+    ? buildCanonicalGraphSlice(state, options)
+    : buildLegacyGraphSlice(state, options);
+}
+
+function buildLegacyGraphSlice(
   state: ProjectedCaseState,
   options: { focusId?: string | null; depth?: number } = {}
 ): GraphSlice {
@@ -55,7 +89,7 @@ export function buildGraphSlice(
   }
 
   for (const record of listProjectedNodes(state)) {
-    const display = classifyGraphNode(record.kind);
+    const display = classifyLegacyGraphNode(record.kind);
     if (!display.include) {
       continue;
     }
@@ -67,12 +101,56 @@ export function buildGraphSlice(
       displayKind: display.displayKind,
       issueKind: display.issueKind,
       label: graphNodeLabel(payload, record.id),
+      payload,
+      summary: graphNodeSummary(record.kind, payload),
       status: record.status,
       revision: record.revision
     });
   }
 
-  const edges = deriveProjectionEdges(state).filter((edge) => nodes.has(edge.fromId) && nodes.has(edge.toId));
+  return focusGraphSlice(nodes, deriveProjectionEdges(state), options);
+}
+
+function buildCanonicalGraphSlice(
+  state: ProjectedCaseState,
+  options: { focusId?: string | null; depth?: number } = {}
+): GraphSlice {
+  const nodes = new Map<string, GraphNode>();
+
+  for (const record of [
+    ...state.tables.problems.values(),
+    ...state.tables.hypotheses.values(),
+    ...state.tables.blockers.values(),
+    ...state.tables.repair_attempts.values(),
+    ...state.tables.evidence_refs.values()
+  ]) {
+    if (record.kind === 'hypothesis' && asString(asObject(record.payload).canonicalKind) !== 'hypothesis') {
+      continue;
+    }
+
+    const payload = asObject(record.payload);
+    nodes.set(record.id, {
+      id: record.id,
+      kind: record.kind,
+      displayKind: record.kind,
+      issueKind: null,
+      label: canonicalGraphNodeLabel(record.kind, payload, state),
+      payload,
+      summary: graphNodeSummary(record.kind, payload),
+      status: record.status,
+      revision: record.revision
+    });
+  }
+
+  return focusGraphSlice(nodes, deriveProjectionEdges(state), options);
+}
+
+function focusGraphSlice(
+  nodes: Map<string, GraphNode>,
+  derivedEdges: ProjectionEdge[],
+  options: { focusId?: string | null; depth?: number } = {}
+): GraphSlice {
+  const edges = derivedEdges.filter((edge) => nodes.has(edge.fromId) && nodes.has(edge.toId));
   const focusId = options.focusId ?? null;
   const depth = Math.max(options.depth ?? 1, 1);
 
@@ -117,7 +195,7 @@ export function buildGraphSlice(
   };
 }
 
-function classifyGraphNode(kind: string): {
+function classifyLegacyGraphNode(kind: string): {
   include: boolean;
   displayKind: string;
   issueKind: string | null;

@@ -174,6 +174,16 @@
   box-shadow: var(--shadow-lg), var(--glow-purple);
 }
 
+.graph-node-problem {
+  border-color: rgba(14, 165, 233, 0.28);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), var(--bg-2));
+}
+
+.graph-node-problem:hover {
+  border-color: #0ea5e9;
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(14, 165, 233, 0.28);
+}
+
 .graph-node-issue {
   border-color: rgba(59, 130, 246, 0.25);
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), var(--bg-2));
@@ -231,6 +241,36 @@
 
 .graph-node-residual:hover {
   box-shadow: var(--shadow-lg);
+}
+
+.graph-node-blocker {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--bg-2));
+}
+
+.graph-node-blocker:hover {
+  border-color: var(--status-error);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.graph-node-repair-attempt {
+  border-color: rgba(249, 115, 22, 0.25);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), var(--bg-2));
+}
+
+.graph-node-repair-attempt:hover {
+  border-color: #f97316;
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(249, 115, 22, 0.28);
+}
+
+.graph-node-evidence-ref {
+  border-color: rgba(99, 102, 241, 0.25);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), var(--bg-2));
+}
+
+.graph-node-evidence-ref:hover {
+  border-color: #6366f1;
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(99, 102, 241, 0.28);
 }
 
 .edge-glow {

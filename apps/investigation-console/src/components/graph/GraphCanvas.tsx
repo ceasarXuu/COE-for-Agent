@@ -9,6 +9,7 @@ import ReactFlow, {
   type Edge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { allowedCanonicalChildKinds } from '@coe/domain';
 import { buildIdempotencyKey } from '@coe/shared-utils';
 
 import {
@@ -30,13 +31,22 @@ import { SymptomNode } from './nodes/SymptomNode.js';
 import { ArtifactNode } from './nodes/ArtifactNode.js';
 import { EntityNode } from './nodes/EntityNode.js';
 import { IssueNode } from './nodes/IssueNode.js';
+import { ProblemNode } from './nodes/ProblemNode.js';
+import { BlockerNode } from './nodes/BlockerNode.js';
+import { RepairAttemptNode } from './nodes/RepairAttemptNode.js';
+import { EvidenceRefNode } from './nodes/EvidenceRefNode.js';
 import type { GraphNodeViewData } from './nodes/GraphNodeCard.js';
 import { GlowingEdge } from './edges/GlowingEdge.js';
 import { getDisplayKind, getPresentationKind, summarizeGraphNodes } from './graph-node-presentation.js';
+import { CanonicalGraphCreatePopover, type CanonicalCreateSubmission } from './CanonicalGraphCreatePopover.js';
 
 const nodeTypes = {
+  problem: ProblemNode,
   issue: IssueNode,
   hypothesis: HypothesisNode,
+  blocker: BlockerNode,
+  repair_attempt: RepairAttemptNode,
+  evidence_ref: EvidenceRefNode,
   fact: FactNode,
   experiment: ExperimentNode,
   decision: DecisionNode,
@@ -70,6 +80,14 @@ interface FlowPositionProjector {
   screenToFlowPosition: (position: { x: number; y: number }) => { x: number; y: number };
 }
 
+interface PendingCanonicalCreate {
+  parentNodeId: string;
+  parentKind: 'problem' | 'hypothesis' | 'repair_attempt';
+  parentStatus: 'open' | 'resolved' | 'abandoned' | 'unverified' | 'blocked' | 'confirmed' | 'rejected' | 'proposed' | 'running' | 'effective' | 'ineffective' | null;
+  paneX: number;
+  paneY: number;
+}
+
 const contextMenuNodeOptions = [
   { type: 'issue', labelKey: 'graph.node.issue', defaultLabelKey: 'graph.newIssue' },
   { type: 'artifact', labelKey: 'graph.node.artifact', defaultLabelKey: 'graph.newArtifact' }
@@ -81,6 +99,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   const caseRecord = snapshot.data.case;
   const caseId = caseRecord?.id ?? null;
   const currentRevision = caseRecord?.revision ?? snapshot.headRevision;
+  const isCanonicalGraph = graph.data.nodes.some((node) => node.kind === 'problem');
   const [isSpacePanning, setIsSpacePanning] = useState(false);
   const [reactFlowInstance, setReactFlowInstance] = useState<FlowPositionProjector | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -88,6 +107,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   const [manualEdges, setManualEdges] = useState<GraphOverlayEdge[]>([]);
   const [mutationPending, setMutationPending] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [pendingCanonicalCreate, setPendingCanonicalCreate] = useState<PendingCanonicalCreate | null>(null);
 
   useEffect(() => {
     const overlay = loadGraphOverlayState(caseId);
@@ -217,6 +237,10 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   };
 
   const handleConnect = (connection: { source: null | string; target: null | string }) => {
+    if (isCanonicalGraph) {
+      return;
+    }
+
     if (!connection.source || !connection.target) {
       return;
     }
@@ -252,6 +276,70 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
     });
   };
 
+  const handleConnectStart = (
+    _event: React.MouseEvent | React.TouchEvent,
+    params: { handleType: 'source' | 'target' | null; nodeId: null | string }
+  ) => {
+    if (!isCanonicalGraph || params.handleType !== 'source' || !params.nodeId) {
+      return;
+    }
+
+    const sourceNode = graph.data.nodes.find((node) => node.id === params.nodeId);
+    if (!sourceNode) {
+      return;
+    }
+
+    const parentKind = sourceNode.kind === 'problem'
+      ? 'problem'
+      : sourceNode.kind === 'hypothesis'
+        ? 'hypothesis'
+        : sourceNode.kind === 'repair_attempt'
+          ? 'repair_attempt'
+          : null;
+
+    if (!parentKind) {
+      return;
+    }
+
+    setPendingCanonicalCreate({
+      parentNodeId: sourceNode.id,
+      parentKind,
+      parentStatus: sourceNode.status as PendingCanonicalCreate['parentStatus'],
+      paneX: 0,
+      paneY: 0
+    });
+  };
+
+  const handleConnectEnd = (event: MouseEvent | TouchEvent) => {
+    if (!isCanonicalGraph || !pendingCanonicalCreate) {
+      return;
+    }
+
+    const target = 'target' in event ? event.target : null;
+    if (target instanceof Element && target.closest('.react-flow__handle')) {
+      setPendingCanonicalCreate(null);
+      return;
+    }
+
+    const point = 'changedTouches' in event
+      ? (event.changedTouches[0] ?? null)
+      : event;
+    if (!point) {
+      setPendingCanonicalCreate(null);
+      return;
+    }
+    const container = document.querySelector('.graph-canvas-container');
+    const rect = container instanceof HTMLElement ? container.getBoundingClientRect() : { left: 0, top: 0 };
+
+    setPendingCanonicalCreate((current) => current
+      ? {
+          ...current,
+          paneX: point.clientX - rect.left,
+          paneY: point.clientY - rect.top
+        }
+      : current);
+  };
+
   const handleNodeDragStop = (_event: React.MouseEvent, node: Node<GraphNodeViewData>) => {
     const nextOverrides = {
       ...positionOverrides,
@@ -282,7 +370,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
 
   const handlePaneContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
-    if (snapshot.historical || mutationPending) {
+    if (isCanonicalGraph || snapshot.historical || mutationPending) {
       return;
     }
 
@@ -377,6 +465,72 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
     }
   };
 
+  const handleCanonicalCreate = async (submission: CanonicalCreateSubmission) => {
+    if (!caseId || !pendingCanonicalCreate || snapshot.historical) {
+      return;
+    }
+
+    setMutationPending(true);
+    setMutationError(null);
+
+    try {
+      switch (submission.childKind) {
+        case 'hypothesis':
+          await invokeTool('investigation.hypothesis.create', {
+            caseId,
+            ifCaseRevision: currentRevision,
+            parentNodeId: pendingCanonicalCreate.parentNodeId,
+            statement: submission.statement,
+            title: submission.statement,
+            falsificationCriteria: submission.falsificationCriteria ?? [submission.statement ?? 'disprove hypothesis'],
+            idempotencyKey: buildIdempotencyKey('canonical-hypothesis-create')
+          });
+          break;
+        case 'blocker':
+          await invokeTool('investigation.blocker.open', {
+            caseId,
+            ifCaseRevision: currentRevision,
+            hypothesisId: pendingCanonicalCreate.parentNodeId,
+            description: submission.description,
+            possibleWorkarounds: submission.possibleWorkarounds ?? [],
+            idempotencyKey: buildIdempotencyKey('canonical-blocker-open')
+          });
+          break;
+        case 'repair_attempt':
+          await invokeTool('investigation.repair_attempt.create', {
+            caseId,
+            ifCaseRevision: currentRevision,
+            parentNodeId: pendingCanonicalCreate.parentNodeId,
+            changeSummary: submission.changeSummary,
+            scope: submission.scope,
+            idempotencyKey: buildIdempotencyKey('canonical-repair-create')
+          });
+          break;
+        case 'evidence_ref':
+          await invokeTool('investigation.evidence.capture_and_attach', {
+            caseId,
+            ifCaseRevision: currentRevision,
+            parentNodeId: pendingCanonicalCreate.parentNodeId,
+            kind: 'other',
+            title: submission.title,
+            summary: submission.summary,
+            provenance: submission.provenance,
+            effectOnParent: submission.effectOnParent,
+            interpretation: submission.interpretation,
+            idempotencyKey: buildIdempotencyKey('canonical-evidence-capture-and-attach')
+          });
+          break;
+      }
+
+      setPendingCanonicalCreate(null);
+      await onMutationComplete?.();
+    } catch (reason: unknown) {
+      setMutationError(reason instanceof Error ? reason.message : t('errors.mutationFailed'));
+    } finally {
+      setMutationPending(false);
+    }
+  };
+
   const summaryTags = summarizeGraphNodes(graph.data.nodes).map((item) => `${formatEnumLabel(item.kind)} ${item.count}`);
   
   if (nodes.length === 0) {
@@ -456,6 +610,8 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
           panActivationKeyCode="Space"
           autoPanOnNodeDrag={false}
           onConnect={handleConnect}
+          onConnectStart={handleConnectStart}
+          onConnectEnd={handleConnectEnd}
           onNodesChange={handleNodesChange}
           onNodeDragStop={handleNodeDragStop}
           onMoveEnd={handleMoveEnd}
@@ -496,6 +652,19 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
             ))}
           </div>
         )}
+        {pendingCanonicalCreate && isCanonicalGraph ? (
+          <CanonicalGraphCreatePopover
+            allowedKinds={allowedCanonicalChildKinds({
+              parentKind: pendingCanonicalCreate.parentKind,
+              parentStatus: pendingCanonicalCreate.parentStatus
+            }).filter((kind): kind is 'hypothesis' | 'blocker' | 'repair_attempt' | 'evidence_ref' => kind !== 'problem')}
+            parentKind={pendingCanonicalCreate.parentKind}
+            pending={mutationPending}
+            position={{ left: pendingCanonicalCreate.paneX, top: pendingCanonicalCreate.paneY }}
+            onCancel={() => setPendingCanonicalCreate(null)}
+            onSubmit={(submission) => void handleCanonicalCreate(submission)}
+          />
+        ) : null}
       </div>
     </section>
   );
@@ -503,8 +672,12 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
 
 function getNodeColor(nodeType: string | undefined): string {
   const colors: Record<string, string> = {
+    problem: '#0ea5e9',
     issue: '#3b82f6',
     hypothesis: '#a855f7',
+    blocker: '#ef4444',
+    repair_attempt: '#f97316',
+    evidence_ref: '#6366f1',
     fact: '#00f0ff',
     experiment: '#22c55e',
     decision: '#f59e0b',

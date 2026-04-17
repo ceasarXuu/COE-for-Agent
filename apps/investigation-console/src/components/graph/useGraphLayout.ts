@@ -6,6 +6,8 @@ export interface GraphNodeRecord {
   displayKind?: string;
   issueKind?: string | null;
   label: string;
+  payload?: Record<string, unknown>;
+  summary?: string | null;
   status: string | null;
   revision: number;
 }
@@ -23,10 +25,11 @@ export function useGraphLayout(
   const laneLookup = new Map<string, number>();
 
   const LANE_ORDER = [
-    ['case'],
-    ['symptom', 'blocking_issue', 'residual_risk', 'artifact'],
+    ['case', 'problem'],
+    ['symptom', 'blocking_issue', 'residual_risk', 'artifact', 'hypothesis'],
+    ['blocker', 'repair_attempt'],
+    ['evidence_ref'],
     ['fact'],
-    ['hypothesis'],
     ['experiment'],
     ['decision']
   ] as const;
@@ -54,6 +57,8 @@ export function useGraphLayout(
       displayKind: node.displayKind,
       issueKind: node.issueKind,
       label: node.label,
+      payload: node.payload,
+      summary: node.summary,
       status: node.status ?? null,
       revision: node.revision
     });

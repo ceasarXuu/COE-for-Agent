@@ -100,6 +100,8 @@ export interface GraphNodeRecord {
   displayKind?: string;
   issueKind?: string | null;
   label: string;
+  payload?: Record<string, unknown>;
+  summary?: string | null;
   status: string | null;
   revision: number;
 }

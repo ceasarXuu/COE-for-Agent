@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-utils';
 
 import { ActionPanel } from '../components/action-panel/index.js';
+import { CanonicalActionPanel } from '../components/action-panel/CanonicalActionPanel.js';
 import { Breadcrumb } from '../components/breadcrumb.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
 import { GuardrailView } from '../components/guardrail-view.js';
@@ -111,9 +112,14 @@ export function CaseWorkspaceRoute() {
 
     let cancelled = false;
     const graphNode = workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null;
+    const isCanonicalGraph = workspace.graph.data.nodes.some((node) => node.kind === 'problem');
     setInspectorLoading(true);
 
     const loadInspector = async () => {
+      if (isCanonicalGraph && graphNode) {
+        return buildGraphBackedInspector(graphNode, workspace);
+      }
+
       if (selectedNodeId.startsWith('hypothesis_')) {
         const panel = await getHypothesisPanel(caseId, selectedNodeId, revision);
         const hypothesis = asObjectRecord(panel.data.hypothesis);
@@ -212,6 +218,7 @@ export function CaseWorkspaceRoute() {
   const selectedNode = workspace && selectedNodeId
     ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
+  const isCanonicalGraph = workspace?.graph.data.nodes.some((node) => node.kind === 'problem') ?? false;
 
   async function handleMutationComplete() {
     requestRefresh();
@@ -245,7 +252,7 @@ export function CaseWorkspaceRoute() {
 
         <aside className="workspace-rail workspace-rail-side">
           <InspectorPanel inspector={inspector} loading={inspectorLoading} />
-          {workspace ? (
+          {workspace && !isCanonicalGraph ? (
             <ActionPanel
               caseId={caseId}
               caseStage={workspace.snapshot.data.case?.stage ?? null}
@@ -254,6 +261,15 @@ export function CaseWorkspaceRoute() {
                 : null}
               currentRevision={currentRevision}
               guardrails={workspace.guardrails}
+              historical={historical}
+              onMutationComplete={handleMutationComplete}
+              selectedNode={selectedNode}
+            />
+          ) : null}
+          {workspace && isCanonicalGraph ? (
+            <CanonicalActionPanel
+              caseId={caseId}
+              currentRevision={currentRevision}
               historical={historical}
               onMutationComplete={handleMutationComplete}
               selectedNode={selectedNode}
@@ -298,6 +314,28 @@ function buildGraphBackedInspector(
   const relatedNodes = collectRelatedNodes(node.id, workspace.graph.data.nodes, workspace.graph.data.edges);
 
   switch (node.kind) {
+    case 'problem':
+      return {
+        kind: 'node',
+        title: node.label,
+        status: node.status,
+        summary: node.summary ?? '',
+        primaryItems: collectRelatedNodes(node.id, workspace.graph.data.nodes, workspace.graph.data.edges)
+          .filter((relatedNode) => relatedNode.kind === 'hypothesis')
+          .map((relatedNode) => relatedNode.label),
+        secondaryItems: []
+      };
+    case 'blocker':
+    case 'repair_attempt':
+    case 'evidence_ref':
+      return {
+        kind: 'node',
+        title: node.label,
+        status: node.status,
+        summary: node.summary ?? '',
+        primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
+        secondaryItems: []
+      };
     case 'experiment':
       return {
         kind: 'experiment',

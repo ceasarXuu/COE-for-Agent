@@ -15,6 +15,7 @@ const PROJECTION_TABLE_NAMES = [
   'problems',
   'blockers',
   'repair_attempts',
+  'evidence_pool',
   'evidence_refs',
   'inquiries',
   'entities',
@@ -100,6 +101,7 @@ function createTables(): ProjectedCaseState['tables'] {
     problems: new Map(),
     blockers: new Map(),
     repair_attempts: new Map(),
+    evidence_pool: new Map(),
     evidence_refs: new Map(),
     inquiries: new Map(),
     entities: new Map(),
@@ -209,6 +211,7 @@ function serializeState(state: ProjectedCaseState): SerializedProjectedCaseState
       problems: [...state.tables.problems.values()].map((record) => structuredClone(record)),
       blockers: [...state.tables.blockers.values()].map((record) => structuredClone(record)),
       repair_attempts: [...state.tables.repair_attempts.values()].map((record) => structuredClone(record)),
+      evidence_pool: [...state.tables.evidence_pool.values()].map((record) => structuredClone(record)),
       evidence_refs: [...state.tables.evidence_refs.values()].map((record) => structuredClone(record)),
       inquiries: [...state.tables.inquiries.values()].map((record) => structuredClone(record)),
       entities: [...state.tables.entities.values()].map((record) => structuredClone(record)),
@@ -298,6 +301,7 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
       const objective = asString(payload.objective) ?? null;
       const severity = asString(payload.severity) ?? null;
       const defaultInquiryId = asString(payload.defaultInquiryId);
+      const defaultProblemId = asString(payload.defaultProblemId);
 
       state.caseRecord = {
         id: caseId,
@@ -328,6 +332,190 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
         }, 'open');
       }
 
+      if (defaultProblemId) {
+        upsertNode(state, 'problems', defaultProblemId, event.caseRevision, {
+          id: defaultProblemId,
+          caseId,
+          title,
+          description: objective,
+          environment: '',
+          symptoms: [],
+          resolutionCriteria: [],
+          referenceMaterials: [],
+          status: 'open'
+        }, 'open');
+      }
+
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'problem.updated': {
+      const problemId = asString(payload.problemId);
+      if (problemId) {
+        patchNode(state, 'problems', problemId, event.caseRevision, {
+          ...(payload.title !== null && payload.title !== undefined ? { title: asString(payload.title) ?? null } : {}),
+          ...(payload.description !== null && payload.description !== undefined ? { description: asString(payload.description) ?? null } : {}),
+          ...(payload.environment !== null && payload.environment !== undefined ? { environment: asString(payload.environment) ?? null } : {}),
+          ...(Array.isArray(payload.symptoms) ? { symptoms: asStringArray(payload.symptoms) } : {}),
+          ...(Array.isArray(payload.resolutionCriteria) ? { resolutionCriteria: asStringArray(payload.resolutionCriteria) } : {})
+        });
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'problem.status_updated': {
+      const problemId = asString(payload.problemId);
+      const nextStatus = asString(payload.newStatus);
+      if (problemId && nextStatus) {
+        patchNode(state, 'problems', problemId, event.caseRevision, {
+          status: nextStatus
+        }, nextStatus);
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'problem.reference_material_added': {
+      const problemId = asString(payload.problemId);
+      if (problemId) {
+        const current = state.tables.problems.get(problemId);
+        const currentPayload = current?.payload ?? {};
+        const nextReferenceMaterial = {
+          materialId: asString(payload.materialId) ?? '',
+          kind: asString(payload.materialKind) ?? 'other',
+          title: asString(payload.title) ?? '',
+          contentRef: payload.contentRef ?? null,
+          note: payload.note ?? null
+        };
+        const currentMaterials = Array.isArray(currentPayload.referenceMaterials)
+          ? currentPayload.referenceMaterials
+          : [];
+        patchNode(state, 'problems', problemId, event.caseRevision, {
+          referenceMaterials: [...currentMaterials, nextReferenceMaterial]
+        });
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.hypothesis.created': {
+      const hypothesisId = asString(payload.hypothesisId);
+      if (hypothesisId) {
+        upsertNode(state, 'hypotheses', hypothesisId, event.caseRevision, {
+          id: hypothesisId,
+          caseId: state.caseId,
+          canonicalKind: 'hypothesis',
+          parentNodeId: asString(payload.parentNodeId) ?? null,
+          parentNodeKind: asString(payload.parentNodeKind) ?? null,
+          title: asString(payload.title) ?? asString(payload.statement) ?? null,
+          statement: asString(payload.statement) ?? null,
+          falsificationCriteria: asStringArray(payload.falsificationCriteria),
+          derivedFromEvidenceIds: asStringArray(payload.derivedFromEvidenceIds),
+          status: 'unverified'
+        }, 'unverified');
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.hypothesis.status_updated': {
+      const hypothesisId = asString(payload.hypothesisId);
+      const nextStatus = asString(payload.newStatus);
+      if (hypothesisId && nextStatus) {
+        patchNode(state, 'hypotheses', hypothesisId, event.caseRevision, {
+          status: nextStatus
+        }, nextStatus);
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.blocker.opened': {
+      const blockerId = asString(payload.blockerId);
+      if (blockerId) {
+        upsertNode(state, 'blockers', blockerId, event.caseRevision, {
+          id: blockerId,
+          caseId: state.caseId,
+          canonicalKind: 'blocker',
+          parentNodeId: asString(payload.hypothesisId) ?? null,
+          parentNodeKind: 'hypothesis',
+          description: asString(payload.description) ?? null,
+          possibleWorkarounds: asStringArray(payload.possibleWorkarounds),
+          status: 'active'
+        }, 'active');
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.blocker.closed': {
+      const blockerId = asString(payload.blockerId);
+      const nextStatus = asString(payload.newStatus);
+      if (blockerId && nextStatus) {
+        patchNode(state, 'blockers', blockerId, event.caseRevision, {
+          status: nextStatus
+        }, nextStatus);
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.repair_attempt.created': {
+      const repairAttemptId = asString(payload.repairAttemptId);
+      if (repairAttemptId) {
+        upsertNode(state, 'repair_attempts', repairAttemptId, event.caseRevision, {
+          id: repairAttemptId,
+          caseId: state.caseId,
+          canonicalKind: 'repair_attempt',
+          parentNodeId: asString(payload.parentNodeId) ?? null,
+          parentNodeKind: asString(payload.parentNodeKind) ?? null,
+          changeSummary: asString(payload.changeSummary) ?? null,
+          scope: asString(payload.scope) ?? null,
+          confidence: typeof payload.confidence === 'number' ? payload.confidence : null,
+          status: 'proposed'
+        }, 'proposed');
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.repair_attempt.status_updated': {
+      const repairAttemptId = asString(payload.repairAttemptId);
+      const nextStatus = asString(payload.newStatus);
+      if (repairAttemptId && nextStatus) {
+        patchNode(state, 'repair_attempts', repairAttemptId, event.caseRevision, {
+          status: nextStatus
+        }, nextStatus);
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.evidence.captured': {
+      const evidenceId = asString(payload.evidenceId);
+      if (evidenceId) {
+        upsertNode(state, 'evidence_pool', evidenceId, event.caseRevision, {
+          id: evidenceId,
+          caseId: state.caseId,
+          canonicalKind: 'evidence',
+          kind: asString(payload.kind) ?? 'other',
+          title: asString(payload.title) ?? null,
+          summary: asString(payload.summary) ?? null,
+          contentRef: payload.contentRef ?? null,
+          provenance: asString(payload.provenance) ?? null,
+          confidence: typeof payload.confidence === 'number' ? payload.confidence : null
+        });
+      }
+      touchCaseRevision(state, event.caseRevision);
+      return;
+    }
+    case 'canonical.evidence.attached': {
+      const evidenceRefId = asString(payload.evidenceRefId);
+      if (evidenceRefId) {
+        upsertNode(state, 'evidence_refs', evidenceRefId, event.caseRevision, {
+          id: evidenceRefId,
+          caseId: state.caseId,
+          canonicalKind: 'evidence_ref',
+          parentNodeId: asString(payload.parentNodeId) ?? null,
+          parentNodeKind: asString(payload.parentNodeKind) ?? null,
+          evidenceId: asString(payload.evidenceId) ?? null,
+          effectOnParent: asString(payload.effectOnParent) ?? null,
+          interpretation: asString(payload.interpretation) ?? null,
+          localConfidence: typeof payload.localConfidence === 'number' ? payload.localConfidence : null
+        });
+      }
       touchCaseRevision(state, event.caseRevision);
       return;
     }

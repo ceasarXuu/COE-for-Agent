@@ -77,10 +77,15 @@ declare module 'reactflow' {
   export const ReactFlow: ComponentType<{
     nodes: Node[];
     edges: Edge[];
+    onConnect?: (connection: { source?: string | null; target?: string | null }) => void;
+    onConnectStart?: (event: React.MouseEvent | React.TouchEvent, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => void;
+    onConnectEnd?: (event: MouseEvent | TouchEvent) => void;
     onNodeClick?: (event: React.MouseEvent, node: Node) => void;
     onNodeDragStop?: (event: React.MouseEvent, node: Node) => void;
     onNodesChange?: (changes: NodeChange[]) => void;
     onMoveEnd?: (event: MouseEvent | TouchEvent | null, viewport: { x: number; y: number; zoom: number }) => void;
+    onPaneContextMenu?: (event: React.MouseEvent) => void;
+    onInit?: (instance: unknown) => void;
     nodeTypes?: Record<string, ComponentType<NodeProps>>;
     edgeTypes?: Record<string, ComponentType<EdgeProps>>;
     fitView?: boolean;

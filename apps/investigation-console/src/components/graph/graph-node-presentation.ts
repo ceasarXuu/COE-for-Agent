@@ -12,9 +12,13 @@ export function summarizeGraphNodes(nodes: GraphNodeRecord[]): Array<{ kind: str
   }
 
   return [
+    { kind: 'problem', count: counts.get('problem') ?? 0 },
     { kind: 'symptom', count: counts.get('symptom') ?? 0 },
     { kind: 'blocking_issue', count: counts.get('blocking_issue') ?? 0 },
     { kind: 'residual_risk', count: counts.get('residual_risk') ?? 0 },
+    { kind: 'blocker', count: counts.get('blocker') ?? 0 },
+    { kind: 'repair_attempt', count: counts.get('repair_attempt') ?? 0 },
+    { kind: 'evidence_ref', count: counts.get('evidence_ref') ?? 0 },
     { kind: 'artifact', count: counts.get('artifact') ?? 0 },
     { kind: 'fact', count: counts.get('fact') ?? 0 },
     { kind: 'hypothesis', count: counts.get('hypothesis') ?? 0 }
@@ -42,6 +46,11 @@ export function getPresentationKind(node: Pick<GraphNodeRecord, 'kind' | 'displa
 
 function normalizeLegacyKind(kind: string): string {
   switch (kind) {
+    case 'problem':
+    case 'blocker':
+    case 'repair_attempt':
+    case 'evidence_ref':
+      return kind;
     case 'symptom':
     case 'inquiry':
       return 'symptom';

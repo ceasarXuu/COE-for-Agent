@@ -2,7 +2,7 @@ import type { ProjectedCaseState } from './replay.js';
 
 export interface ProjectionEdge {
   key: string;
-  type: 'evidences' | 'supports' | 'contradicts' | 'explains' | 'tests' | 'blocks' | 'unresolved_by';
+  type: 'evidences' | 'supports' | 'contradicts' | 'explains' | 'tests' | 'blocks' | 'unresolved_by' | 'structural';
   fromId: string;
   toId: string;
 }
@@ -40,6 +40,14 @@ function addEdge(edges: Map<string, ProjectionEdge>, type: ProjectionEdge['type'
 }
 
 export function deriveProjectionEdges(state: ProjectedCaseState): ProjectionEdge[] {
+  if (isCanonicalGraphState(state)) {
+    return deriveCanonicalEdges(state);
+  }
+
+  return deriveLegacyEdges(state);
+}
+
+function deriveLegacyEdges(state: ProjectedCaseState): ProjectionEdge[] {
   const edges = new Map<string, ProjectionEdge>();
 
   for (const artifact of state.tables.artifacts.values()) {
@@ -94,4 +102,48 @@ export function deriveProjectionEdges(state: ProjectedCaseState): ProjectionEdge
   }
 
   return [...edges.values()].sort((left, right) => left.key.localeCompare(right.key));
+}
+
+function deriveCanonicalEdges(state: ProjectedCaseState): ProjectionEdge[] {
+  const edges = new Map<string, ProjectionEdge>();
+
+  for (const table of [state.tables.hypotheses, state.tables.blockers, state.tables.repair_attempts, state.tables.evidence_refs]) {
+    for (const record of table.values()) {
+      const payload = asObject(record.payload);
+      const parentNodeId = asString(payload.parentNodeId);
+      if (!parentNodeId) {
+        continue;
+      }
+
+      addEdge(edges, 'structural', parentNodeId, record.id);
+    }
+  }
+
+  return [...edges.values()].sort((left, right) => left.key.localeCompare(right.key));
+}
+
+export function isCanonicalGraphState(state: ProjectedCaseState): boolean {
+  if (state.tables.problems.size === 0) {
+    return false;
+  }
+
+  const hasCanonicalChildren = [...state.tables.hypotheses.values()].some((record) => asString(asObject(record.payload).canonicalKind) === 'hypothesis')
+    || state.tables.blockers.size > 0
+    || state.tables.repair_attempts.size > 0
+    || state.tables.evidence_refs.size > 0;
+
+  if (hasCanonicalChildren) {
+    return true;
+  }
+
+  const hasLegacyGraphNodes = state.tables.symptoms.size > 0
+    || state.tables.artifacts.size > 0
+    || state.tables.facts.size > 0
+    || [...state.tables.hypotheses.values()].some((record) => asString(asObject(record.payload).canonicalKind) !== 'hypothesis')
+    || state.tables.experiments.size > 0
+    || state.tables.gaps.size > 0
+    || state.tables.residuals.size > 0
+    || state.tables.decisions.size > 0;
+
+  return !hasLegacyGraphNodes;
 }
