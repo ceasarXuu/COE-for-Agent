@@ -9,7 +9,9 @@ import ReactFlow, {
   type Edge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import type { CaseGraphEnvelope, CaseSnapshotEnvelope } from '../../lib/api.js';
+import { buildIdempotencyKey } from '@coe/shared-utils';
+
+import { invokeTool, type CaseGraphEnvelope, type CaseSnapshotEnvelope } from '../../lib/api.js';
 import { useI18n } from '../../lib/i18n.js';
 import { useGraphLayout, type GraphNodeRecord } from './useGraphLayout.js';
 import { HypothesisNode } from './nodes/HypothesisNode.js';
@@ -48,6 +50,7 @@ const edgeTypes = {
 interface GraphCanvasProps {
   snapshot: CaseSnapshotEnvelope;
   graph: CaseGraphEnvelope;
+  onMutationComplete?: () => Promise<void> | void;
   onSelectNode: (nodeId: string) => void;
 }
 
@@ -63,22 +66,21 @@ interface FlowPositionProjector {
 }
 
 const contextMenuNodeOptions = [
-  { type: 'issue', labelKey: 'graph.node.issue', defaultLabel: 'New Issue' },
-  { type: 'artifact', labelKey: 'graph.node.artifact', defaultLabel: 'New Artifact' },
-  { type: 'fact', labelKey: 'graph.node.fact', defaultLabel: 'New Fact' },
-  { type: 'hypothesis', labelKey: 'graph.node.hypothesis', defaultLabel: 'New Hypothesis' },
-  { type: 'experiment', labelKey: 'graph.node.experiment', defaultLabel: 'New Experiment' },
-  { type: 'decision', labelKey: 'graph.node.decision', defaultLabel: 'New Decision' }
+  { type: 'issue', labelKey: 'graph.node.issue', defaultLabelKey: 'graph.newIssue' },
+  { type: 'artifact', labelKey: 'graph.node.artifact', defaultLabelKey: 'graph.newArtifact' }
 ] as const;
 
-export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps) {
+export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode }: GraphCanvasProps) {
   const { compareText, formatEnumLabel, t } = useI18n();
   const layout = useMemo(() => useGraphLayout(graph, compareText), [compareText, graph]);
   const caseRecord = snapshot.data.case;
   const caseId = caseRecord?.id ?? null;
+  const currentRevision = caseRecord?.revision ?? snapshot.headRevision;
   const [isSpacePanning, setIsSpacePanning] = useState(false);
   const [reactFlowInstance, setReactFlowInstance] = useState<FlowPositionProjector | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [mutationPending, setMutationPending] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     return layout.nodes.map((node) => ({
@@ -249,6 +251,10 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
 
   const handlePaneContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
+    if (snapshot.historical || mutationPending) {
+      return;
+    }
+
     if (reactFlowInstance && event.currentTarget instanceof HTMLElement) {
       const container = event.currentTarget.closest('.graph-canvas-container');
       const menuAnchor = container instanceof HTMLElement ? container : event.currentTarget;
@@ -278,36 +284,66 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
     setContextMenu(null);
   };
 
-  const handleAddNode = (type: string, label: string) => {
-    if (!reactFlowInstance || !contextMenu) return;
+  const handleAddNode = async (type: 'artifact' | 'issue', labelKey: 'graph.newArtifact' | 'graph.newIssue') => {
+    if (!caseId || snapshot.historical) {
+      return;
+    }
 
-    const nodeId = `node_${Date.now()}`;
-    const newNode: Node<GraphNodeViewData> = {
-      id: nodeId,
-      type,
-      position: { x: contextMenu.flowX, y: contextMenu.flowY },
-      data: {
-        id: nodeId,
-        label,
-        kind: type as any,
-        status: 'proposed',
-        revision: 1,
-        kindLabel: formatEnumLabel(type as any),
-        kindDetailLabel: null,
-        revisionLabel: t('graph.revision', { revision: 1 }),
-        statusLabel: formatEnumLabel('proposed')
+    const label = t(labelKey);
+    setMutationPending(true);
+    setMutationError(null);
+
+    try {
+      let createdIds: string[] = [];
+
+      if (type === 'issue') {
+        const result = await invokeTool<{ createdIds?: string[] }>('investigation.issue.record', {
+          caseId,
+          ifCaseRevision: currentRevision,
+          issueKind: 'symptom',
+          title: label,
+          summary: label,
+          priority: normalizePriority(caseRecord?.severity),
+          reproducibility: 'unknown',
+          idempotencyKey: buildIdempotencyKey('graph-issue-record')
+        });
+        createdIds = result.createdIds ?? [];
+      } else {
+        const result = await invokeTool<{ createdIds?: string[] }>('investigation.artifact.attach', {
+          caseId,
+          ifCaseRevision: currentRevision,
+          artifactKind: 'log',
+          title: label,
+          source: {
+            uri: `manual://graph-canvas/${caseId}/${Date.now()}`
+          },
+          excerpt: label,
+          idempotencyKey: buildIdempotencyKey('graph-artifact-attach')
+        });
+        createdIds = result.createdIds ?? [];
       }
-    };
 
-    setNodes((prevNodes) => [...prevNodes, newNode]);
-    console.info('[investigation-console] graph-node-added', {
-      caseId,
-      source: 'graph-canvas',
-      nodeId,
-      nodeType: type,
-      position: newNode.position
-    });
-    setContextMenu(null);
+      console.info('[investigation-console] graph-node-persisted', {
+        caseId,
+        createdIds,
+        nodeType: type,
+        source: 'graph-canvas'
+      });
+
+      setContextMenu(null);
+      await onMutationComplete?.();
+    } catch (reason: unknown) {
+      const message = reason instanceof Error ? reason.message : t('errors.mutationFailed');
+      console.error('[investigation-console] graph-node-persist-failed', {
+        caseId,
+        message,
+        nodeType: type,
+        source: 'graph-canvas'
+      });
+      setMutationError(message);
+    } finally {
+      setMutationPending(false);
+    }
   };
 
   const summaryTags = summarizeGraphNodes(graph.data.nodes).map((item) => `${formatEnumLabel(item.kind)} ${item.count}`);
@@ -366,6 +402,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
           </div>
         </div>
       </div>
+      {mutationError ? <p className="inline-error">{mutationError}</p> : null}
 
       <div className="graph-canvas-container">
         {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
@@ -421,7 +458,7 @@ export function GraphCanvas({ snapshot, graph, onSelectNode }: GraphCanvasProps)
               <div
                 key={option.type}
                 className="context-menu-item"
-                onClick={() => handleAddNode(option.type, option.defaultLabel)}
+                onClick={() => void handleAddNode(option.type, option.defaultLabelKey)}
               >
                 {t(option.labelKey)}
               </div>
@@ -449,4 +486,16 @@ function getNodeColor(nodeType: string | undefined): string {
   };
   
   return colors[nodeType ?? ''] ?? '#71717a';
+}
+
+function normalizePriority(severity: unknown): 'critical' | 'high' | 'medium' | 'low' {
+  switch (severity) {
+    case 'critical':
+    case 'high':
+    case 'medium':
+    case 'low':
+      return severity;
+    default:
+      return 'medium';
+  }
 }

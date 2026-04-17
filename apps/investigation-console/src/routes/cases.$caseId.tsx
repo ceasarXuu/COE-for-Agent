@@ -237,6 +237,7 @@ export function CaseWorkspaceRoute() {
             <GraphCanvas
               snapshot={workspace.snapshot}
               graph={workspace.graph}
+              onMutationComplete={handleMutationComplete}
               onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
             />
           ) : null}

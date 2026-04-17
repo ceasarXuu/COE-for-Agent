@@ -206,17 +206,13 @@ test('workspace opens the graph context menu on right click', async ({ page }) =
   });
 
   await expect(contextMenu).toBeVisible();
-  await expect(contextMenu.locator('.context-menu-item')).toHaveCount(6);
+  await expect(contextMenu.locator('.context-menu-item')).toHaveCount(2);
   await expect(contextMenu).toContainText('Issue');
   await expect(contextMenu).toContainText('Artifact');
-  await expect(contextMenu).toContainText('Fact');
-  await expect(contextMenu).toContainText('Hypothesis');
-  await expect(contextMenu).toContainText('Experiment');
-  await expect(contextMenu).toContainText('Decision');
-  await expect(contextMenu).not.toContainText('Gap');
-  await expect(contextMenu).not.toContainText('Residual');
-  await expect(contextMenu).not.toContainText('Inquiry');
-  await expect(contextMenu).not.toContainText('Symptom');
+  await expect(contextMenu).not.toContainText('Fact');
+  await expect(contextMenu).not.toContainText('Hypothesis');
+  await expect(contextMenu).not.toContainText('Experiment');
+  await expect(contextMenu).not.toContainText('Decision');
 });
 
 test('workspace closes the graph context menu when the canvas is clicked elsewhere', async ({ page }) => {
@@ -262,6 +258,41 @@ test('workspace connects nodes when dragging from one handle to another', async 
   await page.mouse.up();
 
   await expect.poll(() => edges.count()).toBe(edgeCountBefore + 1);
+});
+
+test('workspace persists manually added issue nodes across reloads', async ({ page }) => {
+  await page.goto('/cases');
+  await page.getByTestId('case-create-card').click();
+
+  await page.getByTestId('create-case-title').fill('Graph save regression');
+  await page.getByTestId('create-case-objective').fill('Verify graph context-menu additions persist after navigation.');
+  await page.getByTestId('create-case-severity').selectOption('high');
+  await page.getByTestId('create-case-project-directory').fill('/workspace/graph-save');
+  await page.getByTestId('create-case-submit').click();
+
+  await expect.poll(() => new URL(page.url()).pathname).toMatch(/^\/cases\/case_/);
+
+  const pane = page.locator('.react-flow__pane');
+  const contextMenu = page.locator('.context-menu');
+  const graphNodes = page.locator('.react-flow__node');
+
+  await expect(graphNodes).toHaveCount(2);
+
+  await pane.click({
+    button: 'right',
+    position: { x: 96, y: 96 }
+  });
+
+  await expect(contextMenu).toBeVisible();
+  await contextMenu.getByText('Issue').click();
+
+  await expect.poll(() => graphNodes.count()).toBe(3);
+  const workspaceUrl = page.url();
+
+  await page.getByRole('link', { name: 'Cases' }).click();
+  await page.goto(workspaceUrl);
+
+  await expect.poll(() => graphNodes.count()).toBe(3);
 });
 
 test('workspace graph pans only from blank-pane drags or space-drag and keeps plain node drags for repositioning', async ({ page }) => {

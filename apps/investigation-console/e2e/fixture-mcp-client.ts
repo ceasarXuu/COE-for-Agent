@@ -143,6 +143,18 @@ interface ManualCaseState {
   labels: string[];
   createdAt: string;
   updatedAt: string;
+  headRevision: number;
+  counts: {
+    inquiries: number;
+    symptoms: number;
+    artifacts: number;
+    facts: number;
+  };
+  nodes: RevisionState['nodes'];
+  edges: RevisionState['edges'];
+  timeline: TimelineEvent[];
+  nextArtifactSequence: number;
+  nextIssueSequence: number;
 }
 
 function clone<T>(value: T): T {
@@ -1259,7 +1271,127 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
       projectDirectory: requireString(input, 'projectDirectory'),
       labels,
       createdAt,
-      updatedAt: createdAt
+      updatedAt: createdAt,
+      headRevision: 1,
+      counts: {
+        inquiries: 1,
+        symptoms: 0,
+        artifacts: 0,
+        facts: 0
+      },
+      nodes: [
+        {
+          id: caseId,
+          kind: 'case',
+          label: requireString(input, 'title'),
+          status: 'active',
+          revision: 1
+        },
+        {
+          id: inquiryId,
+          kind: 'inquiry',
+          label: 'Default inquiry',
+          status: 'open',
+          revision: 1
+        }
+      ],
+      edges: [
+        {
+          key: `${caseId}:${inquiryId}:contains`,
+          type: 'contains',
+          fromId: caseId,
+          toId: inquiryId
+        }
+      ],
+      timeline: [
+        {
+          eventId: `event_${caseId}_opened`,
+          eventType: 'case.opened',
+          caseRevision: 1,
+          occurredAt: createdAt,
+          summary: 'Case opened with a default inquiry.'
+        }
+      ],
+      nextArtifactSequence: 1,
+      nextIssueSequence: 1
+    };
+  }
+
+  function nextManualCaseTimestamp(manualCase: ManualCaseState, nextRevision: number) {
+    return new Date(Date.parse(manualCase.createdAt) + nextRevision * 60_000).toISOString();
+  }
+
+  function recordManualIssue(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const symptomId = `symptom_${manualCase.caseId}_${String(manualCase.nextIssueSequence++).padStart(4, '0')}`;
+    const label = typeof input.summary === 'string'
+      ? input.summary
+      : typeof input.title === 'string'
+        ? input.title
+        : 'Issue';
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.counts.symptoms += 1;
+    manualCase.nodes.push({
+      id: symptomId,
+      kind: 'symptom',
+      label,
+      status: 'open',
+      revision
+    });
+    manualCase.timeline.push({
+      eventId: `event_${symptomId}_reported`,
+      eventType: 'symptom.reported',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Issue recorded from the graph canvas.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      createdIds: [symptomId],
+      warnings: [],
+      violations: []
+    };
+  }
+
+  function recordManualArtifact(manualCase: ManualCaseState, input: Record<string, unknown>) {
+    const revision = manualCase.headRevision + 1;
+    const artifactId = `artifact_${manualCase.caseId}_${String(manualCase.nextArtifactSequence++).padStart(4, '0')}`;
+    const label = typeof input.title === 'string' ? input.title : 'Artifact';
+    const occurredAt = nextManualCaseTimestamp(manualCase, revision);
+
+    manualCase.headRevision = revision;
+    manualCase.updatedAt = occurredAt;
+    manualCase.counts.artifacts += 1;
+    manualCase.nodes.push({
+      id: artifactId,
+      kind: 'artifact',
+      label,
+      status: null,
+      revision
+    });
+    manualCase.timeline.push({
+      eventId: `event_${artifactId}_attached`,
+      eventType: 'artifact.attached',
+      caseRevision: revision,
+      occurredAt,
+      summary: 'Artifact attached from the graph canvas.'
+    });
+
+    return {
+      ok: true,
+      headRevisionBefore: revision - 1,
+      headRevisionAfter: revision,
+      projectionScheduled: false,
+      createdIds: [artifactId],
+      warnings: [],
+      violations: []
     };
   }
 
@@ -1334,7 +1466,7 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             status: 'active',
             stage: 'intake',
             severity: manualCase.severity,
-            headRevision: 1,
+            headRevision: manualCase.headRevision,
             updatedAt: manualCase.updatedAt
           }))
         ].filter((item) => {
@@ -1380,8 +1512,8 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               uri,
               mimeType: 'application/json',
               data: createResourceEnvelope({
-                headRevision: 1,
-                projectionRevision: 1,
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
                 data: {
                   case: {
                     id: manualCase.caseId,
@@ -1390,17 +1522,12 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
                     severity: manualCase.severity,
                     status: 'active',
                     stage: 'intake',
-                    revision: 1,
+                    revision: manualCase.headRevision,
                     projectDirectory: manualCase.projectDirectory,
                     labels: manualCase.labels,
                     defaultInquiryId: manualCase.inquiryId
                   },
-                  counts: {
-                    inquiries: 1,
-                    symptoms: 0,
-                    artifacts: 0,
-                    facts: 0
-                  },
+                  counts: clone(manualCase.counts),
                   warnings: []
                 }
               })
@@ -1410,18 +1537,10 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               uri,
               mimeType: 'application/json',
               data: createResourceEnvelope({
-                headRevision: 1,
-                projectionRevision: 1,
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
                 data: {
-                  events: [
-                    {
-                      eventId: `event_${manualCase.caseId}_opened`,
-                      eventType: 'case.opened',
-                      caseRevision: 1,
-                      occurredAt: manualCase.createdAt,
-                      summary: 'Case opened with a default inquiry.'
-                    }
-                  ]
+                  events: clone(manualCase.timeline)
                 }
               })
             };
@@ -1430,34 +1549,12 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               uri,
               mimeType: 'application/json',
               data: createResourceEnvelope({
-                headRevision: 1,
-                projectionRevision: 1,
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
                 data: {
                   focusId: null,
-                  nodes: [
-                    {
-                      id: manualCase.caseId,
-                      kind: 'case',
-                      label: manualCase.title,
-                      status: 'active',
-                      revision: 1
-                    },
-                    {
-                      id: manualCase.inquiryId,
-                      kind: 'inquiry',
-                      label: 'Default inquiry',
-                      status: 'open',
-                      revision: 1
-                    }
-                  ],
-                  edges: [
-                    {
-                      key: `${manualCase.caseId}:${manualCase.inquiryId}:contains`,
-                      type: 'contains',
-                      fromId: manualCase.caseId,
-                      toId: manualCase.inquiryId
-                    }
-                  ]
+                  nodes: clone(manualCase.nodes),
+                  edges: clone(manualCase.edges)
                 }
               })
             };
@@ -1466,14 +1563,22 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               uri,
               mimeType: 'application/json',
               data: createResourceEnvelope({
-                headRevision: 1,
-                projectionRevision: 1,
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
                 data: {
-                  items: [],
+                  items: manualCase.nodes
+                    .filter((node) => node.kind === 'symptom')
+                    .map((node) => ({
+                      symptomId: node.id,
+                      statement: node.label,
+                      coverage: 'none' as const,
+                      supportingFactIds: [],
+                      relatedHypothesisIds: []
+                    })),
                   summary: {
                     direct: 0,
                     indirect: 0,
-                    none: 0
+                    none: manualCase.nodes.filter((node) => node.kind === 'symptom').length
                   }
                 }
               })
@@ -1483,11 +1588,11 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               uri,
               mimeType: 'application/json',
               data: createResourceEnvelope({
-                headRevision: 1,
-                projectionRevision: 1,
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
                 data: {
-                  fromRevision: 1,
-                  toRevision: 1,
+                  fromRevision: manualCase.headRevision,
+                  toRevision: manualCase.headRevision,
                   changedNodeIds: [],
                   changedEdgeKeys: [],
                   stateTransitions: [],
@@ -1500,8 +1605,8 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               uri,
               mimeType: 'application/json',
               data: createResourceEnvelope({
-                headRevision: 1,
-                projectionRevision: 1,
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
                 data: {
                   hypothesis: null,
                   supportingFacts: [],
@@ -1516,8 +1621,8 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               uri,
               mimeType: 'application/json',
               data: createResourceEnvelope({
-                headRevision: 1,
-                projectionRevision: 1,
+                headRevision: manualCase.headRevision,
+                projectionRevision: manualCase.headRevision,
                 data: {
                   inquiry: resourceId === manualCase.inquiryId
                     ? {
@@ -1670,6 +1775,16 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             return clone(manualGuardrails().closeCase);
           }
           return clone(headState.guardrails.closeCase);
+        case 'investigation.issue.record':
+          if (manualCase) {
+            return recordManualIssue(manualCase, input);
+          }
+          throw new Error('fixture only supports issue.record for manual cases');
+        case 'investigation.artifact.attach':
+          if (manualCase) {
+            return recordManualArtifact(manualCase, input);
+          }
+          throw new Error('fixture only supports artifact.attach for manual cases');
         case 'investigation.case.advance_stage': {
           if (typeof input.confirmToken !== 'string' || input.confirmToken.length === 0) {
             throw new Error('confirmToken is required');
