@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/hypothesis.create.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "parentNodeId", "statement", "falsificationCriteria"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "parentNodeId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "statement": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "falsificationCriteria": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "derivedFromEvidenceIds": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^evidence_[0-9A-F]{26}$" },
+      "uniqueItems": true
+    }
+  }
+}

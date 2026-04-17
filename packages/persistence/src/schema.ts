@@ -126,6 +126,10 @@ export interface PersistenceDatabase {
   command_dedup: CommandDedupTable;
   cases: CasesTable;
   problems: CurrentStateTable;
+  blockers: CurrentStateTable;
+  repair_attempts: CurrentStateTable;
+  evidence_pool: CurrentStateTable;
+  evidence_refs: CurrentStateTable;
   inquiries: CurrentStateTable;
   entities: CurrentStateTable;
   symptoms: CurrentStateTable;

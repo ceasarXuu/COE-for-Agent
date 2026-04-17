@@ -133,6 +133,16 @@ export function getAuthorizationRequirement(
         reasonText: optionalString(input.reason) ?? ''
       });
     }
+    case 'investigation.hypothesis.set_status': {
+      const newStatus = optionalString(input.newStatus);
+      return buildRequirement(input, {
+        minimumRole: newStatus === 'confirmed' ? 'Reviewer' : 'Operator',
+        reviewerOnly: newStatus === 'confirmed',
+        requiresConfirmToken: newStatus === 'confirmed',
+        targetIds: [requireStringField(input, 'hypothesisId')],
+        reasonText: optionalString(input.reason) ?? ''
+      });
+    }
     case 'investigation.decision.record': {
       const decisionKind = optionalString(input.decisionKind) ?? '';
       const reviewerOnly = REVIEWER_ONLY_DECISION_KINDS.has(decisionKind);

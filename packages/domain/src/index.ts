@@ -6,6 +6,7 @@ export * from './commands/command-result.js';
 export * from './canonical-case-graph.js';
 export * from './state-machines/case.js';
 export * from './state-machines/problem.js';
+export * from './state-machines/canonical-hypothesis.js';
 export * from './state-machines/inquiry.js';
 export * from './state-machines/hypothesis.js';
 export * from './state-machines/experiment.js';

@@ -1,7 +1,8 @@
+import type { CanonicalHypothesisStatus } from './state-machines/canonical-hypothesis.js';
+
 export type CanonicalGraphNodeKind = 'problem' | 'hypothesis' | 'evidence_ref' | 'blocker' | 'repair_attempt';
 
 export type CanonicalProblemStatus = 'open' | 'resolved' | 'abandoned';
-export type CanonicalHypothesisStatus = 'unverified' | 'blocked' | 'confirmed' | 'rejected';
 export type CanonicalBlockerStatus = 'active' | 'closed';
 export type CanonicalRepairAttemptStatus = 'proposed' | 'running' | 'effective' | 'ineffective';
 

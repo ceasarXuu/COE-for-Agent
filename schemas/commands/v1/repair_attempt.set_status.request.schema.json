@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/repair_attempt.set_status.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "repairAttemptId", "newStatus"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "repairAttemptId": { "type": "string", "pattern": "^repair_attempt_[0-9A-F]{26}$" },
+    "newStatus": { "type": "string", "enum": ["running", "effective", "ineffective"] },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 4000 }
+  }
+}

@@ -16,18 +16,27 @@ import { handleCaseOpen } from '../modules/commands/case-open.js';
 import { handleContextRegister } from '../modules/commands/context-register.js';
 import { handleDecisionRecord } from '../modules/commands/decision-record.js';
 import { handleEntityRegister } from '../modules/commands/entity-register.js';
+import { handleEvidenceAttachExisting } from '../modules/commands/evidence-attach-existing.js';
+import { handleEvidenceCaptureAndAttach } from '../modules/commands/evidence-capture-and-attach.js';
+import { handleEvidenceCapture } from '../modules/commands/evidence-capture.js';
 import { handleExperimentPlan } from '../modules/commands/experiment-plan.js';
 import { handleExperimentRecordResult } from '../modules/commands/experiment-record-result.js';
 import { handleFactAssert } from '../modules/commands/fact-assert.js';
+import { handleBlockerClose } from '../modules/commands/blocker-close.js';
+import { handleBlockerOpen } from '../modules/commands/blocker-open.js';
 import { handleGapOpen } from '../modules/commands/gap-open.js';
 import { handleGapResolve } from '../modules/commands/gap-resolve.js';
+import { handleHypothesisCreate } from '../modules/commands/hypothesis-create.js';
 import { handleHypothesisPropose } from '../modules/commands/hypothesis-propose.js';
+import { handleHypothesisSetStatus } from '../modules/commands/hypothesis-set-status.js';
 import { handleHypothesisUpdateStatus } from '../modules/commands/hypothesis-update-status.js';
 import { handleInquiryClose } from '../modules/commands/inquiry-close.js';
 import { handleInquiryOpen } from '../modules/commands/inquiry-open.js';
 import { handleProblemAddReferenceMaterial } from '../modules/commands/problem-add-reference-material.js';
 import { handleProblemSetStatus } from '../modules/commands/problem-set-status.js';
 import { handleProblemUpdate } from '../modules/commands/problem-update.js';
+import { handleRepairAttemptCreate } from '../modules/commands/repair-attempt-create.js';
+import { handleRepairAttemptSetStatus } from '../modules/commands/repair-attempt-set-status.js';
 import { handleIssueRecord } from '../modules/commands/issue-record.js';
 import { handleIssueResolve } from '../modules/commands/issue-resolve.js';
 import { handleResidualOpen } from '../modules/commands/residual-open.js';
@@ -111,6 +120,15 @@ export class InvestigationMcpServer {
             ['investigation.problem.update', (input) => handleProblemUpdate(services, input)],
             ['investigation.problem.set_status', (input) => handleProblemSetStatus(services, input)],
             ['investigation.problem.add_reference_material', (input) => handleProblemAddReferenceMaterial(services, input)],
+            ['investigation.hypothesis.create', (input) => handleHypothesisCreate(services, input)],
+            ['investigation.hypothesis.set_status', (input) => handleHypothesisSetStatus(services, input)],
+            ['investigation.blocker.open', (input) => handleBlockerOpen(services, input)],
+            ['investigation.blocker.close', (input) => handleBlockerClose(services, input)],
+            ['investigation.repair_attempt.create', (input) => handleRepairAttemptCreate(services, input)],
+            ['investigation.repair_attempt.set_status', (input) => handleRepairAttemptSetStatus(services, input)],
+            ['investigation.evidence.capture', (input) => handleEvidenceCapture(services, input)],
+            ['investigation.evidence.attach_existing', (input) => handleEvidenceAttachExisting(services, input)],
+            ['investigation.evidence.capture_and_attach', (input) => handleEvidenceCaptureAndAttach(services, input)],
             ['investigation.issue.record', (input) => handleIssueRecord(services, input)],
             ['investigation.issue.resolve', (input) => handleIssueResolve(services, input)],
             ['investigation.context.register', (input) => handleContextRegister(services, input)],

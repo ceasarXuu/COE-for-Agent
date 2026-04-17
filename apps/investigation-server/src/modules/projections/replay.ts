@@ -13,6 +13,9 @@ import type { InvestigationServerServices } from '../../services.js';
 
 const PROJECTION_TABLE_NAMES = [
   'problems',
+  'blockers',
+  'repair_attempts',
+  'evidence_refs',
   'inquiries',
   'entities',
   'symptoms',
@@ -27,6 +30,10 @@ const PROJECTION_TABLE_NAMES = [
 
 const NODE_KIND_BY_TABLE: Record<CurrentStateTableName, string> = {
   problems: 'problem',
+  blockers: 'blocker',
+  repair_attempts: 'repair_attempt',
+  evidence_pool: 'evidence',
+  evidence_refs: 'evidence_ref',
   inquiries: 'inquiry',
   entities: 'entity',
   symptoms: 'symptom',
@@ -91,6 +98,9 @@ function asStringArray(value: unknown): string[] {
 function createTables(): ProjectedCaseState['tables'] {
   return {
     problems: new Map(),
+    blockers: new Map(),
+    repair_attempts: new Map(),
+    evidence_refs: new Map(),
     inquiries: new Map(),
     entities: new Map(),
     symptoms: new Map(),
@@ -197,6 +207,9 @@ function serializeState(state: ProjectedCaseState): SerializedProjectedCaseState
     caseRecord: state.caseRecord ? structuredClone(state.caseRecord) : null,
     tables: {
       problems: [...state.tables.problems.values()].map((record) => structuredClone(record)),
+      blockers: [...state.tables.blockers.values()].map((record) => structuredClone(record)),
+      repair_attempts: [...state.tables.repair_attempts.values()].map((record) => structuredClone(record)),
+      evidence_refs: [...state.tables.evidence_refs.values()].map((record) => structuredClone(record)),
       inquiries: [...state.tables.inquiries.values()].map((record) => structuredClone(record)),
       entities: [...state.tables.entities.values()].map((record) => structuredClone(record)),
       symptoms: [...state.tables.symptoms.values()].map((record) => structuredClone(record)),

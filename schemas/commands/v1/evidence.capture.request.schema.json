@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/evidence.capture.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "kind", "title", "provenance"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "kind": { "type": "string", "enum": ["log", "code", "trace", "reasoning", "experiment_result", "document", "other"] },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "contentRef": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "provenance": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  },
+  "anyOf": [
+    { "required": ["summary"] },
+    { "required": ["contentRef"] }
+  ]
+}

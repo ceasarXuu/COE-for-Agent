@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  transitionCanonicalHypothesisStatus,
   transitionBlockerStatus,
   transitionProblemStatus,
   transitionRepairAttemptStatus
@@ -21,5 +22,11 @@ describe('canonical state machines', () => {
     expect(transitionRepairAttemptStatus('proposed', 'running')).toBe('running');
     expect(transitionRepairAttemptStatus('running', 'effective')).toBe('effective');
     expect(() => transitionRepairAttemptStatus('effective', 'running')).toThrow('Invalid repair attempt transition');
+  });
+
+  test('allows only legal canonical hypothesis transitions', () => {
+    expect(transitionCanonicalHypothesisStatus('unverified', 'blocked')).toBe('blocked');
+    expect(transitionCanonicalHypothesisStatus('unverified', 'confirmed')).toBe('confirmed');
+    expect(() => transitionCanonicalHypothesisStatus('confirmed', 'unverified')).toThrow('Invalid canonical hypothesis transition');
   });
 });

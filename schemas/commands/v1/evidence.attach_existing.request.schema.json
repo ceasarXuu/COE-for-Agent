@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/evidence.attach_existing.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "parentNodeId", "evidenceId", "effectOnParent", "interpretation"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "parentNodeId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "evidenceId": { "type": "string", "pattern": "^evidence_[0-9A-F]{26}$" },
+    "effectOnParent": { "type": "string", "enum": ["supports", "refutes", "neutral", "validates", "invalidates"] },
+    "interpretation": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "localConfidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}
