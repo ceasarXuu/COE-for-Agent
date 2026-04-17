@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/problem.set_status.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "problemId", "newStatus"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "problemId": { "type": "string", "pattern": "^problem_[0-9A-F]{26}$" },
+    "newStatus": { "type": "string", "enum": ["resolved", "abandoned"] },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 4000 }
+  }
+}

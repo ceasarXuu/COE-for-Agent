@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/problem.update.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "problemId"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "problemId": { "type": "string", "pattern": "^problem_[0-9A-F]{26}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "environment": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "symptoms": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "uniqueItems": true
+    },
+    "resolutionCriteria": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "uniqueItems": true
+    }
+  },
+  "anyOf": [
+    { "required": ["title"] },
+    { "required": ["description"] },
+    { "required": ["environment"] },
+    { "required": ["symptoms"] },
+    { "required": ["resolutionCriteria"] }
+  ]
+}

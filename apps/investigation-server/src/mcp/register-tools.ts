@@ -10,6 +10,9 @@ export interface ToolRegistration {
 const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
   'investigation.case.open': 'commands/v1/case.open.request.schema.json',
   'investigation.case.advance_stage': 'commands/v1/case.advance_stage.request.schema.json',
+  'investigation.problem.update': 'commands/v1/problem.update.request.schema.json',
+  'investigation.problem.set_status': 'commands/v1/problem.set_status.request.schema.json',
+  'investigation.problem.add_reference_material': 'commands/v1/problem.add_reference_material.request.schema.json',
   'investigation.issue.record': 'commands/v1/issue.record.request.schema.json',
   'investigation.issue.resolve': 'commands/v1/issue.resolve.request.schema.json',
   'investigation.context.register': 'commands/v1/context.register.request.schema.json',
@@ -33,6 +36,9 @@ const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
 const TOOL_DESCRIPTION_BY_NAME: Record<string, string> = {
   'investigation.case.open': 'Open a new investigation case and create its default inquiry.',
   'investigation.case.advance_stage': 'Advance a case to the next investigation lifecycle stage.',
+  'investigation.problem.update': 'Update the canonical root problem content for a case.',
+  'investigation.problem.set_status': 'Set the canonical root problem status.',
+  'investigation.problem.add_reference_material': 'Attach a non-evidentiary reference material item to the canonical root problem.',
   'investigation.issue.record': 'Record a canonical issue and route it to the compatible legacy investigation model.',
   'investigation.issue.resolve': 'Resolve a canonical issue by routing to the compatible legacy lifecycle command.',
   'investigation.context.register': 'Register investigation context using the simplified context terminology.',

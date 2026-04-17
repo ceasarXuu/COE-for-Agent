@@ -25,6 +25,9 @@ import { handleHypothesisPropose } from '../modules/commands/hypothesis-propose.
 import { handleHypothesisUpdateStatus } from '../modules/commands/hypothesis-update-status.js';
 import { handleInquiryClose } from '../modules/commands/inquiry-close.js';
 import { handleInquiryOpen } from '../modules/commands/inquiry-open.js';
+import { handleProblemAddReferenceMaterial } from '../modules/commands/problem-add-reference-material.js';
+import { handleProblemSetStatus } from '../modules/commands/problem-set-status.js';
+import { handleProblemUpdate } from '../modules/commands/problem-update.js';
 import { handleIssueRecord } from '../modules/commands/issue-record.js';
 import { handleIssueResolve } from '../modules/commands/issue-resolve.js';
 import { handleResidualOpen } from '../modules/commands/residual-open.js';
@@ -105,6 +108,9 @@ export class InvestigationMcpServer {
       ? [
             ['investigation.case.open', (input) => handleCaseOpen(services, input)],
             ['investigation.case.advance_stage', (input) => handleCaseAdvanceStage(services, input)],
+            ['investigation.problem.update', (input) => handleProblemUpdate(services, input)],
+            ['investigation.problem.set_status', (input) => handleProblemSetStatus(services, input)],
+            ['investigation.problem.add_reference_material', (input) => handleProblemAddReferenceMaterial(services, input)],
             ['investigation.issue.record', (input) => handleIssueRecord(services, input)],
             ['investigation.issue.resolve', (input) => handleIssueResolve(services, input)],
             ['investigation.context.register', (input) => handleContextRegister(services, input)],

@@ -80,6 +80,7 @@ export interface StoredOutboxRecord {
 }
 
 export type PersistenceCurrentStateTableName =
+  | 'problems'
   | 'inquiries'
   | 'entities'
   | 'symptoms'
@@ -117,6 +118,7 @@ function createEmptyStore(): PersistenceStore {
     cases: {},
     eventsByCase: {},
     currentState: {
+      problems: {},
       inquiries: {},
       entities: {},
       symptoms: {},

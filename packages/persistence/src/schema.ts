@@ -125,6 +125,7 @@ export interface PersistenceDatabase {
   investigation_events: InvestigationEventsTable;
   command_dedup: CommandDedupTable;
   cases: CasesTable;
+  problems: CurrentStateTable;
   inquiries: CurrentStateTable;
   entities: CurrentStateTable;
   symptoms: CurrentStateTable;

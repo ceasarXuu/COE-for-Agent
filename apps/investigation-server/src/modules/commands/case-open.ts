@@ -1,4 +1,4 @@
-import { createCaseId, createCommandResult, createInquiryId } from '@coe/domain';
+import { createCaseId, createCommandResult, createInquiryId, createProblemId } from '@coe/domain';
 import { CaseListProjectionRepository, CurrentStateRepository, EventStoreRepository } from '@coe/persistence';
 
 import type { InvestigationServerServices, InvestigationServerTransaction } from '../../services.js';
@@ -35,6 +35,7 @@ export async function handleCaseOpen(
 
         const caseId = createCaseId();
         const inquiryId = createInquiryId();
+        const problemId = createProblemId();
         const result = await eventStore.appendEventInExecutor(trx, {
           caseId,
           expectedRevision: 0,
@@ -47,7 +48,8 @@ export async function handleCaseOpen(
             objective: payload.objective,
             severity: payload.severity,
             projectDirectory: payload.projectDirectory,
-            defaultInquiryId: inquiryId
+            defaultInquiryId: inquiryId,
+            defaultProblemId: problemId
           }),
           metadata: toJsonValue({
             idempotencyKey: payload.idempotencyKey
@@ -69,8 +71,27 @@ export async function handleCaseOpen(
             projectDirectory: payload.projectDirectory,
             labels: payload.labels ?? [],
             defaultInquiryId: inquiryId,
+            defaultProblemId: problemId,
             status: 'active',
             stage: 'intake'
+          })
+        });
+
+        await currentState.upsertRecord('problems', {
+          id: problemId,
+          caseId,
+          revision: result.caseRevision,
+          status: 'open',
+          payload: toJsonValue({
+            id: problemId,
+            caseId,
+            title: payload.title,
+            description: payload.objective,
+            environment: '',
+            symptoms: [],
+            resolutionCriteria: [],
+            referenceMaterials: [],
+            status: 'open'
           })
         });
 
@@ -101,7 +122,7 @@ export async function handleCaseOpen(
         return createCommandResult({
           ok: true,
           eventId: result.eventId,
-          createdIds: [caseId, inquiryId],
+          createdIds: [caseId, inquiryId, problemId],
           headRevisionBefore: 0,
           headRevisionAfter: result.caseRevision,
           projectionScheduled: false

@@ -12,6 +12,7 @@ import {
 import type { InvestigationServerServices } from '../../services.js';
 
 const PROJECTION_TABLE_NAMES = [
+  'problems',
   'inquiries',
   'entities',
   'symptoms',
@@ -25,6 +26,7 @@ const PROJECTION_TABLE_NAMES = [
 ] as const satisfies readonly CurrentStateTableName[];
 
 const NODE_KIND_BY_TABLE: Record<CurrentStateTableName, string> = {
+  problems: 'problem',
   inquiries: 'inquiry',
   entities: 'entity',
   symptoms: 'symptom',
@@ -88,6 +90,7 @@ function asStringArray(value: unknown): string[] {
 
 function createTables(): ProjectedCaseState['tables'] {
   return {
+    problems: new Map(),
     inquiries: new Map(),
     entities: new Map(),
     symptoms: new Map(),
@@ -193,6 +196,7 @@ function serializeState(state: ProjectedCaseState): SerializedProjectedCaseState
     projectionRevision: state.projectionRevision,
     caseRecord: state.caseRecord ? structuredClone(state.caseRecord) : null,
     tables: {
+      problems: [...state.tables.problems.values()].map((record) => structuredClone(record)),
       inquiries: [...state.tables.inquiries.values()].map((record) => structuredClone(record)),
       entities: [...state.tables.entities.values()].map((record) => structuredClone(record)),
       symptoms: [...state.tables.symptoms.values()].map((record) => structuredClone(record)),
