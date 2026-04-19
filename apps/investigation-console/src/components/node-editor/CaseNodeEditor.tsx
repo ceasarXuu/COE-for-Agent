@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getCaseEvidencePool, type GraphNodeRecord } from '../../lib/api.js';
 import { useI18n } from '../../lib/i18n.js';
 import type { DraftNodePatch, DraftNodeRecord } from './case-node-drafts.js';
+import { buildNodeEditorSyncKey } from './case-node-editor-selection.js';
 import { DraftNodeEditorFields, SavedNodeEditorFields } from './case-node-editor-fields.js';
 import {
   buildSavedNodeDraft,
@@ -38,6 +39,7 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
   const [statusReason, setStatusReason] = useState('');
   const [targetStatus, setTargetStatus] = useState('');
   const [evidenceOptions, setEvidenceOptions] = useState<Array<{ evidenceId: string; title: string }>>([]);
+  const editorSyncKey = buildNodeEditorSyncKey(props.selectedDraftNode, props.selectedNode);
 
   useEffect(() => {
     if (!props.caseId) {
@@ -73,6 +75,17 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
     if (props.selectedDraftNode || !props.selectedNode) {
       setSavedNodeDraft(createEmptySavedNodeDraft());
       setTargetStatus('');
+      console.info('[investigation-console] node-editor-selection-synced', {
+        caseId: props.caseId,
+        selection: props.selectedDraftNode
+          ? {
+              kind: 'draft',
+              nodeId: props.selectedDraftNode.id,
+              status: props.selectedDraftNode.status
+            }
+          : null,
+        source: 'node-editor'
+      });
       return;
     }
 
@@ -80,7 +93,16 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
 
     setSavedNodeDraft(buildSavedNodeDraft(props.selectedNode));
     setTargetStatus(currentStatus);
-  }, [props.selectedDraftNode, props.selectedNode]);
+    console.info('[investigation-console] node-editor-selection-synced', {
+      caseId: props.caseId,
+      selection: {
+        kind: props.selectedNode.kind,
+        nodeId: props.selectedNode.id,
+        revision: props.selectedNode.revision
+      },
+      source: 'node-editor'
+    });
+  }, [editorSyncKey, props.caseId]);
 
   const selectedNode = props.selectedDraftNode ?? props.selectedNode;
   const savedNode = props.selectedDraftNode ? null : props.selectedNode;

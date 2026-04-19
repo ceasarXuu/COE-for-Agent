@@ -89,7 +89,7 @@ declare module 'reactflow' {
     nodeTypes?: Record<string, ComponentType<NodeProps>>;
     edgeTypes?: Record<string, ComponentType<EdgeProps>>;
     fitView?: boolean;
-    fitViewOptions?: { padding?: number };
+    fitViewOptions?: { padding?: number; minZoom?: number; maxZoom?: number };
     minZoom?: number;
     maxZoom?: number;
     defaultViewport?: { x: number; y: number; zoom: number };

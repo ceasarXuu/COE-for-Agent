@@ -23,6 +23,18 @@ CONSOLE_WEB_PORT=4200 CONSOLE_BFF_PORT=4340 pnpm --filter @coe/investigation-con
 - Manual create form handlers must read `event.currentTarget.value` before entering `setState` callbacks.
 - Reading the synthetic event inside the updater callback can null out `currentTarget` and crash the drawer after the first keystroke.
 
+## Node Editor Stability
+
+- Saved-node editor drafts must sync on a stable selection key such as `nodeId + revision`, not on the raw `selectedNode` object identity.
+- Background refreshes rebuild graph node objects even when the selected canonical node has not changed. If the editor effect depends on the whole object reference, unsaved input will be overwritten during innocuous workspace refreshes.
+- A quick local probe is enough before escalating to a full e2e lane: select a saved node, type into a field, wait through at least one short refresh window, and confirm the field value still matches the typed content while the save button stays enabled.
+- Keep a structured console log for editor resync boundaries. It gives a direct breadcrumb when someone reports “输入后又被打回去” and helps distinguish real draft resets from keyboard/focus issues.
+
+## Graph Viewport Check
+
+- For React Flow startup zoom changes, do not trust `defaultViewport` alone when `fitView` is enabled. The real cap must be enforced through `fitViewOptions.maxZoom`.
+- The fastest browser verification is to inspect `.react-flow__viewport` and read its computed transform. A healthy “about 60%” startup now shows a matrix scale near `0.6`, for example `matrix(0.6, 0, 0, 0.6, ...)`.
+
 ## Verification
 
 - Stable local verification for the web console remains:

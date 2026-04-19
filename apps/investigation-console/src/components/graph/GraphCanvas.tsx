@@ -225,12 +225,12 @@ export function GraphCanvas(props: GraphCanvasProps) {
       <div className="graph-canvas-container">
         {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
         <ReactFlow
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
           edgeTypes={edgeTypes}
           edges={baseEdges}
           elementsSelectable
           fitView
-          fitViewOptions={{ padding: 0.12 }}
+          fitViewOptions={{ padding: 0.12, maxZoom: 0.6 }}
           maxZoom={2}
           minZoom={0.5}
           nodeTypes={nodeTypes}
