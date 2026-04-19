@@ -245,6 +245,35 @@ Structural edges are derived from `parentNodeId` + `parentNodeType`; they are no
 
 Shared evidence pool should be exposed through a dedicated resource, not mixed into the main graph.
 
+## Guardrail Direction
+
+Canonical guardrails must branch on canonical graph authority instead of reusing legacy inquiry and symptom semantics.
+
+- Canonical mode should activate only when the case actually uses the canonical graph as its working structure:
+  - canonical-only nodes such as `blocker`, `repair_attempt`, or `evidence_ref` exist, or
+  - at least one canonical `hypothesis` exists and no legacy graph nodes are active
+- A sidecar `problem` root alone is not enough to treat a mixed legacy case as canonical.
+
+Canonical guardrail expectations:
+
+- `ready_to_patch`
+  - candidate branch = at least one `confirmed` canonical hypothesis
+  - blocker = any active child `blocker` under a candidate hypothesis
+  - legacy `gap` / `residual` / `experiment` requirements must not leak into canonical mode
+- `close_case`
+  - canonical close flow must ignore the legacy default inquiry sidecar
+  - closure requires:
+    - case stage at `repair_validation` or `closed`
+    - root `problem.status = resolved`
+    - no active canonical `blocker`
+    - at least one `repair_attempt.status = effective`
+    - at least one child `evidence_ref.effectOnParent = validates` attached to an effective repair attempt
+- `stall_check`
+  - active hypothesis pileups should count canonical hypotheses
+  - recent-evidence heuristics should use canonical evidence events instead of legacy fact events
+- aggregate `check`
+  - canonical active blockers should surface as warnings directly, rather than being translated through legacy `gap` semantics
+
 ## UI Direction
 
 Editing model:

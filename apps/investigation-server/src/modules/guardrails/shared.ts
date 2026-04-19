@@ -5,6 +5,7 @@ import { recordPayload, stringArray, stringValue } from '../shared/record-helper
 
 export interface CaseGuardrailContext {
   caseRecord: NonNullable<Awaited<ReturnType<CurrentStateRepository['getCase']>>>;
+  problems: CurrentStateNodeRecord[];
   inquiries: CurrentStateNodeRecord[];
   symptoms: CurrentStateNodeRecord[];
   facts: CurrentStateNodeRecord[];
@@ -13,6 +14,10 @@ export interface CaseGuardrailContext {
   gaps: CurrentStateNodeRecord[];
   residuals: CurrentStateNodeRecord[];
   decisions: CurrentStateNodeRecord[];
+  blockers: CurrentStateNodeRecord[];
+  repairAttempts: CurrentStateNodeRecord[];
+  evidenceRefs: CurrentStateNodeRecord[];
+  mode: 'canonical' | 'legacy';
   events: StoredEvent[];
 }
 
@@ -29,6 +34,7 @@ export async function loadCaseGuardrailContext(
   }
 
   const [
+    problems,
     inquiries,
     symptoms,
     facts,
@@ -37,8 +43,12 @@ export async function loadCaseGuardrailContext(
     gaps,
     residuals,
     decisions,
+    blockers,
+    repairAttempts,
+    evidenceRefs,
     events
   ] = await Promise.all([
+    currentState.listRecordsByCase('problems', caseId),
     currentState.listRecordsByCase('inquiries', caseId),
     currentState.listRecordsByCase('symptoms', caseId),
     currentState.listRecordsByCase('facts', caseId),
@@ -47,11 +57,25 @@ export async function loadCaseGuardrailContext(
     currentState.listRecordsByCase('gaps', caseId),
     currentState.listRecordsByCase('residuals', caseId),
     currentState.listRecordsByCase('decisions', caseId),
+    currentState.listRecordsByCase('blockers', caseId),
+    currentState.listRecordsByCase('repair_attempts', caseId),
+    currentState.listRecordsByCase('evidence_refs', caseId),
     options.includeEvents ? new EventStoreRepository(services.db).listCaseEvents(caseId) : Promise.resolve([])
   ]);
 
+  const canonicalHypotheses = hypotheses.filter(isCanonicalHypothesisRecord);
+  const hasCanonicalOnlyNodes = blockers.length > 0 || repairAttempts.length > 0 || evidenceRefs.length > 0;
+  const hasLegacyGraphNodes = symptoms.length > 0
+    || facts.length > 0
+    || experiments.length > 0
+    || gaps.length > 0
+    || residuals.length > 0
+    || decisions.length > 0
+    || hypotheses.some((record) => !isCanonicalHypothesisRecord(record));
+
   return {
     caseRecord,
+    problems,
     inquiries,
     symptoms,
     facts,
@@ -60,8 +84,16 @@ export async function loadCaseGuardrailContext(
     gaps,
     residuals,
     decisions,
+    blockers,
+    repairAttempts,
+    evidenceRefs,
+    mode: hasCanonicalOnlyNodes || (canonicalHypotheses.length > 0 && !hasLegacyGraphNodes) ? 'canonical' : 'legacy',
     events
   };
+}
+
+export function isCanonicalHypothesisRecord(record: CurrentStateNodeRecord): boolean {
+  return stringValue(recordPayload(record).canonicalKind) === 'hypothesis';
 }
 
 export function nodeStatus(record: CurrentStateNodeRecord, fallback: string): string {
