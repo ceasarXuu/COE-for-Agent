@@ -44,16 +44,15 @@ describe('case workspace layout', () => {
     expect(source).not.toContain("t('workspace.historicalMode'");
   });
 
-  test('renders the severity pill next to the workspace title instead of inside the graph module', () => {
+  test('keeps the workspace toolbar focused on breadcrumb navigation without a legacy title row', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
     );
 
     expect(source).toContain('className="workspace-header-copy"');
-    expect(source).toContain('className="workspace-title-row"');
-    expect(source).toContain('workspace?.snapshot.data.case?.severity ? (');
-    expect(source).toContain('formatEnumLabel(workspace.snapshot.data.case.severity)');
+    expect(source).not.toContain('className="workspace-title-row"');
+    expect(source).not.toContain('workspace?.snapshot.data.case?.severity ? (');
   });
 
   test('does not render the coverage preview module in the workspace rail', () => {
@@ -98,7 +97,7 @@ describe('case workspace layout', () => {
     expect(source).not.toContain("t('workspace.diff')");
   });
 
-  test('renders inspector and action modules and loads their data from panel resources', () => {
+  test('renders inspector and action modules and builds inspector data from the graph projection', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/routes/cases.$caseId.tsx'),
       'utf8'
@@ -107,8 +106,9 @@ describe('case workspace layout', () => {
     expect(source).toContain('<InspectorPanel');
     expect(source).toContain('<ActionPanel');
     expect(source).toContain('getGuardrails(');
-    expect(source).toContain('getHypothesisPanel(');
-    expect(source).toContain('getInquiryPanel(');
+    expect(source).toContain('buildGraphBackedInspector(');
+    expect(source).not.toContain('getHypothesisPanel(');
+    expect(source).not.toContain('getInquiryPanel(');
   });
 
   test('stretches the graph and timeline stages to the available viewport height', () => {

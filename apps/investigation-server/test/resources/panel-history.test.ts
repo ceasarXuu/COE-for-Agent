@@ -8,7 +8,7 @@ import {
 } from '../test-app.js';
 import { buildDiffScenario } from '../support/resource-scenarios.js';
 
-describe.sequential('panel resources history mode', () => {
+describe.sequential('legacy panel resources', () => {
   const adminPool = createAdminPool();
 
   beforeAll(async () => {
@@ -23,44 +23,23 @@ describe.sequential('panel resources history mode', () => {
     await adminPool.end();
   });
 
-  test('replays hypothesis and inquiry panels at a historical revision', async () => {
+  test('are no longer exposed once the canonical graph inspector owns node detail reads', async () => {
     const app = await createTestApp();
 
     try {
       const scenario = await buildDiffScenario(app);
 
-      const hypothesisPanel = await app.mcpServer.readResource(
-        `investigation://cases/${scenario.caseId}/hypotheses/${scenario.hypothesisId}?atRevision=3`
-      );
-      const inquiryPanel = await app.mcpServer.readResource(
-        `investigation://cases/${scenario.caseId}/inquiries/${scenario.inquiryId}?atRevision=2`
-      );
+      await expect(
+        app.mcpServer.readResource(
+          `investigation://cases/${scenario.caseId}/hypotheses/${scenario.hypothesisId}?atRevision=3`
+        )
+      ).rejects.toThrow(/Unknown resource/);
 
-      expect(hypothesisPanel.data).toMatchObject({
-        headRevision: 4,
-        projectionRevision: 3,
-        requestedRevision: 3,
-        historical: true,
-        data: {
-          hypothesis: {
-            id: scenario.hypothesisId,
-            status: 'proposed'
-          }
-        }
-      });
-
-      expect(inquiryPanel.data).toMatchObject({
-        headRevision: 4,
-        projectionRevision: 2,
-        requestedRevision: 2,
-        historical: true,
-        data: {
-          inquiry: {
-            id: scenario.inquiryId
-          },
-          hypotheses: []
-        }
-      });
+      await expect(
+        app.mcpServer.readResource(
+          `investigation://cases/${scenario.caseId}/inquiries/${scenario.inquiryId}?atRevision=2`
+        )
+      ).rejects.toThrow(/Unknown resource/);
     } finally {
       await app.close();
     }

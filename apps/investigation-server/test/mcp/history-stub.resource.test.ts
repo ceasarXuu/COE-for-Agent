@@ -17,6 +17,13 @@ describe('history resources', () => {
         'investigation://cases/{caseId}/diff'
       ])
     );
+    expect(server.listResourceTemplates()).not.toEqual(
+      expect.arrayContaining([
+        'investigation://cases/{caseId}/coverage',
+        'investigation://cases/{caseId}/hypotheses/{hypothesisId}',
+        'investigation://cases/{caseId}/inquiries/{inquiryId}'
+      ])
+    );
 
     const snapshot = await server.readResource(
       'investigation://cases/case_01AAAAAAAAAAAAAAAAAAAAAAAA/snapshot?atRevision=12'

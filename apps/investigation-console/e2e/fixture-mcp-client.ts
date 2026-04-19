@@ -1867,31 +1867,6 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
                 }
               })
             };
-          case 'coverage':
-            return {
-              uri,
-              mimeType: 'application/json',
-              data: createResourceEnvelope({
-                headRevision: manualCase.headRevision,
-                projectionRevision: manualCase.headRevision,
-                data: {
-                  items: manualCase.nodes
-                    .filter((node) => node.kind === 'symptom')
-                    .map((node) => ({
-                      symptomId: node.id,
-                      statement: node.label,
-                      coverage: 'none' as const,
-                      supportingFactIds: [],
-                      relatedHypothesisIds: []
-                    })),
-                  summary: {
-                    direct: 0,
-                    indirect: 0,
-                    none: manualCase.nodes.filter((node) => node.kind === 'symptom').length
-                  }
-                }
-              })
-            };
           case 'diff':
             return {
               uri,
@@ -1906,45 +1881,6 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
                   changedEdgeKeys: [],
                   stateTransitions: [],
                   summary: ['No diff']
-                }
-              })
-            };
-          case 'hypotheses':
-            return {
-              uri,
-              mimeType: 'application/json',
-              data: createResourceEnvelope({
-                headRevision: manualCase.headRevision,
-                projectionRevision: manualCase.headRevision,
-                data: {
-                  hypothesis: null,
-                  supportingFacts: [],
-                  linkedExperiments: [],
-                  openGaps: [],
-                  openResiduals: []
-                }
-              })
-            };
-          case 'inquiries':
-            return {
-              uri,
-              mimeType: 'application/json',
-              data: createResourceEnvelope({
-                headRevision: manualCase.headRevision,
-                projectionRevision: manualCase.headRevision,
-                data: {
-                  inquiry: resourceId === manualCase.inquiryId
-                    ? {
-                        id: manualCase.inquiryId,
-                        caseId: manualCase.caseId,
-                        title: 'Default inquiry',
-                        question: manualCase.objective,
-                        status: 'open'
-                      }
-                    : null,
-                  hypotheses: [],
-                  experiments: [],
-                  gaps: []
                 }
               })
             };
@@ -1993,17 +1929,6 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
               data: readFocusedGraph(state, parsed.url.searchParams.get('focusId'))
             })
           };
-        case 'coverage':
-          return {
-            uri,
-            mimeType: 'application/json',
-            data: createResourceEnvelope({
-              headRevision,
-              projectionRevision: state.revision,
-              requestedRevision: state.revision < headRevision ? state.revision : null,
-              data: clone(state.coverage)
-            })
-          };
         case 'diff': {
           const fromRevision = Number(parsed.url.searchParams.get('fromRevision') ?? '0');
           const toRevision = Number(parsed.url.searchParams.get('toRevision') ?? headRevision);
@@ -2018,28 +1943,6 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             })
           };
         }
-        case 'hypotheses':
-          return {
-            uri,
-            mimeType: 'application/json',
-            data: createResourceEnvelope({
-              headRevision,
-              projectionRevision: state.revision,
-              requestedRevision: state.revision < headRevision ? state.revision : null,
-              data: resourceId === FIXTURE_IDS.hypothesisId ? clone(state.hypothesisPanel) : { hypothesis: null }
-            })
-          };
-        case 'inquiries':
-          return {
-            uri,
-            mimeType: 'application/json',
-            data: createResourceEnvelope({
-              headRevision,
-              projectionRevision: state.revision,
-              requestedRevision: state.revision < headRevision ? state.revision : null,
-              data: resourceId === FIXTURE_IDS.inquiryId ? clone(state.inquiryPanel) : { inquiry: null, hypotheses: [], experiments: [], gaps: [] }
-            })
-          };
         default:
           throw new Error(`Unsupported resource ${resourceName}`);
       }

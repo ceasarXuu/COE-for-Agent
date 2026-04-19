@@ -5,12 +5,9 @@ import { GUARDRAIL_TOOL_NAMES, MUTATION_TOOL_NAMES } from '@coe/mcp-contracts/to
 import type { InvestigationServerConfig } from '../config.js';
 import type { InvestigationServerServices } from '../services.js';
 import { readCasesResource } from '../modules/resources/cases.js';
-import { readCoverageResource } from '../modules/resources/coverage.js';
 import { readDiffResource } from '../modules/resources/diff.js';
 import { readEvidencePoolResource } from '../modules/resources/evidence-pool.js';
 import { readGraphResource } from '../modules/resources/graph.js';
-import { readHypothesisPanelResource } from '../modules/resources/hypothesis-panel.js';
-import { readInquiryPanelResource } from '../modules/resources/inquiry-panel.js';
 import { readSnapshotResource } from '../modules/resources/snapshot.js';
 import { readTimelineResource } from '../modules/resources/timeline.js';
 
@@ -155,67 +152,6 @@ export function registerResourceDefinitions(
           mimeType: 'application/json',
           data: createEmptyEnvelope(atRevision, {
             items: []
-          })
-        };
-      }
-    },
-    {
-      template: RESOURCE_URI_TEMPLATES.coverage,
-      async read(url) {
-        if (services) {
-          return readCoverageResource(services, url);
-        }
-
-        const atRevision = parseOptionalInteger(url.searchParams.get('atRevision'));
-        return {
-          uri: url.toString(),
-          mimeType: 'application/json',
-          data: createEmptyEnvelope(atRevision, {
-            items: [],
-            summary: {
-              direct: 0,
-              indirect: 0,
-              none: 0
-            }
-          })
-        };
-      }
-    },
-    {
-      template: RESOURCE_URI_TEMPLATES.hypothesisPanel,
-      async read(url) {
-        if (services) {
-          return readHypothesisPanelResource(services, url);
-        }
-
-        const atRevision = parseOptionalInteger(url.searchParams.get('atRevision'));
-        return {
-          uri: url.toString(),
-          mimeType: 'application/json',
-          data: createEmptyEnvelope(atRevision, {
-            hypothesis: null,
-            supportingFacts: [],
-            relatedExperiments: []
-          })
-        };
-      }
-    },
-    {
-      template: RESOURCE_URI_TEMPLATES.inquiryPanel,
-      async read(url) {
-        if (services) {
-          return readInquiryPanelResource(services, url);
-        }
-
-        const atRevision = parseOptionalInteger(url.searchParams.get('atRevision'));
-        return {
-          uri: url.toString(),
-          mimeType: 'application/json',
-          data: createEmptyEnvelope(atRevision, {
-            inquiry: null,
-            hypotheses: [],
-            experiments: [],
-            gaps: []
           })
         };
       }

@@ -38,6 +38,7 @@ import { EvidenceRefNode } from './nodes/EvidenceRefNode.js';
 import type { GraphNodeViewData } from './nodes/GraphNodeCard.js';
 import { GlowingEdge } from './edges/GlowingEdge.js';
 import { getDisplayKind, getPresentationKind, summarizeGraphNodes } from './graph-node-presentation.js';
+import { isCanonicalGraphProjection } from './isCanonicalGraphProjection.js';
 import { CanonicalGraphCreatePopover, type CanonicalCreateSubmission } from './CanonicalGraphCreatePopover.js';
 
 const nodeTypes = {
@@ -99,7 +100,7 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   const caseRecord = snapshot.data.case;
   const caseId = caseRecord?.id ?? null;
   const currentRevision = caseRecord?.revision ?? snapshot.headRevision;
-  const isCanonicalGraph = graph.data.nodes.some((node) => node.kind === 'problem');
+  const isCanonicalGraph = isCanonicalGraphProjection(graph);
   const [isSpacePanning, setIsSpacePanning] = useState(false);
   const [reactFlowInstance, setReactFlowInstance] = useState<FlowPositionProjector | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);

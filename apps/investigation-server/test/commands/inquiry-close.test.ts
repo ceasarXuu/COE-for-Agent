@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 
+import { CurrentStateRepository } from '@coe/persistence';
+
 import {
   assertServerTestDatabaseAvailable,
   createAdminPool,
@@ -37,14 +39,12 @@ describe.sequential('case.open and inquiry.close', () => {
     expect(caseId).toMatch(/^case_/);
     expect(inquiryId).toMatch(/^inquiry_/);
 
-    const inquiryPanel = await app.mcpServer.readResource(`investigation://cases/${caseId}/inquiries/${inquiryId}`);
-    expect(inquiryPanel.data).toMatchObject({
-      data: {
-        inquiry: {
-          id: inquiryId,
-          status: 'open'
-        }
-      }
+    const currentState = new CurrentStateRepository(app.services.db);
+    const inquiryRecord = await currentState.getRecord('inquiries', inquiryId!);
+
+    expect(inquiryRecord).toMatchObject({
+      id: inquiryId,
+      status: 'open'
     });
 
     await app.close();
@@ -96,15 +96,14 @@ describe.sequential('case.open and inquiry.close', () => {
 
     expect(closed.headRevisionAfter).toBe(2);
 
-    const inquiryPanel = await app.mcpServer.readResource(`investigation://cases/${caseId}/inquiries/${inquiryId}`);
-    expect(inquiryPanel.data).toMatchObject({
-      data: {
-        inquiry: {
-          id: inquiryId,
-          status: 'closed',
-          resolutionKind: 'answered'
-        }
-      }
+    const currentState = new CurrentStateRepository(app.services.db);
+    const inquiryRecord = await currentState.getRecord('inquiries', inquiryId);
+    expect(inquiryRecord).toMatchObject({
+      id: inquiryId,
+      status: 'closed',
+      payload: expect.objectContaining({
+        resolutionKind: 'answered'
+      })
     });
 
     const timeline = await app.mcpServer.readResource(`investigation://cases/${caseId}/timeline`);

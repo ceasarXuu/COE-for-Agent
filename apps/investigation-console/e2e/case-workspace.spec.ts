@@ -40,7 +40,7 @@ test('list search params survive entering a case workspace and returning to the 
     revision: null
   });
 
-  await page.getByRole('link', { name: 'Back to cases' }).click();
+  await page.getByRole('link', { name: 'Cases' }).click();
 
   await expect.poll(() => {
     const url = new URL(page.url());
@@ -118,7 +118,7 @@ test('cases index presents the gallery create card first and supports manual cas
   await page.getByTestId('create-case-submit').click();
 
   await expect.poll(() => new URL(page.url()).pathname).toMatch(/^\/cases\/case_/);
-  await expect(page.getByRole('heading', { level: 2 })).toContainText('Manual intake from gallery');
+  await expect(page.locator('.breadcrumb-current')).toContainText('Manual intake from gallery');
 });
 
 test('loads the workspace and opens a hypothesis inspector from the graph', async ({ page }) => {
@@ -185,7 +185,6 @@ test('workspace graph surface includes orientation copy for graph state and cont
   const graphStage = page.getByTestId('graph-stage');
 
   await expect(graphStage).toBeVisible();
-  await expect(graphStage.getByText('Case graph')).toBeVisible();
   await expect(graphStage.getByLabel('Graph legend')).toBeVisible();
   await expect(graphStage.getByLabel('Graph controls')).toBeVisible();
   await expect(graphStage.getByLabel('Graph controls').getByText('live slice')).toBeVisible();

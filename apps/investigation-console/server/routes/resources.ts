@@ -73,19 +73,6 @@ export async function registerResourceRoutes(app: FastifyInstance, options: { mc
     return resource.data;
   });
 
-  app.get('/api/cases/:caseId/coverage', async (request) => {
-    const params = request.params as { caseId: string };
-    const query = request.query as Record<string, unknown>;
-    const search = new URLSearchParams();
-    const revision = queryValue(query, 'revision');
-    if (revision) {
-      search.set('atRevision', revision);
-    }
-
-    const resource = await options.mcpClient.readResource(buildCaseResourceUri(params.caseId, 'coverage', search));
-    return resource.data;
-  });
-
   app.get('/api/cases/:caseId/diff', async (request) => {
     const params = request.params as { caseId: string };
     const query = request.query as Record<string, unknown>;
@@ -100,36 +87,6 @@ export async function registerResourceRoutes(app: FastifyInstance, options: { mc
     }
 
     const resource = await options.mcpClient.readResource(buildCaseResourceUri(params.caseId, 'diff', search));
-    return resource.data;
-  });
-
-  app.get('/api/cases/:caseId/hypotheses/:hypothesisId', async (request) => {
-    const params = request.params as { caseId: string; hypothesisId: string };
-    const query = request.query as Record<string, unknown>;
-    const search = new URLSearchParams();
-    const revision = queryValue(query, 'revision');
-    if (revision) {
-      search.set('atRevision', revision);
-    }
-
-    const resource = await options.mcpClient.readResource(
-      `investigation://cases/${params.caseId}/hypotheses/${params.hypothesisId}${search.toString().length > 0 ? `?${search.toString()}` : ''}`
-    );
-    return resource.data;
-  });
-
-  app.get('/api/cases/:caseId/inquiries/:inquiryId', async (request) => {
-    const params = request.params as { caseId: string; inquiryId: string };
-    const query = request.query as Record<string, unknown>;
-    const search = new URLSearchParams();
-    const revision = queryValue(query, 'revision');
-    if (revision) {
-      search.set('atRevision', revision);
-    }
-
-    const resource = await options.mcpClient.readResource(
-      `investigation://cases/${params.caseId}/inquiries/${params.inquiryId}${search.toString().length > 0 ? `?${search.toString()}` : ''}`
-    );
     return resource.data;
   });
 }

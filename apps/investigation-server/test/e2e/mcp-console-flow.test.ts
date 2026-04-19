@@ -35,7 +35,7 @@ describe.sequential('mcp console flow', () => {
     await adminPool.end();
   });
 
-  test('builds a full evidence chain and exposes the same case through list, snapshot, graph, timeline, coverage, and guardrails', async () => {
+  test('builds a full evidence chain and exposes the same case through list, snapshot, graph, timeline, and guardrails', async () => {
     const app = await createTestApp();
 
     try {
@@ -93,12 +93,11 @@ describe.sequential('mcp console flow', () => {
       );
       revision = await advanceStage(app, opened.caseId, decision.revision, 'repair_preparation', 'full-flow');
 
-      const [cases, snapshot, timeline, graph, coverage, aggregate] = await Promise.all([
+      const [cases, snapshot, timeline, graph, aggregate] = await Promise.all([
         app.mcpServer.readResource('investigation://cases'),
         app.mcpServer.readResource(`investigation://cases/${opened.caseId}/snapshot`),
         app.mcpServer.readResource(`investigation://cases/${opened.caseId}/timeline`),
         app.mcpServer.readResource(`investigation://cases/${opened.caseId}/graph`),
-        app.mcpServer.readResource(`investigation://cases/${opened.caseId}/coverage`),
         app.mcpServer.invokeTool('investigation.guardrail.check', { caseId: opened.caseId })
       ]);
 
@@ -144,18 +143,6 @@ describe.sequential('mcp console flow', () => {
             expect.objectContaining({ id: experiment.experimentId, kind: 'experiment' }),
             expect.objectContaining({ id: decision.decisionId, kind: 'decision' })
           ])
-        }
-      });
-      expect(coverage.data).toMatchObject({
-        data: {
-          items: expect.arrayContaining([
-            expect.objectContaining({ symptomId: symptom.symptomId, coverage: 'direct' })
-          ]),
-          summary: {
-            direct: 1,
-            indirect: 0,
-            none: 0
-          }
         }
       });
       expect(aggregate).toMatchObject({

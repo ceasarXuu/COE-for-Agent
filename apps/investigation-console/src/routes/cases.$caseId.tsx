@@ -1,12 +1,13 @@
 import { startTransition, useEffect, useEffectEvent, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { asNonEmptyString, asObjectRecord, uniqueStrings } from '@coe/shared-utils';
+import { asObjectRecord, uniqueStrings } from '@coe/shared-utils';
 
 import { ActionPanel } from '../components/action-panel/index.js';
 import { CanonicalActionPanel } from '../components/action-panel/CanonicalActionPanel.js';
 import { Breadcrumb } from '../components/breadcrumb.js';
 import { GraphCanvas } from '../components/graph/GraphCanvas.js';
+import { isCanonicalGraphProjection } from '../components/graph/isCanonicalGraphProjection.js';
 import { GuardrailView } from '../components/guardrail-view.js';
 import { InspectorPanel, type InspectorViewModel } from '../components/inspector-panel.js';
 import { TimelineView } from '../components/timeline-view.js';
@@ -14,8 +15,6 @@ import { connectConsoleStream } from '../lib/sse.js';
 import {
   getCaseGraph,
   getGuardrails,
-  getHypothesisPanel,
-  getInquiryPanel,
   getCaseSnapshot,
   getCaseTimeline,
   type GraphNodeRecord,
@@ -35,7 +34,7 @@ interface WorkspaceData {
 }
 
 export function CaseWorkspaceRoute() {
-  const { formatEnumLabel, t } = useI18n();
+  const { t } = useI18n();
   const params = useParams();
   const caseId = params.caseId ?? '';
   const navigate = useNavigate();
@@ -112,41 +111,9 @@ export function CaseWorkspaceRoute() {
 
     let cancelled = false;
     const graphNode = workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null;
-    const isCanonicalGraph = workspace.graph.data.nodes.some((node) => node.kind === 'problem');
     setInspectorLoading(true);
 
     const loadInspector = async () => {
-      if (isCanonicalGraph && graphNode) {
-        return buildGraphBackedInspector(graphNode, workspace);
-      }
-
-      if (selectedNodeId.startsWith('hypothesis_')) {
-        const panel = await getHypothesisPanel(caseId, selectedNodeId, revision);
-        const hypothesis = asObjectRecord(panel.data.hypothesis);
-        return {
-          kind: 'hypothesis',
-          title: asNonEmptyString(hypothesis.title) ?? selectedNodeId,
-          status: asNonEmptyString(hypothesis.status),
-          summary: asNonEmptyString(hypothesis.statement) ?? t('workspace.hypothesisFallback'),
-          primaryItems: panel.data.supportingFacts.map((fact) => asNonEmptyString(asObjectRecord(fact).statement) ?? formatEnumLabel('fact')),
-          secondaryItems: (panel.data.linkedExperiments ?? [])
-            .map((experiment) => asNonEmptyString(asObjectRecord(experiment).title) ?? formatEnumLabel('experiment'))
-        } satisfies InspectorViewModel;
-      }
-
-      if (selectedNodeId.startsWith('inquiry_')) {
-        const panel = await getInquiryPanel(caseId, selectedNodeId, revision);
-        const inquiry = asObjectRecord(panel.data.inquiry);
-        return {
-          kind: 'inquiry',
-          title: asNonEmptyString(inquiry.title) ?? selectedNodeId,
-          status: asNonEmptyString(inquiry.status),
-          summary: asNonEmptyString(inquiry.question) ?? t('workspace.inquiryFallback'),
-          primaryItems: panel.data.hypotheses.map((hypothesis) => asNonEmptyString(asObjectRecord(hypothesis).title) ?? formatEnumLabel('hypothesis')),
-          secondaryItems: panel.data.experiments.map((experiment) => asNonEmptyString(asObjectRecord(experiment).title) ?? formatEnumLabel('experiment'))
-        } satisfies InspectorViewModel;
-      }
-
       if (graphNode) {
         return buildGraphBackedInspector(graphNode, workspace);
       }
@@ -188,7 +155,7 @@ export function CaseWorkspaceRoute() {
     return () => {
       cancelled = true;
     };
-  }, [caseId, formatEnumLabel, revision, selectedNodeId, t, workspace]);
+  }, [caseId, selectedNodeId, t, workspace]);
 
   useEffect(() => {
     if (revision !== null) {
@@ -218,7 +185,7 @@ export function CaseWorkspaceRoute() {
   const selectedNode = workspace && selectedNodeId
     ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
-  const isCanonicalGraph = workspace?.graph.data.nodes.some((node) => node.kind === 'problem') ?? false;
+  const isCanonicalGraph = workspace ? isCanonicalGraphProjection(workspace.graph) : false;
 
   async function handleMutationComplete() {
     requestRefresh();
@@ -342,6 +309,19 @@ function buildGraphBackedInspector(
         secondaryItems: Array.isArray(node.payload?.possibleWorkarounds)
           ? node.payload.possibleWorkarounds.filter((item): item is string => typeof item === 'string' && item.length > 0)
           : []
+      };
+    case 'hypothesis':
+      return {
+        kind: 'hypothesis',
+        title: node.label,
+        status: node.status,
+        summary: node.summary ?? '',
+        primaryItems: relatedNodes
+          .filter((relatedNode) => relatedNode.kind === 'fact' || relatedNode.kind === 'evidence_ref')
+          .map((relatedNode) => relatedNode.label),
+        secondaryItems: relatedNodes
+          .filter((relatedNode) => relatedNode.kind !== 'fact' && relatedNode.kind !== 'evidence_ref')
+          .map((relatedNode) => relatedNode.label)
       };
     case 'repair_attempt':
       return {

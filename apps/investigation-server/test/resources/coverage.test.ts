@@ -6,9 +6,8 @@ import {
   createTestApp,
   resetServerTestDatabase
 } from '../test-app.js';
-import { buildCoverageScenario } from '../support/resource-scenarios.js';
 
-describe.sequential('coverage resource', () => {
+describe.sequential('legacy coverage resource', () => {
   const adminPool = createAdminPool();
 
   beforeAll(async () => {
@@ -23,30 +22,22 @@ describe.sequential('coverage resource', () => {
     await adminPool.end();
   });
 
-  test('classifies direct, indirect, and uncovered symptoms', async () => {
+  test('is no longer exposed after canonical graph migration', async () => {
     const app = await createTestApp();
 
     try {
-      const scenario = await buildCoverageScenario(app);
-      const coverage = await app.mcpServer.readResource(`investigation://cases/${scenario.caseId}/coverage`);
-      const items = (coverage.data as { data: { items: Array<{ symptomId: string; coverage: string }> } }).data.items;
-
-      expect(items).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ symptomId: scenario.directSymptomId, coverage: 'direct' }),
-          expect.objectContaining({ symptomId: scenario.indirectSymptomId, coverage: 'indirect' }),
-          expect.objectContaining({ symptomId: scenario.uncoveredSymptomId, coverage: 'none' })
-        ])
-      );
-      expect(coverage.data).toMatchObject({
-        data: {
-          summary: {
-            direct: 1,
-            indirect: 1,
-            none: 1
-          }
-        }
+      const opened = await app.mcpServer.invokeTool('investigation.case.open', {
+        idempotencyKey: 'coverage-removed-open',
+        title: 'Removed coverage resource',
+        objective: 'Ensure the legacy coverage resource is unavailable',
+        severity: 'medium',
+        projectDirectory: '/workspace/coverage-removed-open'
       });
+      const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
+
+      await expect(
+        app.mcpServer.readResource(`investigation://cases/${caseId}/coverage`)
+      ).rejects.toThrow(/Unknown resource/);
     } finally {
       await app.close();
     }

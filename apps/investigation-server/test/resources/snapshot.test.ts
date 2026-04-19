@@ -32,10 +32,10 @@ describe.sequential('snapshot and timeline resources', () => {
       projectDirectory: '/workspace/snapshot-open'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
-    const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
+    const problemId = opened.createdIds?.find((value) => value.startsWith('problem_'))!;
 
     const snapshot = await app.mcpServer.readResource(`investigation://cases/${caseId}/snapshot`);
-    const inquiryPanel = await app.mcpServer.readResource(`investigation://cases/${caseId}/inquiries/${inquiryId}`);
+    const graph = await app.mcpServer.readResource(`investigation://cases/${caseId}/graph`);
     const timeline = await app.mcpServer.readResource(`investigation://cases/${caseId}/timeline`);
 
     expect(snapshot.data).toMatchObject({
@@ -44,7 +44,8 @@ describe.sequential('snapshot and timeline resources', () => {
           id: caseId,
           title: 'Login timeout',
           severity: 'critical',
-          projectDirectory: '/workspace/snapshot-open'
+          projectDirectory: '/workspace/snapshot-open',
+          defaultProblemId: problemId
         },
         counts: {
           inquiries: 1,
@@ -54,13 +55,15 @@ describe.sequential('snapshot and timeline resources', () => {
         }
       }
     });
-    expect(inquiryPanel.data).toMatchObject({
+    expect(graph.data).toMatchObject({
       data: {
-        inquiry: {
-          id: inquiryId,
-          title: 'Default inquiry',
-          status: 'open'
-        }
+        nodes: expect.arrayContaining([
+          expect.objectContaining({
+            id: problemId,
+            kind: 'problem',
+            status: 'open'
+          })
+        ])
       }
     });
     expect(timeline.data).toMatchObject({

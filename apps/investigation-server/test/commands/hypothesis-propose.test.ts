@@ -94,7 +94,7 @@ describe.sequential('hypothesis and experiment commands', () => {
     }
   });
 
-  test('creates a hypothesis and exposes it through the hypothesis panel resource', async () => {
+  test('creates a hypothesis and exposes it through the graph resource', async () => {
     const app = await createTestApp();
 
     try {
@@ -131,19 +131,19 @@ describe.sequential('hypothesis and experiment commands', () => {
       });
       const hypothesisId = proposed.createdIds?.find((value) => value.startsWith('hypothesis_'))!;
 
-      const panel = await app.mcpServer.readResource(`investigation://cases/${caseId}/hypotheses/${hypothesisId}`);
+      const graph = await app.mcpServer.readResource(`investigation://cases/${caseId}/graph?focusId=${hypothesisId}`);
 
-      expect(panel.data).toMatchObject({
+      expect(graph.data).toMatchObject({
         data: {
-          hypothesis: {
-            id: hypothesisId,
-            status: 'proposed',
-            title: 'retry guard is bypassed'
-          },
-          supportingFacts: [],
-          linkedExperiments: [],
-          openGaps: [],
-          openResiduals: []
+          focusId: hypothesisId,
+          nodes: expect.arrayContaining([
+            expect.objectContaining({
+              id: hypothesisId,
+              kind: 'hypothesis',
+              label: 'retry guard is bypassed',
+              status: 'proposed'
+            })
+          ])
         }
       });
     } finally {

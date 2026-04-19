@@ -76,21 +76,6 @@ const RESOURCE_METADATA_BY_TEMPLATE: Record<string, { name: string; title: strin
     title: 'Case Evidence Pool',
     description: 'Reusable canonical evidence entities captured for a case.'
   },
-  [RESOURCE_URI_TEMPLATES.coverage]: {
-    name: 'case-coverage',
-    title: 'Case Coverage',
-    description: 'Evidence coverage summary for investigation objects.'
-  },
-  [RESOURCE_URI_TEMPLATES.hypothesisPanel]: {
-    name: 'hypothesis-panel',
-    title: 'Hypothesis Panel',
-    description: 'Inspector-style hypothesis slice with supporting evidence.'
-  },
-  [RESOURCE_URI_TEMPLATES.inquiryPanel]: {
-    name: 'inquiry-panel',
-    title: 'Inquiry Panel',
-    description: 'Inquiry-focused slice including hypotheses, experiments, and gaps.'
-  },
   [RESOURCE_URI_TEMPLATES.diff]: {
     name: 'case-diff',
     title: 'Case Diff',

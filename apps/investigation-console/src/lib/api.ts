@@ -143,28 +143,6 @@ export interface CaseEvidencePoolEnvelope {
   };
 }
 
-export interface CaseCoverageEnvelope {
-  headRevision: number;
-  projectionRevision: number;
-  requestedRevision: number | null;
-  stale: boolean;
-  historical: boolean;
-  data: {
-    items: Array<{
-      symptomId: string;
-      statement: string;
-      coverage: 'direct' | 'indirect' | 'none';
-      supportingFactIds: string[];
-      relatedHypothesisIds: string[];
-    }>;
-    summary: {
-      direct: number;
-      indirect: number;
-      none: number;
-    };
-  };
-}
-
 export interface CaseDiffEnvelope {
   headRevision: number;
   projectionRevision: number;
@@ -183,26 +161,6 @@ export interface CaseDiffEnvelope {
       toStatus: string | null;
     }>;
     summary: string[];
-  };
-}
-
-export interface HypothesisPanelEnvelope {
-  data: {
-    hypothesis: Record<string, unknown> | null;
-    supportingFacts: Array<Record<string, unknown>>;
-    linkedExperiments?: Array<Record<string, unknown>>;
-    relatedExperiments?: Array<Record<string, unknown>>;
-    openGaps?: Array<Record<string, unknown>>;
-    openResiduals?: Array<Record<string, unknown>>;
-  };
-}
-
-export interface InquiryPanelEnvelope {
-  data: {
-    inquiry: Record<string, unknown> | null;
-    hypotheses: Array<Record<string, unknown>>;
-    experiments: Array<Record<string, unknown>>;
-    gaps: Array<Record<string, unknown>>;
   };
 }
 
@@ -328,20 +286,8 @@ export function getCaseEvidencePool(caseId: string, revision?: number | null): P
   return fetchJson<CaseEvidencePoolEnvelope>(withRevision(`/api/cases/${caseId}/evidence-pool`, revision));
 }
 
-export function getCaseCoverage(caseId: string, revision?: number | null): Promise<CaseCoverageEnvelope> {
-  return fetchJson<CaseCoverageEnvelope>(withRevision(`/api/cases/${caseId}/coverage`, revision));
-}
-
 export function getCaseDiff(caseId: string, from: number, to: number): Promise<CaseDiffEnvelope> {
   return fetchJson<CaseDiffEnvelope>(`/api/cases/${caseId}/diff?from=${from}&to=${to}`);
-}
-
-export function getHypothesisPanel(caseId: string, hypothesisId: string, revision?: number | null): Promise<HypothesisPanelEnvelope> {
-  return fetchJson<HypothesisPanelEnvelope>(withRevision(`/api/cases/${caseId}/hypotheses/${hypothesisId}`, revision));
-}
-
-export function getInquiryPanel(caseId: string, inquiryId: string, revision?: number | null): Promise<InquiryPanelEnvelope> {
-  return fetchJson<InquiryPanelEnvelope>(withRevision(`/api/cases/${caseId}/inquiries/${inquiryId}`, revision));
 }
 
 export async function getGuardrails(caseId: string, revision?: number | null): Promise<GuardrailBundle> {

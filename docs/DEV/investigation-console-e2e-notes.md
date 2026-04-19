@@ -11,6 +11,11 @@ kill <pid>
 ```
 
 - When you only need a targeted browser regression and the default ports are already in use, do not kill unknown processes just to make the happy path work. Start the Vite app and fixture BFF on temporary ports instead, for example `CONSOLE_WEB_PORT=4175` with `CONSOLE_BFF_PORT=4319`, and pass the same pair into the Playwright command.
+- The same override pattern works for the full console e2e script as well, for example:
+
+```bash
+CONSOLE_WEB_PORT=4200 CONSOLE_BFF_PORT=4340 pnpm --filter @coe/investigation-console test:e2e
+```
 
 ## Form Stability
 
@@ -49,6 +54,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - The blank-canvas graph context menu should expose only context-free concepts that can be persisted immediately: `issue` and `artifact`. Keep `fact`, `hypothesis`, `experiment`, and `decision` on context-aware flows such as the Action Panel, where the required supporting refs already exist.
 - For graph edge-creation regressions, check both the React Flow contract and the physical layout. `nodesConnectable` plus `onConnect` must both be wired on the controlled canvas, and the rendered card width in CSS must stay aligned with `useGraphLayout` lane width; otherwise adjacent nodes can visually overlap and cover each other's handles even when connection logic is enabled.
 - Case detail edits are now split across two persistence lanes: domain-safe mutations such as blank-canvas `issue` / `artifact` creation must go through backend tools immediately, while case-detail drafts and graph-only overlay edits such as textarea input, node repositioning, and manual edges must autosave to case-scoped local storage and survive reloads.
+- Do not infer canonical mode from the mere presence of a `problem` node. Mixed legacy cases also carry a canonical root as sidecar state, and the stable client rule is: switch to canonical UI only when the graph has no legacy node kinds, or when canonical-only node kinds such as `blocker`, `repair_attempt`, or `evidence_ref` are present.
 
 ## Snapshot Placement
 

@@ -55,4 +55,18 @@ describe('fixture MCP client', () => {
       ])
     });
   });
+
+  test('does not expose removed legacy coverage or panel resources', async () => {
+    await expect(
+      client.readResource(`investigation://cases/${FIXTURE_IDS.caseId}/coverage`)
+    ).rejects.toThrow(/Unsupported resource/);
+
+    await expect(
+      client.readResource(`investigation://cases/${FIXTURE_IDS.caseId}/hypotheses/${FIXTURE_IDS.hypothesisId}`)
+    ).rejects.toThrow(/Unsupported resource/);
+
+    await expect(
+      client.readResource(`investigation://cases/${FIXTURE_IDS.caseId}/inquiries/${FIXTURE_IDS.inquiryId}`)
+    ).rejects.toThrow(/Unsupported resource/);
+  });
 });
