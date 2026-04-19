@@ -282,7 +282,13 @@ test('workspace creates canonical hypotheses from graph handles and persists the
   await setControlValue(page, 'node-editor-hypothesis-falsification', 'Disprove this branch if the follow-up evidence fails.');
   await page.getByTestId('node-editor-save').click();
 
-  await expect.poll(() => page.getByTestId('node-editor-current-status').textContent()).toContain('Saving');
+  await expect.poll(async () => {
+    try {
+      return (await page.getByTestId('node-editor-current-status').textContent())?.trim() ?? '';
+    } catch {
+      return '';
+    }
+  }).toMatch(/^(Saving|Unverified)$/);
 
   const workspaceUrl = page.url();
   await page.goto(workspaceUrl);

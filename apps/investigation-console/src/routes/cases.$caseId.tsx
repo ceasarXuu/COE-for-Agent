@@ -14,6 +14,7 @@ import { TimelineView } from '../components/timeline-view.js';
 import { getCaseGraph, getCaseSnapshot, getCaseTimeline } from '../lib/api.js';
 import { useI18n } from '../lib/i18n.js';
 import { connectConsoleStream } from '../lib/sse.js';
+import { reconcilePersistedDraftSelection } from './case-workspace-draft-reconciliation.js';
 import { resetUIState, setRevision, setSelectedNodeId, useUIStore } from '../store/ui-store.js';
 
 interface WorkspaceData {
@@ -110,29 +111,25 @@ export function CaseWorkspaceRoute() {
   }, [caseId, requestRefresh, revision]);
 
   useEffect(() => {
-    if (!workspace) {
+    if (!workspace || draftNodes.length === 0) {
       return;
     }
 
     const persistedNodeIds = new Set(workspace.graph.data.nodes.map((node) => node.id));
-    let nextSelectedNodeId: string | null = null;
+    const reconciliation = reconcilePersistedDraftSelection({
+      draftNodes,
+      persistedNodeIds,
+      selectedNodeId
+    });
 
-    setDraftNodes((currentDraftNodes) => currentDraftNodes.filter((draftNode) => {
-      if (!draftNode.persistedNodeId || !persistedNodeIds.has(draftNode.persistedNodeId)) {
-        return true;
-      }
-
-      if (selectedNodeId === draftNode.id) {
-        nextSelectedNodeId = draftNode.persistedNodeId;
-      }
-
-      return false;
-    }));
-
-    if (nextSelectedNodeId) {
-      setSelectedNodeId(nextSelectedNodeId);
+    if (reconciliation.draftNodes.length !== draftNodes.length) {
+      setDraftNodes(reconciliation.draftNodes);
     }
-  }, [selectedNodeId, workspace]);
+
+    if (reconciliation.nextSelectedNodeId) {
+      setSelectedNodeId(reconciliation.nextSelectedNodeId);
+    }
+  }, [draftNodes, selectedNodeId, workspace]);
 
   const maxRevision = workspace?.snapshot.headRevision ?? 1;
   const currentRevision = revision ?? maxRevision;
