@@ -27,9 +27,18 @@ export async function readTimelineResource(services: InvestigationServerServices
           eventType: event.eventType,
           caseRevision: event.caseRevision,
           occurredAt: event.createdAt.toISOString(),
+          editorOrigin: classifyEditorOrigin(event.actor),
           summary: event.eventType
         }))
       }
     })
   };
+}
+
+function classifyEditorOrigin(actor: unknown): 'agent' | 'web_ui' {
+  const actorRecord = typeof actor === 'object' && actor !== null && !Array.isArray(actor)
+    ? actor as Record<string, unknown>
+    : {};
+
+  return actorRecord.actorType === 'user' ? 'web_ui' : 'agent';
 }

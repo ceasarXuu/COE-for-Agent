@@ -24,6 +24,12 @@ export function asJsonObject(value: unknown): Record<string, unknown> {
 }
 
 export function asValidatedInput<T>(value: Record<string, unknown>): T {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error('Command input must be a non-null object');
+  }
+  if (typeof value.idempotencyKey !== 'string' || value.idempotencyKey.length === 0) {
+    throw new Error('idempotencyKey is required and must be a non-empty string');
+  }
   return value as unknown as T;
 }
 

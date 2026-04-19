@@ -28,7 +28,7 @@ function parseOptionalInteger(value: string | null): number | null {
   }
 
   const parsed = Number(value);
-  return Number.isInteger(parsed) ? Math.max(0, parsed) : null;
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function createEmptyEnvelope<T>(requestedRevision: number | null, data: T) {

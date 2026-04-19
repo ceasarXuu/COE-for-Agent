@@ -1,13 +1,21 @@
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
-import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
 
+import {
+  DEFAULT_CONSOLE_BFF_PORT,
+  DEFAULT_CONSOLE_WEB_PORT,
+  isPortAvailable,
+  resolvePortPlan
+} from './run-e2e-ports.mjs';
+
 const cwd = process.cwd();
 const childProcesses = [];
-const CONSOLE_BFF_PORT = Number(process.env.CONSOLE_BFF_PORT ?? '4318');
-const CONSOLE_WEB_PORT = Number(process.env.CONSOLE_WEB_PORT ?? '4173');
+const REQUESTED_CONSOLE_BFF_PORT = Number(process.env.CONSOLE_BFF_PORT ?? String(DEFAULT_CONSOLE_BFF_PORT));
+const REQUESTED_CONSOLE_WEB_PORT = Number(process.env.CONSOLE_WEB_PORT ?? String(DEFAULT_CONSOLE_WEB_PORT));
+const EXPLICIT_CONSOLE_BFF_PORT = Object.hasOwn(process.env, 'CONSOLE_BFF_PORT');
+const EXPLICIT_CONSOLE_WEB_PORT = Object.hasOwn(process.env, 'CONSOLE_WEB_PORT');
 const PLAYWRIGHT_BIN = path.join(cwd, 'node_modules', '.bin', 'playwright');
 const TSX_BIN = path.join(cwd, 'node_modules', '.bin', 'tsx');
 const VITE_BIN = path.join(cwd, 'node_modules', '.bin', 'vite');
@@ -15,25 +23,6 @@ const REAL_E2E_SEED_FILE = path.join(cwd, '.tmp', 'real-backend-seed.json');
 
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
-
-async function ensurePortAvailable(port, label) {
-  await new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.once('error', () => {
-      reject(new Error(`${label} port ${port} is already in use. Stop the existing process and retry.`));
-    });
-    server.once('listening', () => {
-      server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      });
-    });
-    server.listen(port, '127.0.0.1');
-  });
 }
 
 function startProcess(command, args, options = {}) {
@@ -145,31 +134,32 @@ async function runPlaywright(specs, env = {}) {
   });
 }
 
-async function runFixturePhase() {
-  await ensurePortAvailable(CONSOLE_BFF_PORT, 'Console BFF');
+async function runFixturePhase(sharedEnv, consoleBffPort) {
   const bff = startProcess(TSX_BIN, ['server/e2e.ts'], {
-    label: 'fixture e2e bff'
+    label: 'fixture e2e bff',
+    env: sharedEnv
   });
   try {
-    await waitForUrlOrExit(bff, `http://127.0.0.1:${CONSOLE_BFF_PORT}/api/session`);
-    return Number(await runPlaywright(['e2e/case-workspace.spec.ts', 'e2e/history-mode.spec.ts']));
+    await waitForUrlOrExit(bff, `http://127.0.0.1:${consoleBffPort}/api/session`);
+    return Number(await runPlaywright(['e2e/case-workspace.spec.ts', 'e2e/history-mode.spec.ts'], sharedEnv));
   } finally {
     await stopProcess(bff);
   }
 }
 
-async function runRealBackendPhase() {
+async function runRealBackendPhase(sharedEnv, consoleBffPort) {
   await mkdir(path.dirname(REAL_E2E_SEED_FILE), { recursive: true });
-  await ensurePortAvailable(CONSOLE_BFF_PORT, 'Console BFF');
   const bff = startProcess(TSX_BIN, ['server/e2e-real.ts'], {
     label: 'real backend e2e bff',
     env: {
+      ...sharedEnv,
       REAL_E2E_SEED_FILE
     }
   });
   try {
-    await waitForUrlOrExit(bff, `http://127.0.0.1:${CONSOLE_BFF_PORT}/api/session`);
+    await waitForUrlOrExit(bff, `http://127.0.0.1:${consoleBffPort}/api/session`);
     return Number(await runPlaywright(['e2e/real-backend.spec.ts'], {
+      ...sharedEnv,
       REAL_E2E_SEED_FILE
     }));
   } finally {
@@ -189,20 +179,41 @@ process.on('SIGTERM', async () => {
 
 async function main() {
   await ensurePlaywrightRuntime();
-  await ensurePortAvailable(CONSOLE_WEB_PORT, 'Console web');
-  const web = startProcess(VITE_BIN, ['--host', '127.0.0.1', '--port', String(CONSOLE_WEB_PORT), '--strictPort'], {
-    label: 'vite web server'
+  const { webPort, bffPort } = await resolvePortPlan({
+    requestedWebPort: REQUESTED_CONSOLE_WEB_PORT,
+    requestedBffPort: REQUESTED_CONSOLE_BFF_PORT,
+    explicitWebPort: EXPLICIT_CONSOLE_WEB_PORT,
+    explicitBffPort: EXPLICIT_CONSOLE_BFF_PORT,
+    isPortAvailable
+  });
+  const sharedEnv = {
+    CONSOLE_WEB_PORT: String(webPort),
+    CONSOLE_BFF_PORT: String(bffPort)
+  };
+
+  if (webPort !== REQUESTED_CONSOLE_WEB_PORT || bffPort !== REQUESTED_CONSOLE_BFF_PORT) {
+    console.info('[investigation-console] e2e-ports-selected', {
+      requestedWebPort: REQUESTED_CONSOLE_WEB_PORT,
+      requestedBffPort: REQUESTED_CONSOLE_BFF_PORT,
+      webPort,
+      bffPort
+    });
+  }
+
+  const web = startProcess(VITE_BIN, ['--host', '127.0.0.1', '--port', String(webPort), '--strictPort'], {
+    label: 'vite web server',
+    env: sharedEnv
   });
 
   try {
-    await waitForUrlOrExit(web, `http://127.0.0.1:${CONSOLE_WEB_PORT}`);
-    const fixtureExitCode = await runFixturePhase();
+    await waitForUrlOrExit(web, `http://127.0.0.1:${webPort}`);
+    const fixtureExitCode = await runFixturePhase(sharedEnv, bffPort);
     if (fixtureExitCode !== 0) {
       await cleanup();
       process.exit(fixtureExitCode);
     }
 
-    const realExitCode = await runRealBackendPhase();
+    const realExitCode = await runRealBackendPhase(sharedEnv, bffPort);
     await cleanup();
     process.exit(realExitCode);
   } catch (error) {

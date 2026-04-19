@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/repair_attempt.update.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "repairAttemptId"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "repairAttemptId": { "type": "string", "pattern": "^repair_attempt_[0-9A-F]{26}$" },
+    "changeSummary": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "scope": { "type": "string", "minLength": 1, "maxLength": 4000 }
+  }
+}

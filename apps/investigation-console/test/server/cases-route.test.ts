@@ -44,7 +44,7 @@ describe('cases route', () => {
     });
   });
 
-  test('POST /api/cases opens a case with reviewer context and returns the created identifiers', async () => {
+  test('POST /api/cases opens a case with reviewer context and returns only canonical created identifiers', async () => {
     const invokeTool = vi.fn(async () => ({
       ok: true,
       createdIds: [
@@ -103,10 +103,10 @@ describe('cases route', () => {
     expect(response.json()).toMatchObject({
       ok: true,
       caseId: 'case_01BBBBBBBBBBBBBBBBBBBBBBBB',
-      inquiryId: null,
       problemId: 'problem_01BBBBBBBBBBBBBBBBBBBBB',
       headRevisionAfter: 1
     });
+    expect(response.json()).not.toHaveProperty('inquiryId');
   });
 
   test('GET /api/session issues a still-valid session after the server has been running past the session TTL', async () => {

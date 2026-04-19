@@ -12,11 +12,18 @@ export interface GraphNodeRecord {
   revision: number;
 }
 
+const NODE_WIDTH = 220;
+const NODE_HEIGHT = 120;
+const COLUMN_GAP = 72;
+const ROW_GAP = 32;
+const PAD_X = 40;
+const PAD_Y = 40;
+
 function getDisplayKind(node: Pick<GraphNodeRecord, 'kind' | 'displayKind'>): string {
   return node.displayKind ?? node.kind;
 }
 
-export function useGraphLayout(
+export function computeGraphLayout(
   graph: CaseGraphEnvelope,
   compareText: (left: string, right: string) => number = (left, right) => left.localeCompare(right)
 ) {
@@ -26,12 +33,9 @@ export function useGraphLayout(
 
   const LANE_ORDER = [
     ['case', 'problem'],
-    ['symptom', 'blocking_issue', 'residual_risk', 'artifact', 'hypothesis'],
+    ['hypothesis'],
     ['blocker', 'repair_attempt'],
-    ['evidence_ref'],
-    ['fact'],
-    ['experiment'],
-    ['decision']
+    ['evidence_ref']
   ] as const;
 
   LANE_ORDER.forEach((kinds, laneIndex) => {
@@ -71,16 +75,14 @@ export function useGraphLayout(
         return distanceDelta;
       }
 
+      const revisionDelta = left.revision - right.revision;
+      if (revisionDelta !== 0) {
+        return revisionDelta;
+      }
+
       return compareText(left.label, right.label);
     });
   }
-
-  const NODE_WIDTH = 220;
-  const NODE_HEIGHT = 120;
-  const COLUMN_GAP = 72;
-  const ROW_GAP = 32;
-  const PAD_X = 40;
-  const PAD_Y = 40;
 
   const maxRows = Math.max(...lanes.map((lane) => lane.length), 1);
   const activeLaneCount = Math.max(
@@ -109,8 +111,6 @@ export function useGraphLayout(
       return;
     }
 
-    const laneHeight = lane.length * NODE_HEIGHT + Math.max(lane.length - 1, 0) * ROW_GAP;
-    const laneOffset = PAD_Y + (height - PAD_Y * 2 - laneHeight) / 2;
     const x = PAD_X + laneIndex * (NODE_WIDTH + COLUMN_GAP);
 
     lane.forEach((node, index) => {
@@ -119,7 +119,7 @@ export function useGraphLayout(
         type: getDisplayKind(node),
         position: {
           x,
-          y: laneOffset + index * (NODE_HEIGHT + ROW_GAP)
+          y: PAD_Y + index * (NODE_HEIGHT + ROW_GAP)
         },
         data: node
       });

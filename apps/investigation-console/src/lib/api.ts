@@ -38,7 +38,6 @@ export interface CreateCaseInput {
 export interface CreateCaseResult {
   ok: boolean;
   caseId: string | null;
-  inquiryId: string | null;
   problemId?: string | null;
   headRevisionAfter: number;
 }
@@ -91,6 +90,7 @@ export interface CaseTimelineEnvelope {
       eventType: string;
       caseRevision: number;
       occurredAt: string;
+      editorOrigin?: 'agent' | 'web_ui';
       summary: string;
     }>;
   };
@@ -116,6 +116,7 @@ export interface CaseGraphEnvelope {
   historical: boolean;
   data: {
     focusId: string | null;
+    projectionModel?: 'legacy' | 'canonical';
     nodes: GraphNodeRecord[];
     edges: Array<{
       key: string;
@@ -164,13 +165,6 @@ export interface CaseDiffEnvelope {
     }>;
     summary: string[];
   };
-}
-
-export interface GuardrailBundle {
-  aggregate: Record<string, unknown> & { kind: string };
-  stall: Record<string, unknown> & { kind: string; stall?: boolean; reason?: string | null };
-  readyToPatch: Record<string, unknown> & { pass?: boolean };
-  closeCase: Record<string, unknown> & { pass?: boolean };
 }
 
 const SESSION_REFRESH_WINDOW_MS = 60 * 1000;
@@ -259,11 +253,11 @@ export async function createCase(input: CreateCaseInput): Promise<CreateCaseResu
 }
 
 export function getCaseSnapshot(caseId: string, revision?: number | null): Promise<CaseSnapshotEnvelope> {
-  return fetchJson<CaseSnapshotEnvelope>(withRevision(`/api/cases/${caseId}/snapshot`, revision));
+  return fetchJson<CaseSnapshotEnvelope>(withRevision(`/api/cases/${encodeURIComponent(caseId)}/snapshot`, revision));
 }
 
 export function getCaseTimeline(caseId: string, revision?: number | null): Promise<CaseTimelineEnvelope> {
-  return fetchJson<CaseTimelineEnvelope>(withRevision(`/api/cases/${caseId}/timeline`, revision));
+  return fetchJson<CaseTimelineEnvelope>(withRevision(`/api/cases/${encodeURIComponent(caseId)}/timeline`, revision));
 }
 
 export function getCaseGraph(
@@ -281,33 +275,15 @@ export function getCaseGraph(
     params.set('depth', String(options.depth));
   }
 
-  return fetchJson<CaseGraphEnvelope>(`/api/cases/${caseId}/graph${params.toString().length > 0 ? `?${params.toString()}` : ''}`);
+  return fetchJson<CaseGraphEnvelope>(`/api/cases/${encodeURIComponent(caseId)}/graph${params.toString().length > 0 ? `?${params.toString()}` : ''}`);
 }
 
 export function getCaseEvidencePool(caseId: string, revision?: number | null): Promise<CaseEvidencePoolEnvelope> {
-  return fetchJson<CaseEvidencePoolEnvelope>(withRevision(`/api/cases/${caseId}/evidence-pool`, revision));
+  return fetchJson<CaseEvidencePoolEnvelope>(withRevision(`/api/cases/${encodeURIComponent(caseId)}/evidence-pool`, revision));
 }
 
 export function getCaseDiff(caseId: string, from: number, to: number): Promise<CaseDiffEnvelope> {
-  return fetchJson<CaseDiffEnvelope>(`/api/cases/${caseId}/diff?from=${from}&to=${to}`);
-}
-
-export async function getGuardrails(caseId: string, revision?: number | null): Promise<GuardrailBundle> {
-  const revisionPayload = revision ? { atRevision: revision } : {};
-
-  const [aggregate, stall, readyToPatch, closeCase] = await Promise.all([
-    invokeTool<Record<string, unknown>>('investigation.guardrail.check', { caseId, ...revisionPayload }),
-    invokeTool<Record<string, unknown>>('investigation.guardrail.stall_check', { caseId, ...revisionPayload }),
-    invokeTool<Record<string, unknown>>('investigation.guardrail.ready_to_patch_check', { caseId, ...revisionPayload }),
-    invokeTool<Record<string, unknown>>('investigation.guardrail.close_case_check', { caseId, ...revisionPayload })
-  ]);
-
-  return {
-    aggregate: aggregate as GuardrailBundle['aggregate'],
-    stall: stall as GuardrailBundle['stall'],
-    readyToPatch: readyToPatch as GuardrailBundle['readyToPatch'],
-    closeCase: closeCase as GuardrailBundle['closeCase']
-  };
+  return fetchJson<CaseDiffEnvelope>(`/api/cases/${encodeURIComponent(caseId)}/diff?from=${from}&to=${to}`);
 }
 
 export async function invokeTool<T = unknown>(toolName: string, payload: Record<string, unknown>): Promise<T> {

@@ -14,13 +14,17 @@ const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
   'investigation.problem.set_status': 'commands/v1/problem.set_status.request.schema.json',
   'investigation.problem.add_reference_material': 'commands/v1/problem.add_reference_material.request.schema.json',
   'investigation.hypothesis.create': 'commands/v1/hypothesis.create.request.schema.json',
+  'investigation.hypothesis.update': 'commands/v1/hypothesis.update.request.schema.json',
   'investigation.hypothesis.set_status': 'commands/v1/hypothesis.set_status.request.schema.json',
   'investigation.blocker.open': 'commands/v1/blocker.open.request.schema.json',
+  'investigation.blocker.update': 'commands/v1/blocker.update.request.schema.json',
   'investigation.blocker.close': 'commands/v1/blocker.close.request.schema.json',
   'investigation.repair_attempt.create': 'commands/v1/repair_attempt.create.request.schema.json',
+  'investigation.repair_attempt.update': 'commands/v1/repair_attempt.update.request.schema.json',
   'investigation.repair_attempt.set_status': 'commands/v1/repair_attempt.set_status.request.schema.json',
   'investigation.evidence.capture': 'commands/v1/evidence.capture.request.schema.json',
   'investigation.evidence.attach_existing': 'commands/v1/evidence.attach_existing.request.schema.json',
+  'investigation.evidence_ref.update': 'commands/v1/evidence_ref.update.request.schema.json',
   'investigation.evidence.capture_and_attach': 'commands/v1/evidence.capture_and_attach.request.schema.json'
 };
 
@@ -31,13 +35,17 @@ const TOOL_DESCRIPTION_BY_NAME: Record<string, string> = {
   'investigation.problem.set_status': 'Set the canonical root problem status.',
   'investigation.problem.add_reference_material': 'Attach a non-evidentiary reference material item to the canonical root problem.',
   'investigation.hypothesis.create': 'Create a canonical hypothesis node under a problem or hypothesis parent.',
+  'investigation.hypothesis.update': 'Update a canonical hypothesis node.',
   'investigation.hypothesis.set_status': 'Set the canonical hypothesis lifecycle status.',
   'investigation.blocker.open': 'Open a canonical blocker under a hypothesis.',
+  'investigation.blocker.update': 'Update a canonical blocker.',
   'investigation.blocker.close': 'Close a canonical blocker.',
   'investigation.repair_attempt.create': 'Create a canonical repair-attempt node under a confirmed hypothesis or ineffective repair attempt.',
+  'investigation.repair_attempt.update': 'Update a canonical repair-attempt node.',
   'investigation.repair_attempt.set_status': 'Advance the canonical repair-attempt status.',
   'investigation.evidence.capture': 'Capture a reusable canonical evidence entity in the shared evidence pool.',
   'investigation.evidence.attach_existing': 'Attach an existing canonical evidence entity to a hypothesis or repair attempt.',
+  'investigation.evidence_ref.update': 'Update a canonical evidence reference and its linked evidence metadata.',
   'investigation.evidence.capture_and_attach': 'Capture a new canonical evidence entity and attach it in one atomic workflow.',
   'investigation.guardrail.check': 'Evaluate the aggregate investigation guardrail state for a case.',
   'investigation.guardrail.stall_check': 'Evaluate whether the current investigation branch is stalled.',
@@ -51,7 +59,9 @@ const GUARDRAIL_INPUT_SCHEMA: JsonSchema = {
   required: ['caseId'],
   properties: {
     caseId: {
-      type: 'string'
+      type: 'string',
+      minLength: 1,
+      pattern: '^case_'
     },
     atRevision: {
       type: 'integer',

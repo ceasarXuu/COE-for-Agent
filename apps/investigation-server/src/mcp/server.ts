@@ -17,13 +17,17 @@ import { handleEvidenceCaptureAndAttach } from '../modules/commands/evidence-cap
 import { handleEvidenceCapture } from '../modules/commands/evidence-capture.js';
 import { handleBlockerClose } from '../modules/commands/blocker-close.js';
 import { handleBlockerOpen } from '../modules/commands/blocker-open.js';
+import { handleBlockerUpdate } from '../modules/commands/blocker-update.js';
 import { handleHypothesisCreate } from '../modules/commands/hypothesis-create.js';
+import { handleHypothesisUpdate } from '../modules/commands/hypothesis-update.js';
 import { handleHypothesisSetStatus } from '../modules/commands/hypothesis-set-status.js';
 import { handleProblemAddReferenceMaterial } from '../modules/commands/problem-add-reference-material.js';
 import { handleProblemSetStatus } from '../modules/commands/problem-set-status.js';
 import { handleProblemUpdate } from '../modules/commands/problem-update.js';
 import { handleRepairAttemptCreate } from '../modules/commands/repair-attempt-create.js';
+import { handleRepairAttemptUpdate } from '../modules/commands/repair-attempt-update.js';
 import { handleRepairAttemptSetStatus } from '../modules/commands/repair-attempt-set-status.js';
+import { handleEvidenceRefUpdate } from '../modules/commands/evidence-ref-update.js';
 import { handleGuardrailCheck } from '../modules/guardrails/check.js';
 import { handleGuardrailCloseCaseCheck } from '../modules/guardrails/close-case.js';
 import { handleGuardrailReadyToPatchCheck } from '../modules/guardrails/ready-to-patch.js';
@@ -103,13 +107,17 @@ export class InvestigationMcpServer {
             ['investigation.problem.set_status', (input) => handleProblemSetStatus(services, input)],
             ['investigation.problem.add_reference_material', (input) => handleProblemAddReferenceMaterial(services, input)],
             ['investigation.hypothesis.create', (input) => handleHypothesisCreate(services, input)],
+            ['investigation.hypothesis.update', (input) => handleHypothesisUpdate(services, input)],
             ['investigation.hypothesis.set_status', (input) => handleHypothesisSetStatus(services, input)],
             ['investigation.blocker.open', (input) => handleBlockerOpen(services, input)],
+            ['investigation.blocker.update', (input) => handleBlockerUpdate(services, input)],
             ['investigation.blocker.close', (input) => handleBlockerClose(services, input)],
             ['investigation.repair_attempt.create', (input) => handleRepairAttemptCreate(services, input)],
+            ['investigation.repair_attempt.update', (input) => handleRepairAttemptUpdate(services, input)],
             ['investigation.repair_attempt.set_status', (input) => handleRepairAttemptSetStatus(services, input)],
             ['investigation.evidence.capture', (input) => handleEvidenceCapture(services, input)],
             ['investigation.evidence.attach_existing', (input) => handleEvidenceAttachExisting(services, input)],
+            ['investigation.evidence_ref.update', (input) => handleEvidenceRefUpdate(services, input)],
             ['investigation.evidence.capture_and_attach', (input) => handleEvidenceCaptureAndAttach(services, input)],
             ['investigation.guardrail.check', (input) => handleGuardrailCheck(services, input)],
             ['investigation.guardrail.stall_check', (input) => handleGuardrailStallCheck(services, input)],

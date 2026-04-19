@@ -5,13 +5,17 @@ export const MUTATION_TOOL_NAMES = [
   'investigation.problem.set_status',
   'investigation.problem.add_reference_material',
   'investigation.hypothesis.create',
+  'investigation.hypothesis.update',
   'investigation.hypothesis.set_status',
   'investigation.blocker.open',
+  'investigation.blocker.update',
   'investigation.blocker.close',
   'investigation.repair_attempt.create',
+  'investigation.repair_attempt.update',
   'investigation.repair_attempt.set_status',
   'investigation.evidence.capture',
   'investigation.evidence.attach_existing',
+  'investigation.evidence_ref.update',
   'investigation.evidence.capture_and_attach'
 ] as const;
 

@@ -12,28 +12,32 @@ export function TimelineView(props: {
 }) {
   const { formatEventType, t } = useI18n();
   const shouldShowRevisionControls = (props.revisionControls?.maxRevision ?? 0) >= 2;
+  const revisions = [...new Set(props.timeline.data.events.map((event) => event.caseRevision))]
+    .sort((left, right) => left - right)
+    .map((revision) => ({
+      revision,
+      events: props.timeline.data.events
+        .filter((event) => event.caseRevision === revision)
+        .map((event) => ({
+          eventId: event.eventId,
+          originLabel: t(event.editorOrigin === 'web_ui' ? 'revision.origin.web_ui' : 'revision.origin.agent'),
+          revision: event.caseRevision,
+          summary: event.summary,
+          title: formatEventType(event.eventType)
+        }))
+    }));
 
   return (
-    <section className="panel panel-diagnostic workspace-stage timeline-stage workspace-stage-fill">
-      <p className="panel-kicker">{t('timeline.kicker')}</p>
+    <section className="timeline-strip" data-testid="timeline-strip">
+      <span className="timeline-strip-label">{t('timeline.kicker')}</span>
       {shouldShowRevisionControls && props.revisionControls ? (
         <RevisionSlider
           currentRevision={props.revisionControls.currentRevision}
           maxRevision={props.revisionControls.maxRevision}
           onChange={props.revisionControls.onChange}
+          revisions={revisions}
         />
       ) : null}
-      <ul className="timeline-list">
-        {props.timeline.data.events.map((event) => (
-          <li data-testid={`timeline-event-${event.eventId}`} key={event.eventId}>
-            <div>
-              <strong>{formatEventType(event.eventType)}</strong>
-              <span>{t('timeline.rev', { revision: event.caseRevision })}</span>
-            </div>
-            <p>{event.summary}</p>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }

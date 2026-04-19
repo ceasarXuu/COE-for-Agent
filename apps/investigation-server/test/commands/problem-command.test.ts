@@ -178,4 +178,76 @@ describe.sequential('canonical problem commands', () => {
       await app.close();
     }
   });
+
+  test('saved canonical nodes can be updated after creation', async () => {
+    const app = await createTestApp();
+
+    try {
+      const opened = await app.mcpServer.invokeTool('investigation.case.open', {
+        idempotencyKey: 'problem-open-005',
+        title: 'Canonical node updates',
+        objective: 'Verify saved canonical nodes remain editable',
+        severity: 'high',
+        projectDirectory: '/workspace/problem-open-005'
+      });
+
+      const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
+      const problemId = opened.createdIds?.find((value) => value.startsWith('problem_'))!;
+      const createdHypothesis = await app.mcpServer.invokeTool('investigation.hypothesis.create', {
+        idempotencyKey: 'problem-open-005-hypothesis',
+        caseId,
+        ifCaseRevision: 1,
+        parentNodeId: problemId,
+        statement: 'initial hypothesis',
+        falsificationCriteria: ['initial falsification']
+      });
+      const hypothesisId = createdHypothesis.createdIds?.find((value) => value.startsWith('hypothesis_'))!;
+
+      const updatedHypothesis = await app.mcpServer.invokeTool('investigation.hypothesis.update', {
+        idempotencyKey: 'problem-open-005-hypothesis-update',
+        caseId,
+        ifCaseRevision: 2,
+        hypothesisId,
+        statement: 'updated hypothesis',
+        falsificationCriteria: ['updated falsification']
+      });
+
+      expect(updatedHypothesis.updatedIds).toContain(hypothesisId);
+
+      const openedBlocker = await app.mcpServer.invokeTool('investigation.blocker.open', {
+        idempotencyKey: 'problem-open-005-blocker',
+        caseId,
+        ifCaseRevision: 3,
+        hypothesisId,
+        description: 'initial blocker'
+      });
+      const blockerId = openedBlocker.createdIds?.find((value) => value.startsWith('blocker_'))!;
+
+      const updatedBlocker = await app.mcpServer.invokeTool('investigation.blocker.update', {
+        idempotencyKey: 'problem-open-005-blocker-update',
+        caseId,
+        ifCaseRevision: 4,
+        blockerId,
+        description: 'updated blocker',
+        possibleWorkarounds: ['new workaround']
+      });
+
+      expect(updatedBlocker.updatedIds).toContain(blockerId);
+
+      const currentState = new CurrentStateRepository(app.services.db);
+      const hypothesisRecord = await currentState.getRecord('hypotheses', hypothesisId);
+      const blockerRecord = await currentState.getRecord('blockers', blockerId);
+
+      expect(hypothesisRecord?.payload).toMatchObject({
+        statement: 'updated hypothesis',
+        falsificationCriteria: ['updated falsification']
+      });
+      expect(blockerRecord?.payload).toMatchObject({
+        description: 'updated blocker',
+        possibleWorkarounds: ['new workaround']
+      });
+    } finally {
+      await app.close();
+    }
+  });
 });

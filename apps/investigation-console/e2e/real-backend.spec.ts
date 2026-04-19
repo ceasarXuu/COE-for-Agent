@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test } from '@playwright/test';
 
+import { clickGraphNode, setControlValue } from './graph-node-helpers.js';
+
 interface RealBackendSeedState {
   caseId: string;
   hypothesisId: string;
@@ -27,12 +29,21 @@ test('real backend reviewer flow confirms a canonical hypothesis end-to-end', as
   await page.getByTestId(`case-card-${seed.caseId}`).click();
 
   await expect(page.getByTestId('snapshot-panel')).toHaveCount(0);
-  await page.getByTestId(`graph-node-${seed.hypothesisId}`).click();
-  await expect(page.getByTestId('inspector-status')).toHaveText('Unverified');
+  await clickGraphNode(page, seed.hypothesisId);
+  await expect(page.getByTestId('node-editor-current-status')).toHaveText('Unverified');
 
-  await page.getByTestId('canonical-status-reason').fill('real backend confirmation path is working');
-  await page.getByTestId('action-canonical-hypothesis-confirm').click();
+  await page.getByTestId('node-editor-status').selectOption('confirmed');
+  await setControlValue(page, 'node-editor-status-reason', 'real backend confirmation path is working');
+  await Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes('/api/tools/investigation.hypothesis.set_status') && response.status() === 200
+    ),
+    page.getByTestId('node-editor-save').click()
+  ]);
 
-  await expect(page.getByTestId('inspector-status')).toHaveText('Confirmed');
+  await page.reload();
+  await clickGraphNode(page, seed.hypothesisId);
+
+  await expect(page.getByTestId('node-editor-current-status')).toHaveText('Confirmed');
   await expect(page.getByTestId('revision-value')).toHaveText(String(seed.headRevision + 1));
 });

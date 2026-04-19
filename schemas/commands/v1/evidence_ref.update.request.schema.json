@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/evidence_ref.update.request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision", "evidenceRefId"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 8, "maxLength": 128 },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "evidenceRefId": { "type": "string", "pattern": "^evidence_ref_[0-9A-F]{26}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "provenance": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "effectOnParent": { "type": "string", "enum": ["supports", "refutes", "neutral", "validates", "invalidates"] },
+    "interpretation": { "type": "string", "minLength": 1, "maxLength": 4000 }
+  }
+}

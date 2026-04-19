@@ -130,13 +130,11 @@ export async function registerCasesRoutes(
     }) as Record<string, unknown>;
 
     const caseId = findCreatedId(result.createdIds, 'case_');
-    const inquiryId = findCreatedId(result.createdIds, 'inquiry_');
     const problemId = findCreatedId(result.createdIds, 'problem_');
 
     request.log.info({
       event: 'manual_case_create.completed',
       caseId,
-      inquiryId,
       problemId,
       headRevisionAfter: result.headRevisionAfter ?? null
     }, 'manual case create completed');
@@ -144,7 +142,6 @@ export async function registerCasesRoutes(
     return {
       ...result,
       caseId,
-      inquiryId,
       problemId
     };
   });

@@ -19,3 +19,10 @@ export function buildIdempotencyKey(prefix: string): string {
 
   return `${prefix}-${randomPart}`;
 }
+
+export function splitLines(value: string): string[] {
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}

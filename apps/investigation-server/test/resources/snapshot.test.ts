@@ -71,7 +71,57 @@ describe.sequential('snapshot and timeline resources', () => {
       data: {
         events: expect.arrayContaining([
           expect.objectContaining({
-            eventType: 'case.opened'
+            eventType: 'case.opened',
+            editorOrigin: 'web_ui'
+          })
+        ])
+      }
+    });
+
+    await app.close();
+  });
+
+  test('timeline marks agent-authored mutations separately from web ui edits', async () => {
+    const app = await createTestApp();
+    const opened = await app.mcpServer.invokeTool('investigation.case.open', {
+      idempotencyKey: 'timeline-origin-open',
+      title: 'Timeline origin',
+      objective: 'Mark origin labels in hover bubbles',
+      severity: 'high',
+      projectDirectory: '/workspace/timeline-origin'
+    });
+    const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
+    const problemId = opened.createdIds?.find((value) => value.startsWith('problem_'))!;
+
+    await app.mcpServer.invokeTool('investigation.hypothesis.create', {
+      idempotencyKey: 'timeline-origin-agent',
+      caseId,
+      ifCaseRevision: opened.headRevisionAfter,
+      parentNodeId: problemId,
+      statement: 'agent hypothesis',
+      falsificationCriteria: ['disprove agent hypothesis'],
+      actorContext: {
+        actorType: 'agent',
+        actorId: 'codex-agent',
+        sessionId: 'agent-session',
+        role: 'Reviewer',
+        issuer: 'codex',
+        authMode: 'service'
+      }
+    });
+
+    const timeline = await app.mcpServer.readResource(`investigation://cases/${caseId}/timeline`);
+
+    expect(timeline.data).toMatchObject({
+      data: {
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            eventType: 'case.opened',
+            editorOrigin: 'web_ui'
+          }),
+          expect.objectContaining({
+            eventType: 'canonical.hypothesis.created',
+            editorOrigin: 'agent'
           })
         ])
       }

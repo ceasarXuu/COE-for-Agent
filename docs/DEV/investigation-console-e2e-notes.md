@@ -2,15 +2,16 @@
 
 ## Startup
 
-- `pnpm --filter @coe/investigation-console test:e2e` requires `CONSOLE_BFF_PORT=4318` and `CONSOLE_WEB_PORT=4173` to be free before the script starts.
-- If `4318` is already occupied by a leftover local console server, stop that process first:
+- `pnpm --filter @coe/investigation-console test:e2e` now prefers `CONSOLE_BFF_PORT=4318` and `CONSOLE_WEB_PORT=4173`, but when those defaults are already occupied it automatically scans upward to the next free pair.
+- If you explicitly pin `CONSOLE_BFF_PORT` or `CONSOLE_WEB_PORT`, the script treats those ports as strict requirements and will still fail fast when the requested port is already in use.
+- If you want to inspect or reclaim a specific occupied port, use:
 
 ```bash
 lsof -nP -iTCP:4318 -sTCP:LISTEN
 kill <pid>
 ```
 
-- When you only need a targeted browser regression and the default ports are already in use, do not kill unknown processes just to make the happy path work. Start the Vite app and fixture BFF on temporary ports instead, for example `CONSOLE_WEB_PORT=4175` with `CONSOLE_BFF_PORT=4319`, and pass the same pair into the Playwright command.
+- When you only need a targeted browser regression and the default ports are already in use, do not kill unknown processes just to make the happy path work. You can still pin temporary ports yourself, for example `CONSOLE_WEB_PORT=4175` with `CONSOLE_BFF_PORT=4319`, and pass the same pair into the Playwright command.
 - The same override pattern works for the full console e2e script as well, for example:
 
 ```bash
@@ -33,6 +34,8 @@ pnpm --filter @coe/investigation-console test:e2e
 ```
 
 - When doing ad hoc browser probes against the Vite dev server, prefer `domcontentloaded` plus an explicit short wait over `networkidle`; the latter can hang on persistent local activity and slow down quick regression checks.
+- For graph-create regressions, the fixture e2e lane is the quickest signal because it exercises drag-create on the real canvas without waiting on the seeded real-backend bootstrap path.
+- If `test:e2e` fails only in the real-backend phase with the page stuck on `Loading workspace…`, inspect `apps/investigation-console/test-results/*/error-context.md` and the retained Playwright trace before assuming the graph create path regressed; the timeout can happen before the first graph resource is rendered.
 
 ## Drawer Header Layout
 

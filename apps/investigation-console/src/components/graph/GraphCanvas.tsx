@@ -4,160 +4,108 @@ import ReactFlow, {
   Controls,
   MiniMap,
   applyNodeChanges,
+  type Edge,
   type Node,
-  type NodeChange,
-  type Edge
+  type NodeChange
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { allowedCanonicalChildKinds } from '@coe/domain/canonical-case-graph';
-import { buildIdempotencyKey } from '@coe/shared-utils';
 
-import {
-  loadGraphOverlayState,
-  persistGraphOverlayState,
-  type GraphOverlayEdge
-} from '../../lib/case-workspace-storage.js';
-import { getCaseEvidencePool, invokeTool, type CaseGraphEnvelope, type CaseSnapshotEnvelope } from '../../lib/api.js';
+import type { CaseGraphEnvelope, CaseSnapshotEnvelope } from '../../lib/api.js';
+import type { CreateDraftNodeRequest, DraftNodeRecord } from '../node-editor/case-node-drafts.js';
+import { buildDraftEdge } from '../node-editor/case-node-drafts.js';
 import { useI18n } from '../../lib/i18n.js';
-import { useGraphLayout, type GraphNodeRecord } from './useGraphLayout.js';
-import { HypothesisNode } from './nodes/HypothesisNode.js';
-import { FactNode } from './nodes/FactNode.js';
-import { ExperimentNode } from './nodes/ExperimentNode.js';
-import { DecisionNode } from './nodes/DecisionNode.js';
-import { GapNode } from './nodes/GapNode.js';
-import { ResidualNode } from './nodes/ResidualNode.js';
-import { InquiryNode } from './nodes/InquiryNode.js';
-import { SymptomNode } from './nodes/SymptomNode.js';
-import { ArtifactNode } from './nodes/ArtifactNode.js';
-import { EntityNode } from './nodes/EntityNode.js';
-import { IssueNode } from './nodes/IssueNode.js';
-import { ProblemNode } from './nodes/ProblemNode.js';
-import { BlockerNode } from './nodes/BlockerNode.js';
-import { RepairAttemptNode } from './nodes/RepairAttemptNode.js';
-import { EvidenceRefNode } from './nodes/EvidenceRefNode.js';
+import { getPresentationKind } from './graph-node-presentation.js';
 import type { GraphNodeViewData } from './nodes/GraphNodeCard.js';
+import { CaseNode } from './nodes/CaseNode.js';
+import { EvidenceRefNode } from './nodes/EvidenceRefNode.js';
+import { HypothesisNode } from './nodes/HypothesisNode.js';
+import { BlockerNode } from './nodes/BlockerNode.js';
+import { ProblemNode } from './nodes/ProblemNode.js';
+import { RepairAttemptNode } from './nodes/RepairAttemptNode.js';
 import { GlowingEdge } from './edges/GlowingEdge.js';
-import { getDisplayKind, getPresentationKind, summarizeGraphNodes } from './graph-node-presentation.js';
-import { isCanonicalGraphProjection } from './isCanonicalGraphProjection.js';
-import { CanonicalGraphCreatePopover, type CanonicalCreateSubmission } from './CanonicalGraphCreatePopover.js';
+import { computeGraphLayout } from './useGraphLayout.js';
 
 const nodeTypes = {
+  case: CaseNode,
   problem: ProblemNode,
-  issue: IssueNode,
   hypothesis: HypothesisNode,
   blocker: BlockerNode,
   repair_attempt: RepairAttemptNode,
-  evidence_ref: EvidenceRefNode,
-  fact: FactNode,
-  experiment: ExperimentNode,
-  decision: DecisionNode,
-  gap: GapNode,
-  residual: ResidualNode,
-  inquiry: InquiryNode,
-  symptom: SymptomNode,
-  artifact: ArtifactNode,
-  entity: EntityNode,
+  evidence_ref: EvidenceRefNode
 };
 
 const edgeTypes = {
-  glowing: GlowingEdge,
+  glowing: GlowingEdge
 };
 
-interface GraphCanvasProps {
-  snapshot: CaseSnapshotEnvelope;
-  graph: CaseGraphEnvelope;
-  onMutationComplete?: () => Promise<void> | void;
-  onSelectNode: (nodeId: string) => void;
-}
-
-interface ContextMenuState {
-  flowX: number;
-  flowY: number;
-  paneX: number;
-  paneY: number;
-}
-
-interface FlowPositionProjector {
-  screenToFlowPosition: (position: { x: number; y: number }) => { x: number; y: number };
-}
-
-interface PendingCanonicalCreate {
+interface PendingDraftCreate {
   parentNodeId: string;
   parentKind: 'problem' | 'hypothesis' | 'repair_attempt';
   parentStatus: 'open' | 'resolved' | 'abandoned' | 'unverified' | 'blocked' | 'confirmed' | 'rejected' | 'proposed' | 'running' | 'effective' | 'ineffective' | null;
   paneX: number;
   paneY: number;
+  flowX: number;
+  flowY: number;
 }
 
-const contextMenuNodeOptions = [
-  { type: 'issue', labelKey: 'graph.node.issue', defaultLabelKey: 'graph.newIssue' },
-  { type: 'artifact', labelKey: 'graph.node.artifact', defaultLabelKey: 'graph.newArtifact' }
-] as const;
+interface FlowProjector {
+  screenToFlowPosition: (position: { x: number; y: number }) => { x: number; y: number };
+}
 
-export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode }: GraphCanvasProps) {
-  const { compareText, formatEnumLabel, t } = useI18n();
-  const layout = useMemo(() => useGraphLayout(graph, compareText), [compareText, graph]);
-  const caseRecord = snapshot.data.case;
+interface GraphCanvasProps {
+  draftNodes?: DraftNodeRecord[];
+  snapshot: CaseSnapshotEnvelope;
+  graph: CaseGraphEnvelope;
+  selectedNodeId?: string | null;
+  onCreateDraftNode?: (request: CreateDraftNodeRequest) => void;
+  onSelectNode: (nodeId: string) => void;
+}
+
+export function GraphCanvas(props: GraphCanvasProps) {
+  const { formatEnumLabel, t } = useI18n();
+  const caseRecord = props.snapshot.data.case;
   const caseId = caseRecord?.id ?? null;
-  const currentRevision = caseRecord?.revision ?? snapshot.headRevision;
-  const isCanonicalGraph = isCanonicalGraphProjection(graph);
-  const [isSpacePanning, setIsSpacePanning] = useState(false);
-  const [reactFlowInstance, setReactFlowInstance] = useState<FlowPositionProjector | null>(null);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const [positionOverrides, setPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
-  const [manualEdges, setManualEdges] = useState<GraphOverlayEdge[]>([]);
-  const [evidenceOptions, setEvidenceOptions] = useState<Array<{ evidenceId: string; title: string }>>([]);
-  const [mutationPending, setMutationPending] = useState(false);
-  const [mutationError, setMutationError] = useState<string | null>(null);
-  const [pendingCanonicalCreate, setPendingCanonicalCreate] = useState<PendingCanonicalCreate | null>(null);
-
-  useEffect(() => {
-    const overlay = loadGraphOverlayState(caseId);
-    setPositionOverrides(overlay.positionOverrides);
-    setManualEdges(overlay.manualEdges);
-  }, [caseId]);
-
-  useEffect(() => {
-    if (!caseId || !isCanonicalGraph) {
-      setEvidenceOptions([]);
-      return;
-    }
-
-    let cancelled = false;
-    void getCaseEvidencePool(caseId)
-      .then((resource) => {
-        if (!cancelled) {
-          setEvidenceOptions(resource.data.items.map((item) => ({
-            evidenceId: item.evidenceId,
-            title: item.title
-          })));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setEvidenceOptions([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [caseId, isCanonicalGraph, graph.headRevision]);
+  const draftNodes = props.draftNodes ?? [];
+  const selectedNodeId = props.selectedNodeId ?? null;
+  const [pendingDraftCreate, setPendingDraftCreate] = useState<PendingDraftCreate | null>(null);
+  const [flowProjector, setFlowProjector] = useState<FlowProjector | null>(null);
+  const layout = useMemo(() => computeGraphLayout(props.graph), [props.graph]);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
-    return layout.nodes.map((node) => ({
+    const persistedNodes = layout.nodes.map((node) => ({
       id: node.id,
       type: node.type,
-      position: positionOverrides[node.id] ?? node.position,
+      position: node.position,
       data: {
         ...node.data,
+        isDraft: false,
+        isSelected: selectedNodeId === node.id,
         kindLabel: formatEnumLabel(getPresentationKind(node.data)),
         kindDetailLabel: null,
         revisionLabel: t('graph.revision', { revision: node.data.revision }),
         statusLabel: formatEnumLabel(node.data.status ?? 'stateless')
       }
     }));
-  }, [formatEnumLabel, layout.nodes, positionOverrides, t]);
+
+    const transientDraftNodes = draftNodes.map((draftNode) => ({
+      id: draftNode.id,
+      type: draftNode.kind,
+      position: draftNode.position,
+      data: {
+        ...draftNode,
+        isDraft: true,
+        isSaving: draftNode.status === 'saving',
+        isSelected: selectedNodeId === draftNode.id,
+        kindLabel: formatEnumLabel(getPresentationKind(draftNode)),
+        kindDetailLabel: null,
+        revisionLabel: t(draftNode.status === 'saving' ? 'nodeEditor.saving' : 'nodeEditor.unsaved'),
+        statusLabel: t(draftNode.status === 'saving' ? 'nodeEditor.saving' : 'nodeEditor.unsaved')
+      }
+    }));
+
+    return [...persistedNodes, ...transientDraftNodes];
+  }, [draftNodes, formatEnumLabel, layout.nodes, selectedNodeId, t]);
 
   const [nodes, setNodes] = useState<Node<GraphNodeViewData>[]>(() => baseNodes);
 
@@ -166,154 +114,31 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
   }, [baseNodes]);
 
   const baseEdges: Edge[] = useMemo(() => {
-    const projectedEdges = layout.edges.map((edge) => ({
+    const persistedEdges = layout.edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
       type: edge.type,
       data: edge.data ?? {}
     }));
-    const knownPairs = new Set(projectedEdges.map((edge) => `${edge.source}->${edge.target}`));
-    const overlayEdges = manualEdges
-      .filter((edge) => !knownPairs.has(`${edge.source}->${edge.target}`))
-      .map((edge) => ({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        type: edge.type,
-        data: edge.data ?? {}
-      }));
+    const draftEdges = draftNodes.map((draftNode) => buildDraftEdge(draftNode));
 
-    return [...projectedEdges, ...overlayEdges];
-  }, [layout.edges, manualEdges]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const isEditableTarget = (target: EventTarget | null) => {
-      if (!(target instanceof HTMLElement)) {
-        return false;
-      }
-
-      return (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        target.isContentEditable
-      );
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code !== 'Space' || isEditableTarget(event.target)) {
-        return;
-      }
-
-      event.preventDefault();
-      setIsSpacePanning(true);
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.code !== 'Space') {
-        return;
-      }
-
-      if (!isEditableTarget(event.target)) {
-        event.preventDefault();
-      }
-      setIsSpacePanning(false);
-    };
-
-    const handleWindowBlur = () => {
-      setIsSpacePanning(false);
-    };
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!contextMenu) {
-        return;
-      }
-
-      const contextMenuElement = event.target instanceof Element
-        ? event.target.closest('.context-menu')
-        : null;
-
-      if (!contextMenuElement) {
-        console.info('[investigation-console] graph-context-menu-closed', {
-          caseId,
-          reason: 'outside-click',
-          source: 'graph-canvas'
-        });
-        setContextMenu(null);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('mousedown', handleClickOutside, true);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('mousedown', handleClickOutside, true);
-    };
-  }, [contextMenu]);
+    return [...persistedEdges, ...draftEdges];
+  }, [draftNodes, layout.edges]);
 
   const handleNodesChange = (changes: NodeChange[]) => {
     setNodes((currentNodes) => applyNodeChanges(changes, currentNodes));
-  };
-
-  const handleConnect = (connection: { source: null | string; target: null | string }) => {
-    if (isCanonicalGraph) {
-      return;
-    }
-
-    if (!connection.source || !connection.target) {
-      return;
-    }
-
-    const edgeId = `${connection.source}->${connection.target}:manual`;
-    const nextEdge: GraphOverlayEdge = {
-      id: edgeId,
-      source: connection.source,
-      target: connection.target,
-      type: 'glowing',
-      data: { type: 'related' }
-    };
-
-    if (manualEdges.some((edge) => edge.source === connection.source && edge.target === connection.target)) {
-      return;
-    }
-
-    const nextManualEdges = [...manualEdges, nextEdge];
-    setManualEdges(nextManualEdges);
-    if (caseId) {
-      persistGraphOverlayState(caseId, {
-        positionOverrides,
-        manualEdges: nextManualEdges
-      });
-    }
-
-    console.info('[investigation-console] graph-edge-added', {
-      caseId,
-      edgeId,
-      source: 'graph-canvas',
-      sourceNodeId: connection.source,
-      targetNodeId: connection.target
-    });
   };
 
   const handleConnectStart = (
     _event: React.MouseEvent | React.TouchEvent,
     params: { handleType: 'source' | 'target' | null; nodeId: null | string }
   ) => {
-    if (!isCanonicalGraph || params.handleType !== 'source' || !params.nodeId) {
+    if (props.snapshot.historical || params.handleType !== 'source' || !params.nodeId) {
       return;
     }
 
-    const sourceNode = graph.data.nodes.find((node) => node.id === params.nodeId);
+    const sourceNode = props.graph.data.nodes.find((node) => node.id === params.nodeId);
     if (!sourceNode) {
       return;
     }
@@ -330,63 +155,47 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
       return;
     }
 
-    setPendingCanonicalCreate({
+    setPendingDraftCreate({
       parentNodeId: sourceNode.id,
       parentKind,
-      parentStatus: sourceNode.status as PendingCanonicalCreate['parentStatus'],
+      parentStatus: sourceNode.status as PendingDraftCreate['parentStatus'],
       paneX: 0,
-      paneY: 0
-    });
-    console.info('[investigation-console] graph-connect-started', {
-      caseId,
-      parentKind,
-      parentNodeId: sourceNode.id,
-      source: 'graph-canvas'
+      paneY: 0,
+      flowX: 0,
+      flowY: 0
     });
   };
 
   const handleConnectEnd = (event: MouseEvent | TouchEvent) => {
-    if (!isCanonicalGraph || !pendingCanonicalCreate) {
+    if (props.snapshot.historical || !pendingDraftCreate || !flowProjector) {
       return;
     }
 
-    const point = 'changedTouches' in event
-      ? (event.changedTouches[0] ?? null)
-      : event;
+    const point = 'changedTouches' in event ? (event.changedTouches[0] ?? null) : event;
     if (!point) {
-      setPendingCanonicalCreate(null);
+      setPendingDraftCreate(null);
       return;
     }
+
     const container = document.querySelector('.graph-canvas-container');
     const rect = container instanceof HTMLElement ? container.getBoundingClientRect() : { left: 0, top: 0 };
-
-    setPendingCanonicalCreate((current) => current
-      ? {
-          ...current,
-          paneX: point.clientX - rect.left,
-          paneY: point.clientY - rect.top
-        }
-      : current);
-    console.info('[investigation-console] graph-canonical-create-requested', {
-      caseId,
-      parentNodeId: pendingCanonicalCreate.parentNodeId,
-      parentKind: pendingCanonicalCreate.parentKind,
-      source: 'graph-canvas'
+    const flowPosition = flowProjector.screenToFlowPosition({
+      x: point.clientX,
+      y: point.clientY
     });
+
+    setPendingDraftCreate((currentValue) => currentValue
+      ? {
+          ...currentValue,
+          paneX: point.clientX - rect.left,
+          paneY: point.clientY - rect.top,
+          flowX: flowPosition.x,
+          flowY: flowPosition.y
+        }
+      : currentValue);
   };
 
-  const handleNodeDragStop = (_event: React.MouseEvent, node: Node<GraphNodeViewData>) => {
-    const nextOverrides = {
-      ...positionOverrides,
-      [node.id]: node.position
-    };
-    setPositionOverrides(nextOverrides);
-    if (caseId) {
-      persistGraphOverlayState(caseId, {
-        positionOverrides: nextOverrides,
-        manualEdges
-      });
-    }
+  const handleNodeDragStop = (_event: React.MouseEvent, node: { id: string; position: { x: number; y: number } }) => {
     console.info('[investigation-console] graph-node-repositioned', {
       caseId,
       nodeId: node.id,
@@ -403,320 +212,89 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
     });
   };
 
-  const handlePaneContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault();
-    if (isCanonicalGraph || snapshot.historical || mutationPending) {
-      return;
-    }
-
-    if (reactFlowInstance && event.currentTarget instanceof HTMLElement) {
-      const container = event.currentTarget.closest('.graph-canvas-container');
-      const menuAnchor = container instanceof HTMLElement ? container : event.currentTarget;
-      const rect = menuAnchor.getBoundingClientRect();
-      const flowPosition = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY
-      });
-
-      setContextMenu({
-        flowX: flowPosition.x,
-        flowY: flowPosition.y,
-        paneX: event.clientX - rect.left,
-        paneY: event.clientY - rect.top
-      });
-
-      console.info('[investigation-console] graph-context-menu-opened', {
-        caseId,
-        source: 'graph-canvas',
-        clientPosition: { x: event.clientX, y: event.clientY },
-        flowPosition
-      });
-    }
-  };
-
-  const handleCloseContextMenu = () => {
-    setContextMenu(null);
-  };
-
-  const handleAddNode = async (type: 'artifact' | 'issue', labelKey: 'graph.newArtifact' | 'graph.newIssue') => {
-    if (!caseId || snapshot.historical) {
-      return;
-    }
-
-    const label = t(labelKey);
-    setMutationPending(true);
-    setMutationError(null);
-
-    try {
-      let createdIds: string[] = [];
-
-      if (type === 'issue') {
-        const result = await invokeTool<{ createdIds?: string[] }>('investigation.issue.record', {
-          caseId,
-          ifCaseRevision: currentRevision,
-          issueKind: 'symptom',
-          title: label,
-          summary: label,
-          priority: normalizePriority(caseRecord?.severity),
-          reproducibility: 'unknown',
-          idempotencyKey: buildIdempotencyKey('graph-issue-record')
-        });
-        createdIds = result.createdIds ?? [];
-      } else {
-        const result = await invokeTool<{ createdIds?: string[] }>('investigation.artifact.attach', {
-          caseId,
-          ifCaseRevision: currentRevision,
-          artifactKind: 'log',
-          title: label,
-          source: {
-            uri: `manual://graph-canvas/${caseId}/${Date.now()}`
-          },
-          excerpt: label,
-          idempotencyKey: buildIdempotencyKey('graph-artifact-attach')
-        });
-        createdIds = result.createdIds ?? [];
-      }
-
-      console.info('[investigation-console] graph-node-persisted', {
-        caseId,
-        createdIds,
-        nodeType: type,
-        source: 'graph-canvas'
-      });
-
-      setContextMenu(null);
-      await onMutationComplete?.();
-    } catch (reason: unknown) {
-      const message = reason instanceof Error ? reason.message : t('errors.mutationFailed');
-      console.error('[investigation-console] graph-node-persist-failed', {
-        caseId,
-        message,
-        nodeType: type,
-        source: 'graph-canvas'
-      });
-      setMutationError(message);
-    } finally {
-      setMutationPending(false);
-    }
-  };
-
-  const handleCanonicalCreate = async (submission: CanonicalCreateSubmission) => {
-    if (!caseId || !pendingCanonicalCreate || snapshot.historical) {
-      return;
-    }
-
-    setMutationPending(true);
-    setMutationError(null);
-
-    try {
-      switch (submission.childKind) {
-        case 'hypothesis':
-          await invokeTool('investigation.hypothesis.create', {
-            caseId,
-            ifCaseRevision: currentRevision,
-            parentNodeId: pendingCanonicalCreate.parentNodeId,
-            statement: submission.statement,
-            title: submission.statement,
-            falsificationCriteria: submission.falsificationCriteria ?? [submission.statement ?? 'disprove hypothesis'],
-            idempotencyKey: buildIdempotencyKey('canonical-hypothesis-create')
-          });
-          break;
-        case 'blocker':
-          await invokeTool('investigation.blocker.open', {
-            caseId,
-            ifCaseRevision: currentRevision,
-            hypothesisId: pendingCanonicalCreate.parentNodeId,
-            description: submission.description,
-            possibleWorkarounds: submission.possibleWorkarounds ?? [],
-            idempotencyKey: buildIdempotencyKey('canonical-blocker-open')
-          });
-          break;
-        case 'repair_attempt':
-          await invokeTool('investigation.repair_attempt.create', {
-            caseId,
-            ifCaseRevision: currentRevision,
-            parentNodeId: pendingCanonicalCreate.parentNodeId,
-            changeSummary: submission.changeSummary,
-            scope: submission.scope,
-            idempotencyKey: buildIdempotencyKey('canonical-repair-create')
-          });
-          break;
-        case 'evidence_ref':
-          if (submission.evidenceId) {
-            await invokeTool('investigation.evidence.attach_existing', {
-              caseId,
-              ifCaseRevision: currentRevision,
-              parentNodeId: pendingCanonicalCreate.parentNodeId,
-              evidenceId: submission.evidenceId,
-              effectOnParent: submission.effectOnParent,
-              interpretation: submission.interpretation,
-              idempotencyKey: buildIdempotencyKey('canonical-evidence-attach-existing')
-            });
-          } else {
-            await invokeTool('investigation.evidence.capture_and_attach', {
-              caseId,
-              ifCaseRevision: currentRevision,
-              parentNodeId: pendingCanonicalCreate.parentNodeId,
-              kind: 'other',
-              title: submission.title,
-              summary: submission.summary,
-              provenance: submission.provenance,
-              effectOnParent: submission.effectOnParent,
-              interpretation: submission.interpretation,
-              idempotencyKey: buildIdempotencyKey('canonical-evidence-capture-and-attach')
-            });
-          }
-          break;
-      }
-
-      setPendingCanonicalCreate(null);
-      const pool = await getCaseEvidencePool(caseId);
-      setEvidenceOptions(pool.data.items.map((item) => ({
-        evidenceId: item.evidenceId,
-        title: item.title
-      })));
-      await onMutationComplete?.();
-    } catch (reason: unknown) {
-      setMutationError(reason instanceof Error ? reason.message : t('errors.mutationFailed'));
-    } finally {
-      setMutationPending(false);
-    }
-  };
-
-  const summaryTags = summarizeGraphNodes(graph.data.nodes).map((item) => `${formatEnumLabel(item.kind)} ${item.count}`);
-  
   if (nodes.length === 0) {
     return (
       <section className="panel panel-primary graph-stage workspace-stage-fill" data-testid="graph-stage">
-        <div className="graph-header">
-          <div className="graph-summary-row">
-            {snapshot.historical ? (
-              <p className="history-banner graph-history-banner">
-                <span data-testid="historical-mode">{t('snapshot.historical')}</span>
-              </p>
-            ) : null}
-            <div aria-label={t('graph.controls')} className="graph-controls-readout">
-              <span className="focus-chip">{snapshot.historical ? t('graph.historical') : t('graph.live')}</span>
-            </div>
-            <div aria-label={t('graph.legend')} className="graph-legend">
-              <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
-              <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
-              <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
-            </div>
-            <div className="metric-strip graph-context-tags">
-              {summaryTags.map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
-            </div>
-          </div>
-        </div>
         <p className="graph-empty-copy">{t('graph.empty')}</p>
       </section>
     );
   }
-  
+
   return (
     <section className="panel panel-primary graph-stage workspace-stage-fill" data-testid="graph-stage">
-      <div className="graph-header">
-        <div className="graph-summary-row">
-          {snapshot.historical ? (
-            <p className="history-banner graph-history-banner">
-              <span data-testid="historical-mode">{t('snapshot.historical')}</span>
-            </p>
-          ) : null}
-          <div aria-label={t('graph.controls')} className="graph-controls-readout">
-            <span className="focus-chip">{snapshot.historical ? t('graph.historical') : t('graph.live')}</span>
-          </div>
-          <div aria-label={t('graph.legend')} className="graph-legend">
-            <span className="graph-legend-item graph-legend-supports">{t('graph.edge.supports')}</span>
-            <span className="graph-legend-item graph-legend-explains">{t('graph.edge.explains')}</span>
-            <span className="graph-legend-item graph-legend-tests">{t('graph.edge.tests')}</span>
-          </div>
-          <div className="metric-strip graph-context-tags">
-            {summaryTags.map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-      {mutationError ? <p className="inline-error">{mutationError}</p> : null}
-
       <div className="graph-canvas-container">
         {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
         <ReactFlow
-          onInit={setReactFlowInstance}
-          nodes={nodes}
-          edges={baseEdges}
-          nodeTypes={nodeTypes}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
           edgeTypes={edgeTypes}
+          edges={baseEdges}
+          elementsSelectable
           fitView
           fitViewOptions={{ padding: 0.12 }}
-          minZoom={0.5}
           maxZoom={2}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-          nodesDraggable={!isSpacePanning}
-          nodesConnectable
-          elementsSelectable
-          selectionOnDrag={false}
-          panOnDrag={[0]}
-          panActivationKeyCode="Space"
-          autoPanOnNodeDrag={false}
-          onConnect={handleConnect}
-          onConnectStart={handleConnectStart}
+          minZoom={0.5}
+          nodeTypes={nodeTypes}
+          nodes={nodes}
+          nodesConnectable={!props.snapshot.historical}
+          nodesDraggable
           onConnectEnd={handleConnectEnd}
-          onNodesChange={handleNodesChange}
-          onNodeDragStop={handleNodeDragStop}
+          onConnectStart={handleConnectStart}
+          onInit={setFlowProjector}
           onMoveEnd={handleMoveEnd}
-          onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => onSelectNode(node.id)}
-          onPaneContextMenu={handlePaneContextMenu}
+          onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => props.onSelectNode(node.id)}
+          onNodeDragStop={handleNodeDragStop}
+          onNodesChange={handleNodesChange}
+          panActivationKeyCode="Space"
+          panOnDrag={[0]}
+          selectionOnDrag={false}
         >
           <Background color="rgba(0, 240, 255, 0.05)" gap={16} />
           <Controls className="graph-flow-controls" />
           <MiniMap
-            nodeColor={(node) => getNodeColor(node.type)}
-            maskColor="rgba(3, 3, 3, 0.85)"
             className="graph-minimap"
+            maskColor="rgba(3, 3, 3, 0.85)"
+            nodeColor={(node) => getNodeColor(node.type)}
           />
         </ReactFlow>
 
-        {contextMenu && (
-          <div 
+        {pendingDraftCreate && pendingDraftCreate.paneX > 0 ? (
+          <div
             className="context-menu"
             style={{
+              left: pendingDraftCreate.paneX,
               position: 'absolute',
-              top: contextMenu.paneY,
-              left: contextMenu.paneX,
+              top: pendingDraftCreate.paneY,
               zIndex: 1000
             }}
-            onClick={handleCloseContextMenu}
           >
-            <div className="context-menu-header">
-              {t('graph.addNode')}
-            </div>
-            {contextMenuNodeOptions.map((option) => (
-              <div
-                key={option.type}
-                className="context-menu-item"
-                onClick={() => void handleAddNode(option.type, option.defaultLabelKey)}
-              >
-                {t(option.labelKey)}
-              </div>
-            ))}
+            <div className="context-menu-header">{t('canonical.create.header')}</div>
+            {allowedCanonicalChildKinds({
+              parentKind: pendingDraftCreate.parentKind,
+              parentStatus: pendingDraftCreate.parentStatus
+            })
+              .filter((kind): kind is CreateDraftNodeRequest['kind'] => kind !== 'problem')
+              .map((kind) => (
+                <button
+                  className="context-menu-item"
+                  key={kind}
+                  onClick={() => {
+                    props.onCreateDraftNode?.({
+                      kind,
+                      parentNodeId: pendingDraftCreate.parentNodeId,
+                      parentKind: pendingDraftCreate.parentKind,
+                      position: { x: pendingDraftCreate.flowX, y: pendingDraftCreate.flowY }
+                    });
+                    setPendingDraftCreate(null);
+                  }}
+                  type="button"
+                >
+                  {formatEnumLabel(kind)}
+                </button>
+              ))}
+            <button className="ghost-button context-menu-cancel" onClick={() => setPendingDraftCreate(null)} type="button">
+              {t('canonical.create.cancel')}
+            </button>
           </div>
-        )}
-        {pendingCanonicalCreate && isCanonicalGraph ? (
-          <CanonicalGraphCreatePopover
-            allowedKinds={allowedCanonicalChildKinds({
-              parentKind: pendingCanonicalCreate.parentKind,
-              parentStatus: pendingCanonicalCreate.parentStatus
-            }).filter((kind): kind is 'hypothesis' | 'blocker' | 'repair_attempt' | 'evidence_ref' => kind !== 'problem')}
-            evidenceOptions={evidenceOptions}
-            parentKind={pendingCanonicalCreate.parentKind}
-            pending={mutationPending}
-            position={{ left: pendingCanonicalCreate.paneX, top: pendingCanonicalCreate.paneY }}
-            onCancel={() => setPendingCanonicalCreate(null)}
-            onSubmit={(submission) => void handleCanonicalCreate(submission)}
-          />
         ) : null}
       </div>
     </section>
@@ -725,34 +303,13 @@ export function GraphCanvas({ snapshot, graph, onMutationComplete, onSelectNode 
 
 function getNodeColor(nodeType: string | undefined): string {
   const colors: Record<string, string> = {
+    case: '#38bdf8',
     problem: '#0ea5e9',
-    issue: '#3b82f6',
     hypothesis: '#a855f7',
     blocker: '#ef4444',
     repair_attempt: '#f97316',
-    evidence_ref: '#6366f1',
-    fact: '#00f0ff',
-    experiment: '#22c55e',
-    decision: '#f59e0b',
-    gap: '#ef4444',
-    residual: '#71717a',
-    inquiry: '#3b82f6',
-    symptom: '#ec4899',
-    artifact: '#6366f1',
-    entity: '#14b8a6'
+    evidence_ref: '#6366f1'
   };
-  
-  return colors[nodeType ?? ''] ?? '#71717a';
-}
 
-function normalizePriority(severity: unknown): 'critical' | 'high' | 'medium' | 'low' {
-  switch (severity) {
-    case 'critical':
-    case 'high':
-    case 'medium':
-    case 'low':
-      return severity;
-    default:
-      return 'medium';
-  }
+  return colors[nodeType ?? ''] ?? '#71717a';
 }

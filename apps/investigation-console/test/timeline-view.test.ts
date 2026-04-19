@@ -6,7 +6,7 @@ import { TimelineView } from '../src/components/timeline-view.js';
 import { I18nProvider } from '../src/lib/i18n.js';
 
 describe('timeline view', () => {
-  test('renders revision sync controls inside the timeline module', () => {
+  test('renders only the timeline label and revision slider in the top strip while keeping revision bubbles on the markers', () => {
     const html = renderToStaticMarkup(
       createElement(I18nProvider, {
         initialLocale: 'zh-CN',
@@ -21,10 +21,10 @@ describe('timeline view', () => {
               events: [
                 {
                   eventId: 'event_01',
-                  eventType: 'fact.asserted',
+                  eventType: 'canonical.evidence.attached',
                   caseRevision: 3,
                   occurredAt: '2026-04-11T00:00:00.000Z',
-                  summary: 'recorded the queue spike fact'
+                  summary: '已将回放证据关联到当前分支'
                 }
               ]
             }
@@ -40,12 +40,18 @@ describe('timeline view', () => {
       })
     );
 
+    expect(html).toContain('timeline-strip');
     expect(html).toContain('时间线');
-    expect(html).toContain('修订同步');
     expect(html).toContain('data-testid="revision-slider"');
+    expect(html).toContain('data-testid="revision-marker-1"');
+    expect(html).toContain('data-testid="revision-marker-2"');
+    expect(html).toContain('data-testid="revision-marker-3"');
+    expect(html).not.toContain('timeline-strip-event');
+    expect(html).toContain('data-testid="revision-bubble-3"');
+    expect(html).toContain('证据已关联');
   });
 
-  test('hides revision sync controls when fewer than two revisions exist', () => {
+  test('hides the slider when fewer than two revisions exist and keeps the strip minimal', () => {
     const html = renderToStaticMarkup(
       createElement(I18nProvider, {
         initialLocale: 'zh-CN',
@@ -60,10 +66,10 @@ describe('timeline view', () => {
               events: [
                 {
                   eventId: 'event_01',
-                  eventType: 'case.opened',
+                  eventType: 'problem.updated',
                   caseRevision: 1,
                   occurredAt: '2026-04-11T00:00:00.000Z',
-                  summary: 'case opened'
+                  summary: '问题上下文已更新'
                 }
               ]
             }
@@ -79,8 +85,10 @@ describe('timeline view', () => {
       })
     );
 
+    expect(html).toContain('timeline-strip');
     expect(html).toContain('时间线');
-    expect(html).not.toContain('修订同步');
     expect(html).not.toContain('data-testid="revision-slider"');
+    expect(html).not.toContain('timeline-strip-event');
+    expect(html).not.toContain('data-testid="revision-bubble-1"');
   });
 });

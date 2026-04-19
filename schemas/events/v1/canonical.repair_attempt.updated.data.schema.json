@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/canonical.repair_attempt.updated.data.schema.json",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["eventId", "caseId", "caseRevision", "repairAttemptId"]
+}

@@ -6,9 +6,9 @@ import {
   asValidatedInput,
   executeIdempotentMutation,
   requireActorContext,
-  requireRecord,
   toJsonValue
 } from './shared.js';
+import { requireCanonicalParent, assertCanonicalChildUnderParent } from './canonical-shared.js';
 
 interface BlockerOpenInput {
   idempotencyKey: string;
@@ -36,7 +36,8 @@ export async function handleBlockerOpen(
         actorContext
       },
       async () => {
-        await requireRecord(trx, 'hypotheses', payload.hypothesisId, payload.caseId);
+        const parent = await requireCanonicalParent(trx, payload.caseId, payload.hypothesisId);
+        assertCanonicalChildUnderParent(parent, 'blocker');
 
         const currentState = new CurrentStateRepository(trx);
         const eventStore = new EventStoreRepository(trx);

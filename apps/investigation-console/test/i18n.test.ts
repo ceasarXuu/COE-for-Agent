@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest';
 
-import { formatEnumLabel, readStoredLocale, resolveInitialLocale, resolveLocale } from '../src/lib/i18n.js';
+import {
+  formatEnumLabel,
+  formatEventType,
+  readStoredLocale,
+  resolveInitialLocale,
+  resolveLocale
+} from '../src/lib/i18n.js';
 
 describe('i18n helpers', () => {
   test('uses browser zh locale when a preferred browser language is Chinese and falls back to English otherwise', () => {
@@ -27,5 +33,15 @@ describe('i18n helpers', () => {
     expect(formatEnumLabel('discriminative_testing', 'zh-CN')).toBe('判别验证');
     expect(formatEnumLabel('high', 'zh-CN')).toBe('高');
     expect(formatEnumLabel('ready_to_patch', 'en')).toBe('Ready to patch');
+  });
+
+  test('translates canonical timeline event labels for both locales', () => {
+    expect(formatEventType('problem.updated', 'en')).toBe('Problem updated');
+    expect(formatEventType('problem.status_updated', 'zh-CN')).toBe('问题状态已更新');
+    expect(formatEventType('canonical.hypothesis.created', 'en')).toBe('Hypothesis created');
+    expect(formatEventType('canonical.hypothesis.status_updated', 'zh-CN')).toBe('假设状态已更新');
+    expect(formatEventType('canonical.blocker.opened', 'en')).toBe('Blocker opened');
+    expect(formatEventType('canonical.repair_attempt.created', 'en')).toBe('Repair attempt created');
+    expect(formatEventType('canonical.evidence.attached', 'zh-CN')).toBe('证据已关联');
   });
 });

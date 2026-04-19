@@ -125,6 +125,7 @@ export function validateCanonicalGraphStructure(nodes: CanonicalGraphLinkLike[])
 
   const nodeIds = new Set(nodes.map((node) => node.id));
   const seenIds = new Set<string>();
+  const statusByNodeId = new Map(nodes.map((node) => [node.id, node.status]));
 
   for (const node of nodes) {
     if (seenIds.has(node.id)) {
@@ -147,10 +148,15 @@ export function validateCanonicalGraphStructure(nodes: CanonicalGraphLinkLike[])
       throw new Error(`Canonical node ${node.id} references missing parent ${node.parentId}.`);
     }
 
+    const parentStatus = statusByNodeId.get(node.parentId);
+    if (parentStatus === undefined) {
+      throw new Error(`Canonical graph references unknown node ${node.parentId}.`);
+    }
+
     assertCanonicalChildCreation(
       {
         parentKind: node.parentKind,
-        parentStatus: findCanonicalNodeStatus(nodes, node.parentId)
+        parentStatus: parentStatus
       },
       node.kind
     );
@@ -159,13 +165,4 @@ export function validateCanonicalGraphStructure(nodes: CanonicalGraphLinkLike[])
       throw new Error(`Canonical edge would introduce a cycle: ${node.parentId} -> ${node.id}`);
     }
   }
-}
-
-function findCanonicalNodeStatus(nodes: CanonicalGraphLinkLike[], nodeId: string): CanonicalNodeStatus {
-  const node = nodes.find((entry) => entry.id === nodeId);
-  if (!node) {
-    throw new Error(`Canonical graph references unknown node ${nodeId}.`);
-  }
-
-  return node.status;
 }

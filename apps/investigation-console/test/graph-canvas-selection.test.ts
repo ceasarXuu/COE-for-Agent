@@ -18,392 +18,262 @@ vi.mock('reactflow', () => ({
 import { GraphCanvas } from '../src/components/graph/GraphCanvas.js';
 import { I18nProvider } from '../src/lib/i18n.js';
 
+function renderGraphCanvas(props: Record<string, unknown>) {
+  return renderToStaticMarkup(
+    createElement(I18nProvider, {
+      initialLocale: 'en',
+      children: createElement(GraphCanvas, props as never)
+    })
+  );
+}
+
 describe('graph canvas selection', () => {
   beforeEach(() => {
     capturedProps = null;
   });
 
-  test('keeps the graph presentation unchanged when a node is selected', () => {
-    const html = renderToStaticMarkup(
-      createElement(I18nProvider, {
-        initialLocale: 'zh-CN',
-        children: createElement(GraphCanvas, {
-          snapshot: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              case: {
-                id: 'case_01',
-                title: 'debug',
-                severity: 'critical',
-                status: 'active',
-                stage: 'intake',
-                revision: 5,
-                objective: 'debug'
-              },
-              counts: {
-                problems: 0,
-                hypotheses: 0,
-                blockers: 0,
-                repairAttempts: 0,
-                evidenceRefs: 0
-              },
-              warnings: []
-            }
+  test('does not render the legacy graph summary strip above the canvas', () => {
+    const html = renderGraphCanvas({
+      snapshot: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          case: {
+            id: 'case_01',
+            title: 'debug',
+            severity: 'critical',
+            status: 'active',
+            stage: 'intake',
+            revision: 5,
+            objective: 'debug'
           },
-          graph: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              focusId: null,
-              nodes: [
-                {
-                  id: 'symptom_01',
-                  kind: 'symptom',
-                  displayKind: 'issue',
-                  issueKind: 'symptom',
-                  label: 'queue depth spikes',
-                  status: 'open',
-                  revision: 4
-                },
-                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
-              ],
-              edges: [
-                { key: 'explains-1', type: 'explains', fromId: 'hypothesis_01', toId: 'symptom_01' }
-              ]
-            }
+          counts: {
+            problems: 1,
+            hypotheses: 1,
+            blockers: 1,
+            repairAttempts: 0,
+            evidenceRefs: 1
           },
-          onSelectNode() {
-            return;
-          }
-        })
-      })
-    );
+          warnings: []
+        }
+      },
+      graph: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          focusId: null,
+          nodes: [
+            { id: 'problem_01', kind: 'problem', label: 'queue depth spikes', status: 'open', revision: 4 },
+            { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 },
+            { id: 'blocker_01', kind: 'blocker', label: 'approval pending', status: 'open', revision: 5 },
+            { id: 'evidence_ref_01', kind: 'evidence_ref', label: 'pool saturation trace', status: null, revision: 5 }
+          ],
+          edges: [
+            { key: 'supports-1', type: 'supports', fromId: 'evidence_ref_01', toId: 'hypothesis_01' },
+            { key: 'structural-1', type: 'structural', fromId: 'problem_01', toId: 'hypothesis_01' },
+            { key: 'blocks-1', type: 'blocks', fromId: 'hypothesis_01', toId: 'blocker_01' }
+          ]
+        }
+      },
+      onSelectNode() {
+        return;
+      }
+    });
 
-    expect(html).not.toContain('data-testid="graph-clear-focus"');
-    expect(html).not.toContain('焦点 hypothesis');
-    expect(html).not.toContain('受理');
-    expect(html).toContain('实时切片');
-    expect(html).not.toContain('缩放');
-    expect(html).not.toContain('graph-meta-row');
-    expect(html).not.toContain('严重');
-    expect(html).toContain('graph-summary-row');
-    expect(html).toContain('症状 1');
-    expect(html).not.toContain('事项');
-    expect(html).toContain('假设 1');
-    expect(html).not.toContain('2 个节点');
-    expect(html).not.toContain('1 条连线');
-    expect(html).toContain('支撑');
-    expect(html).toContain('解释');
-    expect(html).toContain('验证');
-
-    const nodes = capturedProps?.nodes as Array<{
-      data: {
-        isSelected?: boolean;
-        isFocus?: boolean;
-      };
-    }> | undefined;
-
-    expect(nodes?.every((node) => node.data.isSelected === undefined)).toBe(true);
-    expect(nodes?.every((node) => node.data.isFocus === undefined)).toBe(true);
-    expect(nodes?.some((node) => (node as { type?: string }).type === 'issue')).toBe(true);
+    expect(html).not.toContain('graph-summary-row');
+    expect(html).not.toContain('Graph controls');
+    expect(html).not.toContain('Graph legend');
+    expect(html).not.toContain('Problem 1');
+    expect(html).not.toContain('Hypothesis 1');
+    expect(html).not.toContain('Symptom');
+    expect(html).not.toContain('Artifact');
+    expect(html).not.toContain('Fact');
   });
 
-  test('only selects nodes through node click callbacks and does not clear on pane clicks', () => {
+  test('only wires canonical drag-create handlers and never enables blank-canvas creation', () => {
     const onSelectNode = vi.fn();
 
-    renderToStaticMarkup(
-      createElement(I18nProvider, {
-        initialLocale: 'en',
-        children: createElement(GraphCanvas, {
-          snapshot: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              case: {
-                id: 'case_01',
-                title: 'debug',
-                severity: 'critical',
-                status: 'active',
-                stage: 'intake',
-                revision: 5,
-                objective: 'debug'
-              },
-              counts: {
-                problems: 0,
-                hypotheses: 0,
-                blockers: 0,
-                repairAttempts: 0,
-                evidenceRefs: 0
-              },
-              warnings: []
-            }
+    renderGraphCanvas({
+      snapshot: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          case: {
+            id: 'case_01',
+            title: 'debug',
+            severity: 'critical',
+            status: 'active',
+            stage: 'intake',
+            revision: 5,
+            objective: 'debug'
           },
-          graph: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              focusId: null,
-              nodes: [
-                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
-                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
-              ],
-              edges: [
-                { key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }
-              ]
-            }
+          counts: {
+            problems: 1,
+            hypotheses: 1,
+            blockers: 0,
+            repairAttempts: 0,
+            evidenceRefs: 0
           },
-          onSelectNode
-        })
-      })
-    );
+          warnings: []
+        }
+      },
+      graph: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          focusId: null,
+          nodes: [
+            { id: 'problem_01', kind: 'problem', label: 'queue depth spikes', status: 'open', revision: 4 },
+            { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
+          ],
+          edges: [
+            { key: 'structural-1', type: 'structural', fromId: 'problem_01', toId: 'hypothesis_01' }
+          ]
+        }
+      },
+      onSelectNode
+    });
 
     expect(capturedProps?.onPaneClick).toBeUndefined();
+    expect(capturedProps?.onPaneContextMenu).toBeUndefined();
+    expect(capturedProps?.onConnect).toBeUndefined();
     expect(typeof capturedProps?.onNodeClick).toBe('function');
+    expect(typeof capturedProps?.onConnectStart).toBe('function');
+    expect(typeof capturedProps?.onConnectEnd).toBe('function');
   });
 
-  test('wires canvas context menus through the pane handler ReactFlow actually supports', () => {
-    renderToStaticMarkup(
-      createElement(I18nProvider, {
-        initialLocale: 'en',
-        children: createElement(GraphCanvas, {
-          snapshot: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              case: {
-                id: 'case_01',
-                title: 'debug',
-                severity: 'critical',
-                status: 'active',
-                stage: 'intake',
-                revision: 5,
-                objective: 'debug'
-              },
-              counts: {
-                problems: 0,
-                hypotheses: 0,
-                blockers: 0,
-                repairAttempts: 0,
-                evidenceRefs: 0
-              },
-              warnings: []
-            }
+  test('registers only canonical graph node types', () => {
+    renderGraphCanvas({
+      snapshot: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          case: {
+            id: 'case_01',
+            title: 'debug',
+            severity: 'critical',
+            status: 'active',
+            stage: 'intake',
+            revision: 5,
+            objective: 'debug'
           },
-          graph: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              focusId: null,
-              nodes: [
-                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
-                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
-              ],
-              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
-            }
+          counts: {
+            problems: 1,
+            hypotheses: 1,
+            blockers: 1,
+            repairAttempts: 1,
+            evidenceRefs: 1
           },
-          onSelectNode() {
-            return;
-          }
-        })
-      })
-    );
+          warnings: []
+        }
+      },
+      graph: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          focusId: null,
+          nodes: [
+            { id: 'case_01', kind: 'case', label: 'debug', status: 'active', revision: 5 },
+            { id: 'problem_01', kind: 'problem', label: 'queue depth spikes', status: 'open', revision: 4 },
+            { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 },
+            { id: 'blocker_01', kind: 'blocker', label: 'approval pending', status: 'open', revision: 5 },
+            { id: 'repair_attempt_01', kind: 'repair_attempt', label: 'increase pool size', status: 'planned', revision: 5 },
+            { id: 'evidence_ref_01', kind: 'evidence_ref', label: 'pool saturation trace', status: null, revision: 5 }
+          ],
+          edges: [{ key: 'relates-1', type: 'structural', fromId: 'problem_01', toId: 'hypothesis_01' }]
+        }
+      },
+      onSelectNode() {
+        return;
+      }
+    });
 
-    expect(typeof capturedProps?.onPaneContextMenu).toBe('function');
-    expect(typeof capturedProps?.onInit).toBe('function');
-    expect(capturedProps?.onContextMenu).toBeUndefined();
+    const nodeTypes = capturedProps?.nodeTypes as Record<string, unknown> | undefined;
+    expect(nodeTypes?.case).toBeTypeOf('function');
+    expect(nodeTypes?.problem).toBeTypeOf('function');
+    expect(nodeTypes?.hypothesis).toBeTypeOf('function');
+    expect(nodeTypes?.blocker).toBeTypeOf('function');
+    expect(nodeTypes?.repair_attempt).toBeTypeOf('function');
+    expect(nodeTypes?.evidence_ref).toBeTypeOf('function');
+    expect(nodeTypes?.fact).toBeUndefined();
+    expect(nodeTypes?.experiment).toBeUndefined();
+    expect(nodeTypes?.decision).toBeUndefined();
+    expect(nodeTypes?.gap).toBeUndefined();
+    expect(nodeTypes?.residual).toBeUndefined();
+    expect(nodeTypes?.inquiry).toBeUndefined();
+    expect(nodeTypes?.symptom).toBeUndefined();
+    expect(nodeTypes?.artifact).toBeUndefined();
+    expect(nodeTypes?.entity).toBeUndefined();
+    expect(nodeTypes?.issue).toBeUndefined();
   });
 
-  test('lets nodes drag while limiting canvas panning to blank-pane drags or holding space', () => {
-    renderToStaticMarkup(
-      createElement(I18nProvider, {
-        initialLocale: 'en',
-        children: createElement(GraphCanvas, {
-          snapshot: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              case: {
-                id: 'case_01',
-                title: 'debug',
-                severity: 'critical',
-                status: 'active',
-                stage: 'intake',
-                revision: 5,
-                objective: 'debug'
-              },
-              counts: {
-                problems: 0,
-                hypotheses: 0,
-                blockers: 0,
-                repairAttempts: 0,
-                evidenceRefs: 0
-              },
-              warnings: []
-            }
-          },
-          graph: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              focusId: null,
-              nodes: [
-                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
-                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
-              ],
-              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
-            }
-          },
-          onSelectNode() {
-            return;
-          }
-        })
-      })
-    );
-
-    expect(capturedProps?.nodesDraggable).toBe(true);
-    expect(capturedProps?.panOnDrag).toEqual([0]);
-    expect(capturedProps?.panActivationKeyCode).toBe('Space');
-    expect(capturedProps?.selectionOnDrag).toBe(false);
-    expect(capturedProps?.autoPanOnNodeDrag).toBe(false);
-    expect(typeof capturedProps?.onNodesChange).toBe('function');
-  });
-
-  test('enables node-to-node connections through React Flow', () => {
-    renderToStaticMarkup(
-      createElement(I18nProvider, {
-        initialLocale: 'en',
-        children: createElement(GraphCanvas, {
-          snapshot: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              case: {
-                id: 'case_01',
-                title: 'debug',
-                severity: 'critical',
-                status: 'active',
-                stage: 'intake',
-                revision: 5,
-                objective: 'debug'
-              },
-              counts: {
-                problems: 0,
-                hypotheses: 0,
-                blockers: 0,
-                repairAttempts: 0,
-                evidenceRefs: 0
-              },
-              warnings: []
-            }
-          },
-          graph: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              focusId: null,
-              nodes: [
-                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
-                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
-              ],
-              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
-            }
-          },
-          onSelectNode() {
-            return;
-          }
-        })
-      })
-    );
-
-    expect(capturedProps?.nodesConnectable).toBe(true);
-    expect(typeof capturedProps?.onConnect).toBe('function');
-  });
-
-  test('logs node repositioning and viewport moves for graph interaction debugging', () => {
+  test('keeps drag and viewport logging without overlay persistence writes', () => {
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
-    renderToStaticMarkup(
-      createElement(I18nProvider, {
-        initialLocale: 'en',
-        children: createElement(GraphCanvas, {
-          snapshot: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              case: {
-                id: 'case_01',
-                title: 'debug',
-                severity: 'critical',
-                status: 'active',
-                stage: 'intake',
-                revision: 5,
-                objective: 'debug'
-              },
-              counts: {
-                problems: 0,
-                hypotheses: 0,
-                blockers: 0,
-                repairAttempts: 0,
-                evidenceRefs: 0
-              },
-              warnings: []
-            }
+    renderGraphCanvas({
+      snapshot: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          case: {
+            id: 'case_01',
+            title: 'debug',
+            severity: 'critical',
+            status: 'active',
+            stage: 'intake',
+            revision: 5,
+            objective: 'debug'
           },
-          graph: {
-            headRevision: 5,
-            projectionRevision: 5,
-            requestedRevision: null,
-            stale: false,
-            historical: false,
-            data: {
-              focusId: null,
-              nodes: [
-                { id: 'fact_01', kind: 'fact', label: 'queue depth spikes', status: 'recorded', revision: 4 },
-                { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
-              ],
-              edges: [{ key: 'supports-1', type: 'supports', fromId: 'fact_01', toId: 'hypothesis_01' }]
-            }
+          counts: {
+            problems: 1,
+            hypotheses: 1,
+            blockers: 0,
+            repairAttempts: 0,
+            evidenceRefs: 0
           },
-          onSelectNode() {
-            return;
-          }
-        })
-      })
-    );
+          warnings: []
+        }
+      },
+      graph: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          focusId: null,
+          nodes: [
+            { id: 'problem_01', kind: 'problem', label: 'queue depth spikes', status: 'open', revision: 4 },
+            { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'favored', revision: 5 }
+          ],
+          edges: [{ key: 'structural-1', type: 'structural', fromId: 'problem_01', toId: 'hypothesis_01' }]
+        }
+      },
+      onSelectNode() {
+        return;
+      }
+    });
 
     const onNodeDragStop = capturedProps?.onNodeDragStop as ((event: unknown, node: { id: string; position: { x: number; y: number } }) => void) | undefined;
     const onMoveEnd = capturedProps?.onMoveEnd as ((event: unknown, viewport: { x: number; y: number; zoom: number }) => void) | undefined;
@@ -425,5 +295,135 @@ describe('graph canvas selection', () => {
       source: 'graph-canvas',
       viewport: { x: -28, y: 64, zoom: 1.25 }
     });
+  });
+
+  test('renders unsaved draft nodes alongside persisted graph nodes and flags the selected draft in node data', () => {
+    renderGraphCanvas({
+      snapshot: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          case: {
+            id: 'case_01',
+            title: 'debug',
+            severity: 'critical',
+            status: 'active',
+            stage: 'intake',
+            revision: 5,
+            objective: 'debug'
+          },
+          counts: {
+            problems: 1,
+            hypotheses: 1,
+            blockers: 0,
+            repairAttempts: 0,
+            evidenceRefs: 0
+          },
+          warnings: []
+        }
+      },
+      graph: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          focusId: null,
+          nodes: [
+            { id: 'problem_01', kind: 'problem', label: 'queue depth spikes', status: 'open', revision: 4 },
+            { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'unverified', revision: 5 }
+          ],
+          edges: [{ key: 'structural-1', type: 'structural', fromId: 'problem_01', toId: 'hypothesis_01' }]
+        }
+      },
+      draftNodes: [
+        {
+          id: 'draft_hypothesis_01',
+          kind: 'hypothesis',
+          parentNodeId: 'problem_01',
+          parentKind: 'problem',
+          position: { x: 480, y: 220 },
+          status: 'draft',
+          label: 'Unsaved hypothesis',
+          revision: 0,
+          payload: {
+            statement: 'Unsaved hypothesis'
+          }
+        }
+      ],
+      selectedNodeId: 'draft_hypothesis_01',
+      onCreateDraftNode() {
+        return;
+      },
+      onSelectNode() {
+        return;
+      }
+    });
+
+    const nodes = capturedProps?.nodes as Array<{ id: string; data: Record<string, unknown>; position: { x: number; y: number } }> | undefined;
+    const draftNode = nodes?.find((node) => node.id === 'draft_hypothesis_01');
+
+    expect(draftNode).toBeTruthy();
+    expect(draftNode?.position).toEqual({ x: 480, y: 220 });
+    expect(draftNode?.data.isDraft).toBe(true);
+    expect(draftNode?.data.isSelected).toBe(true);
+    expect(draftNode?.data.statusLabel).toBe('Unsaved');
+  });
+
+  test('does not inject revision bubble entries into graph nodes now that revision bubbles live on the timeline slider', () => {
+    renderGraphCanvas({
+      snapshot: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          case: {
+            id: 'case_01',
+            title: 'debug',
+            severity: 'critical',
+            status: 'active',
+            stage: 'intake',
+            revision: 5,
+            objective: 'debug'
+          },
+          counts: {
+            problems: 1,
+            hypotheses: 1,
+            blockers: 0,
+            repairAttempts: 0,
+            evidenceRefs: 0
+          },
+          warnings: []
+        }
+      },
+      graph: {
+        headRevision: 5,
+        projectionRevision: 5,
+        requestedRevision: null,
+        stale: false,
+        historical: false,
+        data: {
+          focusId: null,
+          nodes: [
+            { id: 'hypothesis_01', kind: 'hypothesis', label: 'worker pool starvation', status: 'unverified', revision: 5 }
+          ],
+          edges: []
+        }
+      },
+      onSelectNode() {
+        return;
+      }
+    });
+
+    const nodes = capturedProps?.nodes as Array<{ id: string; data: Record<string, unknown> }> | undefined;
+    const hypothesisNode = nodes?.find((node) => node.id === 'hypothesis_01');
+
+    expect(hypothesisNode?.data.revisionEvents).toBeUndefined();
   });
 });

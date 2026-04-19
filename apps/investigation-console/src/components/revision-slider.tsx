@@ -1,18 +1,34 @@
-import { useEffect, useState } from 'react';
-
-import { useI18n } from '../lib/i18n.js';
+import { useEffect, useMemo, useState } from 'react';
 
 export function RevisionSlider(props: {
   maxRevision: number;
   currentRevision: number;
   onChange: (revision: number) => void;
+  revisions?: Array<{
+    revision: number;
+    events: Array<{
+      eventId: string;
+      originLabel: string;
+      revision: number;
+      summary: string;
+      title: string;
+    }>;
+  }>;
 }) {
-  const { t } = useI18n();
   const [draftRevision, setDraftRevision] = useState(props.currentRevision);
 
   useEffect(() => {
     setDraftRevision(props.currentRevision);
   }, [props.currentRevision]);
+
+  const markers = useMemo(
+    () => Array.from({ length: props.maxRevision }, (_, index) => index + 1),
+    [props.maxRevision]
+  );
+  const revisionLookup = useMemo(
+    () => new Map((props.revisions ?? []).map((item) => [item.revision, item.events])),
+    [props.revisions]
+  );
 
   const handleRevisionChange = (revisionValue: string) => {
     const revision = Number(revisionValue);
@@ -21,9 +37,9 @@ export function RevisionSlider(props: {
   };
 
   return (
-    <label className="revision-field">
-      <span>{t('revision.sync')}</span>
+    <div className="revision-slider-shell">
       <input
+        aria-label="Revision slider"
         data-testid="revision-slider"
         max={props.maxRevision}
         min={1}
@@ -32,11 +48,37 @@ export function RevisionSlider(props: {
         type="range"
         value={draftRevision}
       />
-      <div className="revision-scale">
-        <span>1</span>
-        <span data-testid="revision-value">{draftRevision}</span>
-        <span>{props.maxRevision}</span>
+      <div aria-hidden="true" className="revision-marker-row">
+        {markers.map((marker) => (
+          <button
+            aria-label={`Revision ${marker}`}
+            className="revision-marker-slot"
+            data-testid={`revision-marker-slot-${marker}`}
+            key={marker}
+            onClick={() => handleRevisionChange(String(marker))}
+            type="button"
+          >
+            <span
+              className={`revision-marker${marker <= draftRevision ? ' is-active' : ''}`}
+              data-testid={`revision-marker-${marker}`}
+            />
+            {revisionLookup.has(marker) ? (
+              <div className="revision-hover-bubble" data-testid={`revision-bubble-${marker}`}>
+                {revisionLookup.get(marker)?.map((event) => (
+                  <div className="revision-hover-bubble-entry" key={event.eventId}>
+                    <span className="revision-hover-origin">{event.originLabel}</span>
+                    <strong>{event.title}</strong>
+                    <p>{event.summary}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </button>
+        ))}
       </div>
-    </label>
+      <span className="visually-hidden" data-testid="revision-value">
+        {draftRevision}
+      </span>
+    </div>
   );
 }

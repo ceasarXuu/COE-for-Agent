@@ -3,6 +3,8 @@ import { Handle, Position } from 'reactflow';
 import type { GraphNodeRecord } from '../useGraphLayout.js';
 
 export interface GraphNodeViewData extends GraphNodeRecord {
+  isDraft?: boolean;
+  isSaving?: boolean;
   isSelected?: boolean;
   kindLabel?: string;
   kindDetailLabel?: string | null;
@@ -15,9 +17,10 @@ export function GraphNodeCard(props: {
   toneClassName: string;
 }) {
   const { data, toneClassName } = props;
+  const stateClassName = data.isDraft ? (data.isSaving ? 'graph-node-saving' : 'graph-node-draft') : '';
 
   return (
-    <div className={`graph-node ${toneClassName} ${data.isSelected ? 'selected' : ''}`} data-testid={`graph-node-${data.id}`}>
+    <div className={`graph-node ${toneClassName} ${stateClassName} ${data.isSelected ? 'selected' : ''}`} data-testid={`graph-node-${data.id}`}>
       <Handle type="target" position={Position.Left} className="node-handle" />
 
       <div className="node-header">
@@ -33,7 +36,6 @@ export function GraphNodeCard(props: {
       <div className="node-meta">
         <span className="node-revision">{data.revisionLabel ?? `rev ${data.revision}`}</span>
       </div>
-
       <Handle type="source" position={Position.Right} className="node-handle" />
     </div>
   );

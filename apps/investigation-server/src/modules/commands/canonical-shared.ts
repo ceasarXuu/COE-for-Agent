@@ -41,11 +41,14 @@ export async function requireCanonicalParent(
 
   const repairAttempt = await currentState.getRecord('repair_attempts', parentNodeId);
   if (repairAttempt && repairAttempt.caseId === caseId) {
-    return {
-      id: repairAttempt.id,
-      kind: 'repair_attempt',
-      status: (repairAttempt.status ?? 'proposed') as CanonicalNodeStatus
-    };
+    const payload = recordPayload(repairAttempt);
+    if (stringValue(payload.canonicalKind) === 'repair_attempt') {
+      return {
+        id: repairAttempt.id,
+        kind: 'repair_attempt',
+        status: (repairAttempt.status ?? 'proposed') as CanonicalNodeStatus
+      };
+    }
   }
 
   throw new Error(`Canonical parent not found: ${parentNodeId}`);
