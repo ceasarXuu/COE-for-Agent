@@ -48,17 +48,32 @@ function graphNodeSummary(kind: string, payload: Record<string, unknown>): strin
 
 function canonicalGraphNodeLabel(kind: string, payload: Record<string, unknown>, state: ProjectedCaseState): string {
   if (kind === 'evidence_ref') {
-    const evidenceId = asString(payload.evidenceId);
-    const evidenceRecord = evidenceId ? state.tables.evidence_pool.get(evidenceId) : null;
-    const evidencePayload = asObject(evidenceRecord?.payload);
+    const evidencePayload = canonicalEvidencePayload(payload, state);
 
     return asString(evidencePayload.title)
       ?? asString(payload.interpretation)
-      ?? evidenceId
+      ?? asString(payload.evidenceId)
       ?? kind;
   }
 
   return graphNodeLabel(payload, kind);
+}
+
+function canonicalGraphNodePayload(kind: string, payload: Record<string, unknown>, state: ProjectedCaseState) {
+  if (kind !== 'evidence_ref') {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    evidence: canonicalEvidencePayload(payload, state)
+  };
+}
+
+function canonicalEvidencePayload(payload: Record<string, unknown>, state: ProjectedCaseState) {
+  const evidenceId = asString(payload.evidenceId);
+  const evidenceRecord = evidenceId ? state.tables.evidence_pool.get(evidenceId) : null;
+  return asObject(evidenceRecord?.payload);
 }
 
 export function buildGraphSlice(
@@ -135,7 +150,7 @@ function buildCanonicalGraphSlice(
       displayKind: record.kind,
       issueKind: null,
       label: canonicalGraphNodeLabel(record.kind, payload, state),
-      payload,
+      payload: canonicalGraphNodePayload(record.kind, payload, state),
       summary: graphNodeSummary(record.kind, payload),
       status: record.status,
       revision: record.revision

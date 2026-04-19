@@ -316,25 +316,57 @@ function buildGraphBackedInspector(
   switch (node.kind) {
     case 'problem':
       return {
-        kind: 'node',
+        kind: 'problem',
         title: node.label,
         status: node.status,
         summary: node.summary ?? '',
         primaryItems: collectRelatedNodes(node.id, workspace.graph.data.nodes, workspace.graph.data.edges)
           .filter((relatedNode) => relatedNode.kind === 'hypothesis')
           .map((relatedNode) => relatedNode.label),
-        secondaryItems: []
+        secondaryItems: [
+          ...(typeof node.payload?.environment === 'string' && node.payload.environment.length > 0
+            ? [node.payload.environment]
+            : []),
+          ...(Array.isArray(node.payload?.symptoms)
+            ? node.payload.symptoms.filter((item): item is string => typeof item === 'string' && item.length > 0)
+            : [])
+        ]
       };
     case 'blocker':
-    case 'repair_attempt':
-    case 'evidence_ref':
       return {
-        kind: 'node',
+        kind: 'blocker',
         title: node.label,
         status: node.status,
         summary: node.summary ?? '',
         primaryItems: relatedNodes.map((relatedNode) => relatedNode.label),
-        secondaryItems: []
+        secondaryItems: Array.isArray(node.payload?.possibleWorkarounds)
+          ? node.payload.possibleWorkarounds.filter((item): item is string => typeof item === 'string' && item.length > 0)
+          : []
+      };
+    case 'repair_attempt':
+      return {
+        kind: 'repair_attempt',
+        title: node.label,
+        status: node.status,
+        summary: node.summary ?? '',
+        primaryItems: relatedNodes.filter((relatedNode) => relatedNode.kind === 'evidence_ref').map((relatedNode) => relatedNode.label),
+        secondaryItems: relatedNodes.filter((relatedNode) => relatedNode.kind === 'repair_attempt').map((relatedNode) => relatedNode.label)
+      };
+    case 'evidence_ref':
+      const evidencePayload = asObjectRecord(node.payload?.evidence);
+      return {
+        kind: 'evidence_ref',
+        title: node.label,
+        status: node.status,
+        summary: node.summary ?? '',
+        primaryItems: [
+          ...(typeof evidencePayload.provenance === 'string' ? [evidencePayload.provenance] : []),
+          ...(typeof evidencePayload.summary === 'string' ? [evidencePayload.summary] : [])
+        ],
+        secondaryItems: [
+          ...(typeof node.payload?.effectOnParent === 'string' ? [node.payload.effectOnParent] : []),
+          ...relatedNodes.map((relatedNode) => relatedNode.label)
+        ]
       };
     case 'experiment':
       return {

@@ -80,4 +80,44 @@ describe('inspector panel', () => {
     expect(html).toContain('Risk treatment');
     expect(html).toContain('regional failover still duplicates a small batch');
   });
+
+  test('renders canonical problem sections with hypothesis and context buckets', () => {
+    const html = renderToStaticMarkup(
+      createElement(InspectorPanel, {
+        loading: false,
+        inspector: {
+          kind: 'problem',
+          title: 'Checkout stalls under peak load',
+          status: 'open',
+          summary: 'The root problem remains unresolved in production.',
+          primaryItems: ['database connection reuse hypothesis'],
+          secondaryItems: ['prod-us-east-1', 'checkout latency spikes after deploy']
+        } as never
+      })
+    );
+
+    expect(html).toContain('Hypotheses');
+    expect(html).toContain('Context');
+    expect(html).toContain('Checkout stalls under peak load');
+  });
+
+  test('renders canonical evidence-ref sections with evidence details and usage context', () => {
+    const html = renderToStaticMarkup(
+      createElement(InspectorPanel, {
+        loading: false,
+        inspector: {
+          kind: 'evidence_ref',
+          title: 'Pool saturation trace',
+          status: null,
+          summary: 'This evidence is attached to the current branch.',
+          primaryItems: ['worker.log@2026-04-19T06:00Z', 'Pool saturation appears before the timeout.'],
+          secondaryItems: ['supports', 'database connection reuse hypothesis']
+        } as never
+      })
+    );
+
+    expect(html).toContain('Evidence details');
+    expect(html).toContain('Used by');
+    expect(html).toContain('Pool saturation trace');
+  });
 });

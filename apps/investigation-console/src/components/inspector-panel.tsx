@@ -1,13 +1,17 @@
 import { DecisionInspector } from './inspector/decision-inspector.js';
+import { BlockerInspector } from './inspector/blocker-inspector.js';
+import { EvidenceRefInspector } from './inspector/evidence-ref-inspector.js';
 import { ExperimentInspector } from './inspector/experiment-inspector.js';
 import { FactInspector } from './inspector/fact-inspector.js';
 import { GapInspector } from './inspector/gap-inspector.js';
 import { HypothesisInspector } from './inspector/hypothesis-inspector.js';
+import { ProblemInspector } from './inspector/problem-inspector.js';
+import { RepairAttemptInspector } from './inspector/repair-attempt-inspector.js';
 import { ResidualInspector } from './inspector/residual-inspector.js';
 import { useI18n } from '../lib/i18n.js';
 
 export interface InspectorViewModel {
-  kind: 'hypothesis' | 'inquiry' | 'fact' | 'experiment' | 'decision' | 'gap' | 'residual' | 'node';
+  kind: 'problem' | 'hypothesis' | 'blocker' | 'repair_attempt' | 'evidence_ref' | 'inquiry' | 'fact' | 'experiment' | 'decision' | 'gap' | 'residual' | 'node';
   title: string;
   status: string | null;
   summary: string;
@@ -47,8 +51,16 @@ export function InspectorPanel(props: {
   }
 
   switch (props.inspector.kind) {
+    case 'problem':
+      return <ProblemInspector inspector={props.inspector} />;
     case 'hypothesis':
       return <HypothesisInspector inspector={props.inspector} />;
+    case 'blocker':
+      return <BlockerInspector inspector={props.inspector} />;
+    case 'repair_attempt':
+      return <RepairAttemptInspector inspector={props.inspector} />;
+    case 'evidence_ref':
+      return <EvidenceRefInspector inspector={props.inspector} />;
     case 'fact':
       return <FactInspector inspector={props.inspector} />;
     case 'experiment':
