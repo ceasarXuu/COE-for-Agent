@@ -1,5 +1,4 @@
 import type { InvestigationServerServices } from '../../services.js';
-import { recordPayload, stringValue } from '../shared/record-helpers.js';
 import { isCanonicalHypothesisRecord, loadCaseGuardrailContext, nodeStatus } from './shared.js';
 
 interface StallSignal {
@@ -32,12 +31,10 @@ export async function handleGuardrailStallCheck(
   const context = await loadCaseGuardrailContext(services, caseId, { includeEvents: true });
   const recentEvents = context.events.slice(-20);
   const signals: StallSignal[] = [];
-  const activeHypothesisCount = context.mode === 'canonical'
-    ? context.hypotheses
-        .filter(isCanonicalHypothesisRecord)
-        .filter((record) => nodeStatus(record, 'unverified') !== 'rejected')
-        .length
-    : context.hypotheses.filter((record) => nodeStatus(record, 'proposed') !== 'rejected').length;
+  const activeHypothesisCount = context.hypotheses
+    .filter(isCanonicalHypothesisRecord)
+    .filter((record) => nodeStatus(record, 'unverified') !== 'rejected')
+    .length;
 
   if (activeHypothesisCount > 3) {
     signals.push({
@@ -47,55 +44,25 @@ export async function handleGuardrailStallCheck(
     });
   }
 
-  const recentFactWindow = recentEvents.slice(-5);
-  const factLikeEventTypes = context.mode === 'canonical'
-    ? ['canonical.evidence.captured', 'canonical.evidence.attached']
-    : ['fact.asserted'];
-  if (recentFactWindow.length === 5 && !recentFactWindow.some((event) => factLikeEventTypes.includes(event.eventType))) {
+  const recentEvidenceWindow = recentEvents.slice(-5);
+  if (
+    recentEvidenceWindow.length === 5 &&
+    !recentEvidenceWindow.some((event) => event.eventType === 'canonical.evidence.captured' || event.eventType === 'canonical.evidence.attached')
+  ) {
     signals.push({
-      code: context.mode === 'canonical' ? 'no_new_evidence_in_last_5_events' : 'no_new_fact_in_last_5_events',
+      code: 'no_new_evidence_in_last_5_events',
       severity: 'medium',
-      message: context.mode === 'canonical'
-        ? 'The latest five write events did not add any new canonical evidence.'
-        : 'The latest five write events did not add any new facts.'
+      message: 'The latest five write events did not add any new canonical evidence.'
     });
   }
 
   const recentStatusWindow = recentEvents.slice(-6);
-  const hypothesisStatusEventTypes = context.mode === 'canonical'
-    ? ['canonical.hypothesis.status_updated']
-    : ['hypothesis.status_updated'];
-  if (recentStatusWindow.length === 6 && !recentStatusWindow.some((event) => hypothesisStatusEventTypes.includes(event.eventType))) {
+  if (recentStatusWindow.length === 6 && !recentStatusWindow.some((event) => event.eventType === 'canonical.hypothesis.status_updated')) {
     signals.push({
       code: 'no_hypothesis_status_change_in_last_6_events',
       severity: 'medium',
       message: 'Hypotheses have not been narrowed or promoted in the latest six write events.'
     });
-  }
-
-  const completedExperiments = context.experiments.filter((record) => nodeStatus(record, 'planned') === 'completed');
-  if (context.mode !== 'canonical' && context.hypotheses.length > 0 && completedExperiments.length === 0) {
-    signals.push({
-      code: 'no_discriminative_experiment_completed',
-      severity: 'high',
-      message: 'No completed experiment has discriminated among the active hypotheses yet.'
-    });
-  }
-
-  if (context.mode !== 'canonical') {
-    const recentInquiryIds = recentEvents
-      .slice(-4)
-      .map((event) => {
-        const payload = recordPayload({ payload: event.payload });
-        return stringValue(payload.inquiryId) ?? stringValue(payload.defaultInquiryId) ?? null;
-      });
-    if (recentInquiryIds.length === 4 && recentInquiryIds.every((value) => value !== null && value === recentInquiryIds[0])) {
-      signals.push({
-        code: 'same_inquiry_revisited_4_times',
-        severity: 'high',
-        message: 'The latest four write events all revisited the same inquiry without branching.'
-      });
-    }
   }
 
   const risk = calculateRisk(signals);
@@ -106,14 +73,10 @@ export async function handleGuardrailStallCheck(
     signals,
     recommendedActions: signals.map((signal) => {
       if (signal.code === 'active_hypothesis_count_gt_3') {
-        return 'Narrow the field by favoring, rejecting, or merging competing hypotheses.';
+        return 'Narrow the field by confirming, rejecting, or blocking competing hypotheses.';
       }
 
-      if (signal.code === 'no_discriminative_experiment_completed') {
-        return 'Plan and complete a discriminative experiment to separate the leading hypotheses.';
-      }
-
-      return 'Capture a new fact or decision to move the investigation forward.';
+      return 'Capture a new evidence node or close a blocker to move the investigation forward.';
     })
   };
 }

@@ -48,8 +48,8 @@ describe.sequential('checkpoint replay', () => {
     await eventStore.appendEvent({
       caseId,
       expectedRevision: 1,
-      eventType: 'symptom.reported',
-      commandName: 'investigation.symptom.report',
+      eventType: 'problem.updated',
+      commandName: 'investigation.problem.update',
       actor: {
         actorType: 'agent',
         actorId: 'copilot',
@@ -58,7 +58,7 @@ describe.sequential('checkpoint replay', () => {
         issuer: 'local-dev',
         authMode: 'local'
       },
-      payload: { statement: 'symptom captured' },
+      payload: { problemId: 'problem_01AAAAAAAAAAAAAAAAAAAAA', description: 'problem updated' },
       metadata: { idempotencyKey: 'idem-002' }
     });
 
@@ -75,8 +75,8 @@ describe.sequential('checkpoint replay', () => {
     await eventStore.appendEvent({
       caseId,
       expectedRevision: 2,
-      eventType: 'fact.asserted',
-      commandName: 'investigation.fact.assert',
+      eventType: 'canonical.hypothesis.created',
+      commandName: 'investigation.hypothesis.create',
       actor: {
         actorType: 'agent',
         actorId: 'copilot',
@@ -85,14 +85,14 @@ describe.sequential('checkpoint replay', () => {
         issuer: 'local-dev',
         authMode: 'local'
       },
-      payload: { statement: 'fact one' },
+      payload: { hypothesisId: 'hypothesis_01AAAAAAAAAAAAAAAAAAA', parentNodeId: 'problem_01AAAAAAAAAAAAAAAAAAAAA', statement: 'hypothesis one' },
       metadata: { idempotencyKey: 'idem-003' }
     });
     await eventStore.appendEvent({
       caseId,
       expectedRevision: 3,
-      eventType: 'decision.recorded',
-      commandName: 'investigation.decision.record',
+      eventType: 'canonical.evidence.captured',
+      commandName: 'investigation.evidence.capture',
       actor: {
         actorType: 'agent',
         actorId: 'copilot',
@@ -101,7 +101,7 @@ describe.sequential('checkpoint replay', () => {
         issuer: 'local-dev',
         authMode: 'local'
       },
-      payload: { statement: 'decision recorded' },
+      payload: { evidenceId: 'evidence_01AAAAAAAAAAAAAAAAAAAAAA', kind: 'log', title: 'evidence captured' },
       metadata: { idempotencyKey: 'idem-004' }
     });
 

@@ -27,13 +27,13 @@ describe.sequential('command dedup', () => {
     const dedup = new CommandDedupRepository(persistence.db);
     const first = await dedup.record({
       caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
-      toolName: 'investigation.fact.assert',
+      toolName: 'investigation.hypothesis.create',
       idempotencyKey: 'idem-001',
       eventId: 'evt_01AAAAAAAAAAAAAAAAAAAAAAAA'
     });
     const second = await dedup.record({
       caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
-      toolName: 'investigation.fact.assert',
+      toolName: 'investigation.hypothesis.create',
       idempotencyKey: 'idem-001',
       eventId: 'evt_01BBBBBBBBBBBBBBBBBBBBBBBB'
     });
@@ -57,7 +57,7 @@ describe.sequential('command dedup', () => {
     const dedup = new CommandDedupRepository(persistence.db);
     const claim = await dedup.claim({
       caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
-      toolName: 'investigation.fact.assert',
+      toolName: 'investigation.hypothesis.create',
       idempotencyKey: 'idem-claim-001'
     });
 
@@ -67,13 +67,13 @@ describe.sequential('command dedup', () => {
 
     await dedup.complete({
       caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
-      toolName: 'investigation.fact.assert',
+      toolName: 'investigation.hypothesis.create',
       idempotencyKey: 'idem-claim-001',
       eventId: 'evt_01AAAAAAAAAAAAAAAAAAAAAAAA',
       commandResult: {
         ok: true,
         eventId: 'evt_01AAAAAAAAAAAAAAAAAAAAAAAA',
-        createdIds: ['fact_01AAAAAAAAAAAAAAAAAAAAAAAA'],
+        createdIds: ['hypothesis_01AAAAAAAAAAAAAAAAAAA'],
         headRevisionBefore: 2,
         headRevisionAfter: 3,
         projectionScheduled: false,
@@ -84,7 +84,7 @@ describe.sequential('command dedup', () => {
 
     const duplicate = await dedup.claim({
       caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
-      toolName: 'investigation.fact.assert',
+      toolName: 'investigation.hypothesis.create',
       idempotencyKey: 'idem-claim-001'
     });
 
@@ -94,7 +94,7 @@ describe.sequential('command dedup', () => {
       commandResult: {
         ok: true,
         eventId: 'evt_01AAAAAAAAAAAAAAAAAAAAAAAA',
-        createdIds: ['fact_01AAAAAAAAAAAAAAAAAAAAAAAA'],
+        createdIds: ['hypothesis_01AAAAAAAAAAAAAAAAAAA'],
         headRevisionBefore: 2,
         headRevisionAfter: 3,
         projectionScheduled: false,

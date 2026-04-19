@@ -25,7 +25,7 @@ const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
 };
 
 const TOOL_DESCRIPTION_BY_NAME: Record<string, string> = {
-  'investigation.case.open': 'Open a new investigation case and create its default inquiry.',
+  'investigation.case.open': 'Open a new canonical investigation case with a single problem root.',
   'investigation.case.advance_stage': 'Advance a case to the next investigation lifecycle stage.',
   'investigation.problem.update': 'Update the canonical root problem content for a case.',
   'investigation.problem.set_status': 'Set the canonical root problem status.',

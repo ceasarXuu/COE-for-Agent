@@ -4,7 +4,6 @@ export type McpTransportMode = 'stdio' | 'http';
 
 export interface InvestigationServerConfig {
   dataDir: string;
-  artifactRoot: string;
   otelExporterOtlpEndpoint: string | null;
   mcpTransport: McpTransportMode;
   localIssuerSecret: string;
@@ -26,7 +25,6 @@ export function loadConfig(source: ConfigSource = process.env): InvestigationSer
 
   return {
     dataDir: resolveProjectPath(source.COE_DATA_DIR ?? '', './.var/data'),
-    artifactRoot: resolveProjectPath(source.ARTIFACT_ROOT ?? '', './artifacts'),
     otelExporterOtlpEndpoint: source.OTEL_EXPORTER_OTLP_ENDPOINT ?? null,
     mcpTransport: transport,
     localIssuerSecret: source.LOCAL_ISSUER_SECRET ?? 'local-dev-secret',

@@ -90,12 +90,13 @@ describe.sequential('mcp console flow', () => {
             stage: 'repair_validation',
             status: 'validating'
           }),
-          counts: expect.objectContaining({
-            inquiries: 0,
-            symptoms: 0,
-            artifacts: 0,
-            facts: 0
-          })
+          counts: {
+            problems: 1,
+            hypotheses: 1,
+            blockers: 0,
+            repairAttempts: 1,
+            evidenceRefs: 1
+          }
         }
       });
       expect(timeline.data).toMatchObject({

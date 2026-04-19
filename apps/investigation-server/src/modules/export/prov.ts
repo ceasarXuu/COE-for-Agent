@@ -57,10 +57,7 @@ export interface ProvExportPackage {
 function generatedEntityIds(eventType: string, payload: Record<string, unknown>, caseId: string): string[] {
   switch (eventType) {
     case 'case.opened':
-      return [
-        asString(payload.caseId) ?? caseId,
-        ...asString(payload.defaultProblemId) ? [asString(payload.defaultProblemId)!] : []
-      ];
+      return [asString(payload.caseId) ?? caseId, ...asString(payload.defaultProblemId) ? [asString(payload.defaultProblemId)!] : []];
     case 'problem.reference_material_added':
       return asString(payload.materialId) ? [asString(payload.materialId)!] : [];
     case 'canonical.hypothesis.created':
@@ -73,26 +70,6 @@ function generatedEntityIds(eventType: string, payload: Record<string, unknown>,
       return asString(payload.evidenceId) ? [asString(payload.evidenceId)!] : [];
     case 'canonical.evidence.attached':
       return asString(payload.evidenceRefId) ? [asString(payload.evidenceRefId)!] : [];
-    case 'inquiry.opened':
-      return asString(payload.inquiryId) ? [asString(payload.inquiryId)!] : [];
-    case 'entity.registered':
-      return asString(payload.entityId) ? [asString(payload.entityId)!] : [];
-    case 'symptom.reported':
-      return asString(payload.symptomId) ? [asString(payload.symptomId)!] : [];
-    case 'artifact.attached':
-      return asString(payload.artifactId) ? [asString(payload.artifactId)!] : [];
-    case 'fact.asserted':
-      return asString(payload.factId) ? [asString(payload.factId)!] : [];
-    case 'hypothesis.proposed':
-      return asString(payload.hypothesisId) ? [asString(payload.hypothesisId)!] : [];
-    case 'experiment.planned':
-      return asString(payload.experimentId) ? [asString(payload.experimentId)!] : [];
-    case 'gap.opened':
-      return asString(payload.gapId) ? [asString(payload.gapId)!] : [];
-    case 'residual.opened':
-      return asString(payload.residualId) ? [asString(payload.residualId)!] : [];
-    case 'decision.recorded':
-      return asString(payload.decisionId) ? [asString(payload.decisionId)!] : [];
     default:
       return [];
   }
@@ -112,31 +89,6 @@ function usedEntityIds(eventType: string, payload: Record<string, unknown>): str
       return [asString(payload.parentNodeId), asString(payload.evidenceId)].filter(
         (value): value is string => typeof value === 'string' && value.length > 0
       );
-    case 'fact.asserted':
-      return [...asStringArray(payload.sourceArtifactIds), ...asStringArray(payload.aboutRefs)];
-    case 'hypothesis.proposed':
-      return [...asStringArray(payload.explainsSymptomIds), ...asStringArray(payload.dependsOnFactIds)];
-    case 'experiment.planned':
-      return asStringArray(payload.testsHypothesisIds);
-    case 'experiment.result_recorded':
-      return [asString(payload.experimentId), ...asStringArray(payload.producedArtifactIds), ...asStringArray(payload.producedFactIds)].filter(
-        (value): value is string => typeof value === 'string' && value.length > 0
-      );
-    case 'gap.resolve':
-      return [asString(payload.gapId), ...asStringArray(payload.resolutionFactIds), ...asStringArray(payload.resolutionExperimentIds)].filter(
-        (value): value is string => typeof value === 'string' && value.length > 0
-      );
-    case 'residual.updated':
-      return [asString(payload.residualId), ...asStringArray(payload.reasonFactIds), ...asStringArray(payload.reasonHypothesisIds)].filter(
-        (value): value is string => typeof value === 'string' && value.length > 0
-      );
-    case 'decision.recorded':
-      return [
-        asString(payload.inquiryId),
-        ...asStringArray(payload.supportingFactIds),
-        ...asStringArray(payload.supportingExperimentIds),
-        ...asStringArray(payload.supportingHypothesisIds)
-      ].filter((value): value is string => typeof value === 'string' && value.length > 0);
     default:
       return [];
   }
@@ -164,7 +116,7 @@ export async function buildProvExport(
       return {
         id: record.id,
         kind: record.kind,
-        label: asString(payload.title) ?? asString(payload.name) ?? asString(payload.statement) ?? asString(payload.question) ?? record.id
+        label: asString(payload.title) ?? asString(payload.statement) ?? asString(payload.description) ?? asString(payload.changeSummary) ?? record.id
       };
     }))
   ].filter((value): value is { id: string; kind: string; label: string } => value !== null);

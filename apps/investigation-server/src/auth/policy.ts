@@ -7,13 +7,6 @@ const ROLE_RANK: Record<ActorRole, number> = {
   Admin: 3
 };
 
-const REVIEWER_ONLY_DECISION_KINDS = new Set([
-  'ready_to_patch',
-  'accept_residual',
-  'declare_root_cause',
-  'close_case'
-]);
-
 const REVIEWER_ONLY_CASE_STAGES = new Set(['repair_preparation', 'repair_validation', 'closed']);
 
 export interface AuthorizationRequirement {
@@ -35,14 +28,6 @@ function asObject(value: unknown): Record<string, unknown> {
 
 function optionalString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-function stringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
 }
 
 function requireStringField(input: Record<string, unknown>, fieldName: string): string {
@@ -85,53 +70,6 @@ export function getAuthorizationRequirement(
   input: Record<string, unknown>
 ): AuthorizationRequirement {
   switch (commandName) {
-    case 'investigation.issue.resolve': {
-      const issueId = requireStringField(input, 'issueId');
-      const resolution = optionalString(input.resolution);
-      const reviewerOnly = issueId.startsWith('residual_')
-        ? resolution === 'accepted'
-        : issueId.startsWith('gap_')
-          ? resolution === 'accepted'
-          : false;
-
-      return buildRequirement(input, {
-        minimumRole: reviewerOnly ? 'Reviewer' : 'Operator',
-        reviewerOnly,
-        requiresConfirmToken: reviewerOnly,
-        targetIds: [issueId],
-        reasonText: optionalString(input.rationale) ?? ''
-      });
-    }
-    case 'investigation.gap.resolve': {
-      const status = optionalString(input.status);
-      return buildRequirement(input, {
-        minimumRole: status === 'waived' ? 'Reviewer' : 'Operator',
-        reviewerOnly: status === 'waived',
-        requiresConfirmToken: status === 'waived',
-        targetIds: [requireStringField(input, 'gapId')],
-        reasonText: optionalString(input.reason) ?? ''
-      });
-    }
-    case 'investigation.residual.update': {
-      const newStatus = optionalString(input.newStatus);
-      return buildRequirement(input, {
-        minimumRole: newStatus === 'accepted' ? 'Reviewer' : 'Operator',
-        reviewerOnly: newStatus === 'accepted',
-        requiresConfirmToken: newStatus === 'accepted',
-        targetIds: [requireStringField(input, 'residualId')],
-        reasonText: optionalString(input.rationale) ?? ''
-      });
-    }
-    case 'investigation.hypothesis.update_status': {
-      const newStatus = optionalString(input.newStatus);
-      return buildRequirement(input, {
-        minimumRole: newStatus === 'confirmed' ? 'Reviewer' : 'Operator',
-        reviewerOnly: newStatus === 'confirmed',
-        requiresConfirmToken: newStatus === 'confirmed',
-        targetIds: [requireStringField(input, 'hypothesisId')],
-        reasonText: optionalString(input.reason) ?? ''
-      });
-    }
     case 'investigation.hypothesis.set_status': {
       const newStatus = optionalString(input.newStatus);
       return buildRequirement(input, {
@@ -140,19 +78,6 @@ export function getAuthorizationRequirement(
         requiresConfirmToken: newStatus === 'confirmed',
         targetIds: [requireStringField(input, 'hypothesisId')],
         reasonText: optionalString(input.reason) ?? ''
-      });
-    }
-    case 'investigation.decision.record': {
-      const decisionKind = optionalString(input.decisionKind) ?? '';
-      const reviewerOnly = REVIEWER_ONLY_DECISION_KINDS.has(decisionKind);
-      return buildRequirement(input, {
-        minimumRole: reviewerOnly ? 'Reviewer' : 'Operator',
-        reviewerOnly,
-        requiresConfirmToken: reviewerOnly,
-        targetIds: stringArray(input.supportingHypothesisIds).length > 0
-          ? stringArray(input.supportingHypothesisIds)
-          : [requireStringField(input, 'caseId')],
-        reasonText: optionalString(input.rationale) ?? optionalString(input.statement) ?? ''
       });
     }
     case 'investigation.case.advance_stage': {

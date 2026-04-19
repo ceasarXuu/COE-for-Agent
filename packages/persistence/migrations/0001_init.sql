@@ -39,47 +39,7 @@ create table if not exists cases (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists inquiries (
-  id text primary key,
-  case_id text not null,
-  revision integer not null,
-  status text,
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists entities (
-  id text primary key,
-  case_id text not null,
-  revision integer not null,
-  status text,
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists symptoms (
-  id text primary key,
-  case_id text not null,
-  revision integer not null,
-  status text,
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists artifacts (
-  id text primary key,
-  case_id text not null,
-  revision integer not null,
-  status text,
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists facts (
+create table if not exists problems (
   id text primary key,
   case_id text not null,
   revision integer not null,
@@ -99,7 +59,7 @@ create table if not exists hypotheses (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists experiments (
+create table if not exists blockers (
   id text primary key,
   case_id text not null,
   revision integer not null,
@@ -109,7 +69,7 @@ create table if not exists experiments (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists gaps (
+create table if not exists repair_attempts (
   id text primary key,
   case_id text not null,
   revision integer not null,
@@ -119,7 +79,7 @@ create table if not exists gaps (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists residuals (
+create table if not exists evidence_pool (
   id text primary key,
   case_id text not null,
   revision integer not null,
@@ -129,49 +89,13 @@ create table if not exists residuals (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists decisions (
+create table if not exists evidence_refs (
   id text primary key,
   case_id text not null,
   revision integer not null,
   status text,
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists case_edges (
-  case_id text not null,
-  from_id text not null,
-  to_id text not null,
-  edge_type text not null,
-  source_event_id text not null,
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  primary key (case_id, from_id, to_id, edge_type)
-);
-
-create index if not exists idx_case_edges_from on case_edges (case_id, from_id);
-create index if not exists idx_case_edges_to on case_edges (case_id, to_id);
-
-create table if not exists case_snapshot_cache (
-  case_id text primary key,
-  case_revision integer not null,
-  payload jsonb not null,
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists coverage_cache (
-  case_id text primary key,
-  case_revision integer not null,
-  payload jsonb not null,
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists guardrail_cache (
-  case_id text primary key,
-  case_revision integer not null,
-  stall_risk text,
-  ready_to_patch_payload jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
 
@@ -183,9 +107,6 @@ create table if not exists case_list_projection (
   status text,
   stage text,
   active_hypothesis_count integer not null default 0,
-  open_gap_count integer not null default 0,
-  open_residual_count integer not null default 0,
-  stall_risk text,
   updated_at timestamptz not null default now(),
   search_document tsvector generated always as (
     to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, ''))
@@ -220,17 +141,3 @@ create table if not exists projection_outbox (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
-create index if not exists idx_projection_outbox_pending on projection_outbox (task_type, status, available_at, created_at);
-
-create table if not exists artifact_blobs (
-  artifact_id text primary key,
-  storage_uri text not null,
-  digest text,
-  size_bytes bigint,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists idx_hypotheses_case_status on hypotheses (case_id, status);
-create index if not exists idx_gaps_case_status on gaps (case_id, status);
-create index if not exists idx_residuals_case_status on residuals (case_id, status);

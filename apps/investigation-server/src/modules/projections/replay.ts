@@ -5,7 +5,6 @@ import {
   type CaseStateRecord,
   type CheckpointRecord,
   type CurrentStateNodeRecord,
-  type CurrentStateTableName,
   type StoredEvent
 } from '@coe/persistence';
 
@@ -17,37 +16,19 @@ const PROJECTION_TABLE_NAMES = [
   'repair_attempts',
   'evidence_pool',
   'evidence_refs',
-  'inquiries',
-  'entities',
-  'symptoms',
-  'artifacts',
-  'facts',
-  'hypotheses',
-  'experiments',
-  'gaps',
-  'residuals',
-  'decisions'
-] as const satisfies readonly CurrentStateTableName[];
+  'hypotheses'
+] as const;
 
-const NODE_KIND_BY_TABLE: Record<CurrentStateTableName, string> = {
+export type ProjectionTableName = typeof PROJECTION_TABLE_NAMES[number];
+
+const NODE_KIND_BY_TABLE: Record<ProjectionTableName, string> = {
   problems: 'problem',
   blockers: 'blocker',
   repair_attempts: 'repair_attempt',
   evidence_pool: 'evidence',
   evidence_refs: 'evidence_ref',
-  inquiries: 'inquiry',
-  entities: 'entity',
-  symptoms: 'symptom',
-  artifacts: 'artifact',
-  facts: 'fact',
-  hypotheses: 'hypothesis',
-  experiments: 'experiment',
-  gaps: 'gap',
-  residuals: 'residual',
-  decisions: 'decision'
+  hypotheses: 'hypothesis'
 };
-
-export type ProjectionTableName = typeof PROJECTION_TABLE_NAMES[number];
 
 export interface ProjectedNodeRecord {
   id: string;
@@ -103,16 +84,7 @@ function createTables(): ProjectedCaseState['tables'] {
     repair_attempts: new Map(),
     evidence_pool: new Map(),
     evidence_refs: new Map(),
-    inquiries: new Map(),
-    entities: new Map(),
-    symptoms: new Map(),
-    artifacts: new Map(),
-    facts: new Map(),
-    hypotheses: new Map(),
-    experiments: new Map(),
-    gaps: new Map(),
-    residuals: new Map(),
-    decisions: new Map()
+    hypotheses: new Map()
   };
 }
 
@@ -138,7 +110,7 @@ function toProjectedCaseRecord(record: CaseStateRecord): ProjectedCaseRecord {
   };
 }
 
-function toProjectedNodeRecord(tableName: CurrentStateTableName, record: CurrentStateNodeRecord): ProjectedNodeRecord {
+function toProjectedNodeRecord(tableName: ProjectionTableName, record: CurrentStateNodeRecord): ProjectedNodeRecord {
   return {
     id: record.id,
     kind: NODE_KIND_BY_TABLE[tableName],
@@ -147,16 +119,6 @@ function toProjectedNodeRecord(tableName: CurrentStateTableName, record: Current
     status: record.status ?? null,
     payload: structuredClone(asObject(record.payload))
   };
-}
-
-function touchCaseRevision(state: ProjectedCaseState, revision: number): void {
-  state.projectionRevision = revision;
-  if (state.caseRecord) {
-    state.caseRecord = {
-      ...state.caseRecord,
-      revision
-    };
-  }
 }
 
 function upsertNode(
@@ -213,25 +175,12 @@ function serializeState(state: ProjectedCaseState): SerializedProjectedCaseState
       repair_attempts: [...state.tables.repair_attempts.values()].map((record) => structuredClone(record)),
       evidence_pool: [...state.tables.evidence_pool.values()].map((record) => structuredClone(record)),
       evidence_refs: [...state.tables.evidence_refs.values()].map((record) => structuredClone(record)),
-      inquiries: [...state.tables.inquiries.values()].map((record) => structuredClone(record)),
-      entities: [...state.tables.entities.values()].map((record) => structuredClone(record)),
-      symptoms: [...state.tables.symptoms.values()].map((record) => structuredClone(record)),
-      artifacts: [...state.tables.artifacts.values()].map((record) => structuredClone(record)),
-      facts: [...state.tables.facts.values()].map((record) => structuredClone(record)),
-      hypotheses: [...state.tables.hypotheses.values()].map((record) => structuredClone(record)),
-      experiments: [...state.tables.experiments.values()].map((record) => structuredClone(record)),
-      gaps: [...state.tables.gaps.values()].map((record) => structuredClone(record)),
-      residuals: [...state.tables.residuals.values()].map((record) => structuredClone(record)),
-      decisions: [...state.tables.decisions.values()].map((record) => structuredClone(record))
+      hypotheses: [...state.tables.hypotheses.values()].map((record) => structuredClone(record))
     }
   };
 }
 
-function restoreFromCheckpoint(
-  caseId: string,
-  headRevision: number,
-  checkpoint: CheckpointRecord | undefined
-): ProjectedCaseState | null {
+function restoreFromCheckpoint(caseId: string, headRevision: number, checkpoint: CheckpointRecord | undefined): ProjectedCaseState | null {
   if (!checkpoint) {
     return null;
   }
@@ -261,12 +210,12 @@ function restoreFromCheckpoint(
 
   const tables = asObject(projectionState.tables);
   for (const tableName of PROJECTION_TABLE_NAMES) {
-    const serializedRows = tables[tableName];
-    if (!Array.isArray(serializedRows)) {
+    const rows = tables[tableName];
+    if (!Array.isArray(rows)) {
       continue;
     }
 
-    for (const row of serializedRows) {
+    for (const row of rows) {
       if (typeof row !== 'object' || row === null || Array.isArray(row)) {
         continue;
       }
@@ -300,7 +249,6 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
       const title = asString(payload.title) ?? null;
       const objective = asString(payload.objective) ?? null;
       const severity = asString(payload.severity) ?? null;
-      const defaultInquiryId = asString(payload.defaultInquiryId);
       const defaultProblemId = asString(payload.defaultProblemId);
 
       state.caseRecord = {
@@ -315,22 +263,11 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           title,
           objective,
           severity,
-          defaultInquiryId: defaultInquiryId ?? null,
+          defaultProblemId: defaultProblemId ?? null,
           status: 'active',
           stage: 'intake'
         }
       };
-
-      if (defaultInquiryId) {
-        upsertNode(state, 'inquiries', defaultInquiryId, event.caseRevision, {
-          id: defaultInquiryId,
-          caseId,
-          title: 'Default inquiry',
-          question: objective,
-          priority: severity,
-          status: 'open'
-        }, 'open');
-      }
 
       if (defaultProblemId) {
         upsertNode(state, 'problems', defaultProblemId, event.caseRevision, {
@@ -345,8 +282,27 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           status: 'open'
         }, 'open');
       }
-
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
+      return;
+    }
+    case 'case.stage_advanced': {
+      const stage = asString(payload.stage) ?? state.caseRecord?.stage ?? 'intake';
+      const status = asString(payload.status) ?? state.caseRecord?.status ?? 'active';
+      if (state.caseRecord) {
+        state.caseRecord = {
+          ...state.caseRecord,
+          status,
+          stage,
+          revision: event.caseRevision,
+          payload: {
+            ...state.caseRecord.payload,
+            stage,
+            status,
+            reason: payload.reason ?? null
+          }
+        };
+      }
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'problem.updated': {
@@ -360,18 +316,16 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           ...(Array.isArray(payload.resolutionCriteria) ? { resolutionCriteria: asStringArray(payload.resolutionCriteria) } : {})
         });
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'problem.status_updated': {
       const problemId = asString(payload.problemId);
       const nextStatus = asString(payload.newStatus);
       if (problemId && nextStatus) {
-        patchNode(state, 'problems', problemId, event.caseRevision, {
-          status: nextStatus
-        }, nextStatus);
+        patchNode(state, 'problems', problemId, event.caseRevision, { status: nextStatus }, nextStatus);
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'problem.reference_material_added': {
@@ -379,21 +333,19 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
       if (problemId) {
         const current = state.tables.problems.get(problemId);
         const currentPayload = current?.payload ?? {};
-        const nextReferenceMaterial = {
+        const nextMaterial = {
           materialId: asString(payload.materialId) ?? '',
           kind: asString(payload.materialKind) ?? 'other',
           title: asString(payload.title) ?? '',
           contentRef: payload.contentRef ?? null,
           note: payload.note ?? null
         };
-        const currentMaterials = Array.isArray(currentPayload.referenceMaterials)
-          ? currentPayload.referenceMaterials
-          : [];
+        const currentMaterials = Array.isArray(currentPayload.referenceMaterials) ? currentPayload.referenceMaterials : [];
         patchNode(state, 'problems', problemId, event.caseRevision, {
-          referenceMaterials: [...currentMaterials, nextReferenceMaterial]
+          referenceMaterials: [...currentMaterials, nextMaterial]
         });
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.hypothesis.created': {
@@ -412,18 +364,16 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           status: 'unverified'
         }, 'unverified');
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.hypothesis.status_updated': {
       const hypothesisId = asString(payload.hypothesisId);
       const nextStatus = asString(payload.newStatus);
       if (hypothesisId && nextStatus) {
-        patchNode(state, 'hypotheses', hypothesisId, event.caseRevision, {
-          status: nextStatus
-        }, nextStatus);
+        patchNode(state, 'hypotheses', hypothesisId, event.caseRevision, { status: nextStatus }, nextStatus);
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.blocker.opened': {
@@ -440,18 +390,16 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           status: 'active'
         }, 'active');
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.blocker.closed': {
       const blockerId = asString(payload.blockerId);
       const nextStatus = asString(payload.newStatus);
       if (blockerId && nextStatus) {
-        patchNode(state, 'blockers', blockerId, event.caseRevision, {
-          status: nextStatus
-        }, nextStatus);
+        patchNode(state, 'blockers', blockerId, event.caseRevision, { status: nextStatus }, nextStatus);
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.repair_attempt.created': {
@@ -469,18 +417,16 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           status: 'proposed'
         }, 'proposed');
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.repair_attempt.status_updated': {
       const repairAttemptId = asString(payload.repairAttemptId);
       const nextStatus = asString(payload.newStatus);
       if (repairAttemptId && nextStatus) {
-        patchNode(state, 'repair_attempts', repairAttemptId, event.caseRevision, {
-          status: nextStatus
-        }, nextStatus);
+        patchNode(state, 'repair_attempts', repairAttemptId, event.caseRevision, { status: nextStatus }, nextStatus);
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.evidence.captured': {
@@ -498,7 +444,7 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           confidence: typeof payload.confidence === 'number' ? payload.confidence : null
         });
       }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     case 'canonical.evidence.attached': {
@@ -516,273 +462,11 @@ function applyStoredEvent(state: ProjectedCaseState, event: StoredEvent): void {
           localConfidence: typeof payload.localConfidence === 'number' ? payload.localConfidence : null
         });
       }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'case.stage_advanced': {
-      const stage = asString(payload.stage) ?? state.caseRecord?.stage ?? 'intake';
-      const status = asString(payload.status) ?? state.caseRecord?.status ?? 'active';
-      state.caseRecord = {
-        id: state.caseRecord?.id ?? state.caseId,
-        title: state.caseRecord?.title ?? null,
-        severity: state.caseRecord?.severity ?? null,
-        status,
-        stage,
-        revision: event.caseRevision,
-        payload: {
-          ...(state.caseRecord?.payload ?? { id: state.caseId }),
-          stage,
-          status,
-          reason: payload.reason ?? null
-        }
-      };
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'inquiry.opened': {
-      const inquiryId = asString(payload.inquiryId);
-      if (inquiryId) {
-        upsertNode(state, 'inquiries', inquiryId, event.caseRevision, {
-          id: inquiryId,
-          caseId: state.caseId,
-          title: asString(payload.title) ?? null,
-          question: asString(payload.question) ?? null,
-          priority: asString(payload.priority) ?? null,
-          scopeRefs: asStringArray(payload.scopeRefs),
-          status: 'open'
-        }, 'open');
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'inquiry.closed': {
-      const inquiryId = asString(payload.inquiryId);
-      if (inquiryId) {
-        const resolutionKind = asString(payload.resolutionKind) ?? 'closed';
-        const nextStatus = resolutionKind === 'merged' ? 'merged' : 'closed';
-        patchNode(state, 'inquiries', inquiryId, event.caseRevision, {
-          resolutionKind,
-          reason: payload.reason ?? null,
-          status: nextStatus
-        }, nextStatus);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'entity.registered': {
-      const entityId = asString(payload.entityId);
-      if (entityId) {
-        upsertNode(state, 'entities', entityId, event.caseRevision, {
-          id: entityId,
-          caseId: state.caseId,
-          entityKind: asString(payload.entityKind) ?? null,
-          name: asString(payload.name) ?? null,
-          locator: structuredClone(asObject(payload.locator))
-        });
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'symptom.reported': {
-      const symptomId = asString(payload.symptomId);
-      if (symptomId) {
-        upsertNode(state, 'symptoms', symptomId, event.caseRevision, {
-          id: symptomId,
-          caseId: state.caseId,
-          statement: asString(payload.statement) ?? null,
-          severity: asString(payload.severity) ?? null,
-          reproducibility: asString(payload.reproducibility) ?? null,
-          affectedRefs: asStringArray(payload.affectedRefs)
-        });
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'artifact.attached': {
-      const artifactId = asString(payload.artifactId);
-      if (artifactId) {
-        upsertNode(state, 'artifacts', artifactId, event.caseRevision, {
-          id: artifactId,
-          caseId: state.caseId,
-          artifactKind: asString(payload.artifactKind) ?? null,
-          title: asString(payload.title) ?? null,
-          source: structuredClone(asObject(payload.source)),
-          contentRef: payload.contentRef ?? null,
-          excerpt: payload.excerpt ?? null,
-          aboutRefs: asStringArray(payload.aboutRefs)
-        });
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'fact.asserted': {
-      const factId = asString(payload.factId);
-      if (factId) {
-        upsertNode(state, 'facts', factId, event.caseRevision, {
-          id: factId,
-          caseId: state.caseId,
-          inquiryId: asString(payload.inquiryId) ?? null,
-          statement: asString(payload.statement) ?? null,
-          factKind: asString(payload.factKind) ?? null,
-          polarity: asString(payload.polarity) ?? null,
-          sourceArtifactIds: asStringArray(payload.sourceArtifactIds),
-          aboutRefs: asStringArray(payload.aboutRefs),
-          observationScope: payload.observationScope ?? null,
-          status: 'active'
-        }, 'active');
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'hypothesis.proposed': {
-      const hypothesisId = asString(payload.hypothesisId);
-      if (hypothesisId) {
-        upsertNode(state, 'hypotheses', hypothesisId, event.caseRevision, {
-          id: hypothesisId,
-          caseId: state.caseId,
-          inquiryId: asString(payload.inquiryId) ?? null,
-          title: asString(payload.title) ?? null,
-          statement: asString(payload.statement) ?? null,
-          level: asString(payload.level) ?? null,
-          status: asString(payload.status) ?? 'proposed',
-          explainsSymptomIds: asStringArray(payload.explainsSymptomIds),
-          dependsOnFactIds: asStringArray(payload.dependsOnFactIds),
-          falsificationCriteria: asStringArray(payload.falsificationCriteria)
-        }, asString(payload.status) ?? 'proposed');
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'hypothesis.status_updated': {
-      const hypothesisId = asString(payload.hypothesisId);
-      const nextStatus = asString(payload.newStatus);
-      if (hypothesisId && nextStatus) {
-        patchNode(state, 'hypotheses', hypothesisId, event.caseRevision, {
-          status: nextStatus,
-          reason: payload.reason ?? null,
-          reasonFactIds: asStringArray(payload.reasonFactIds),
-          reasonExperimentIds: asStringArray(payload.reasonExperimentIds)
-        }, nextStatus);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'experiment.planned': {
-      const experimentId = asString(payload.experimentId);
-      const status = asString(payload.status) ?? 'planned';
-      if (experimentId) {
-        upsertNode(state, 'experiments', experimentId, event.caseRevision, {
-          id: experimentId,
-          caseId: state.caseId,
-          inquiryId: asString(payload.inquiryId) ?? null,
-          title: asString(payload.title) ?? null,
-          objective: asString(payload.objective) ?? null,
-          method: asString(payload.method) ?? null,
-          status,
-          testsHypothesisIds: asStringArray(payload.testsHypothesisIds),
-          expectedOutcomes: Array.isArray(payload.expectedOutcomes) ? structuredClone(payload.expectedOutcomes) : [],
-          cost: asString(payload.cost) ?? null,
-          risk: asString(payload.risk) ?? null
-        }, status);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'experiment.result_recorded': {
-      const experimentId = asString(payload.experimentId);
-      const nextStatus = asString(payload.status);
-      if (experimentId && nextStatus) {
-        patchNode(state, 'experiments', experimentId, event.caseRevision, {
-          status: nextStatus,
-          summary: asString(payload.summary) ?? null,
-          producedArtifactIds: asStringArray(payload.producedArtifactIds),
-          producedFactIds: asStringArray(payload.producedFactIds)
-        }, nextStatus);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'gap.opened': {
-      const gapId = asString(payload.gapId);
-      const status = asString(payload.status) ?? 'open';
-      if (gapId) {
-        upsertNode(state, 'gaps', gapId, event.caseRevision, {
-          id: gapId,
-          caseId: state.caseId,
-          question: asString(payload.question) ?? null,
-          priority: asString(payload.priority) ?? null,
-          status,
-          blockedRefs: asStringArray(payload.blockedRefs)
-        }, status);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'gap.resolved': {
-      const gapId = asString(payload.gapId);
-      const nextStatus = asString(payload.status);
-      if (gapId && nextStatus) {
-        patchNode(state, 'gaps', gapId, event.caseRevision, {
-          status: nextStatus,
-          reason: payload.reason ?? null,
-          resolutionFactIds: asStringArray(payload.resolutionFactIds),
-          resolutionExperimentIds: asStringArray(payload.resolutionExperimentIds)
-        }, nextStatus);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'residual.opened': {
-      const residualId = asString(payload.residualId);
-      const status = asString(payload.status) ?? 'open';
-      if (residualId) {
-        upsertNode(state, 'residuals', residualId, event.caseRevision, {
-          id: residualId,
-          caseId: state.caseId,
-          statement: asString(payload.statement) ?? null,
-          severity: asString(payload.severity) ?? null,
-          status,
-          relatedSymptomIds: asStringArray(payload.relatedSymptomIds)
-        }, status);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'residual.updated': {
-      const residualId = asString(payload.residualId);
-      const nextStatus = asString(payload.newStatus);
-      if (residualId && nextStatus) {
-        patchNode(state, 'residuals', residualId, event.caseRevision, {
-          status: nextStatus,
-          rationale: payload.rationale ?? null,
-          reasonFactIds: asStringArray(payload.reasonFactIds),
-          reasonHypothesisIds: asStringArray(payload.reasonHypothesisIds)
-        }, nextStatus);
-      }
-      touchCaseRevision(state, event.caseRevision);
-      return;
-    }
-    case 'decision.recorded': {
-      const decisionId = asString(payload.decisionId);
-      if (decisionId) {
-        upsertNode(state, 'decisions', decisionId, event.caseRevision, {
-          id: decisionId,
-          caseId: state.caseId,
-          inquiryId: asString(payload.inquiryId) ?? null,
-          title: asString(payload.title) ?? null,
-          decisionKind: asString(payload.decisionKind) ?? null,
-          statement: asString(payload.statement) ?? null,
-          supportingFactIds: asStringArray(payload.supportingFactIds),
-          supportingExperimentIds: asStringArray(payload.supportingExperimentIds),
-          supportingHypothesisIds: asStringArray(payload.supportingHypothesisIds),
-          rationale: payload.rationale ?? null
-        });
-      }
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
       return;
     }
     default:
-      touchCaseRevision(state, event.caseRevision);
+      state.projectionRevision = event.caseRevision;
   }
 }
 
@@ -804,17 +488,17 @@ export async function loadProjectedCaseState(
   const headRevision = caseRecord?.revision ?? 0;
 
   if (requestedRevision === null || requestedRevision >= headRevision) {
-    const tables = await Promise.all(PROJECTION_TABLE_NAMES.map((tableName) => currentState.listRecordsByCase(tableName, caseId)));
     const state = createEmptyProjectedCaseState(caseId, headRevision);
     state.projectionRevision = headRevision;
     state.caseRecord = caseRecord ? toProjectedCaseRecord(caseRecord) : null;
 
-    PROJECTION_TABLE_NAMES.forEach((tableName, index) => {
-      for (const record of tables[index] ?? []) {
+    for (const tableName of PROJECTION_TABLE_NAMES) {
+      const records = await currentState.listRecordsByCase(tableName, caseId);
+      for (const record of records) {
         const projected = toProjectedNodeRecord(tableName, record);
         state.tables[tableName].set(projected.id, projected);
       }
-    });
+    }
 
     return state;
   }

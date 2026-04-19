@@ -69,10 +69,11 @@ export interface CaseSnapshotEnvelope {
       objective?: string | null;
     }) | null;
     counts: {
-      inquiries: number;
-      symptoms: number;
-      artifacts: number;
-      facts: number;
+      problems: number;
+      hypotheses: number;
+      blockers: number;
+      repairAttempts: number;
+      evidenceRefs: number;
     };
     warnings: string[];
   };

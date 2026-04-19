@@ -1,32 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.coe.local/domain/v1/hypothesis.schema.json",
-  "allOf": [
-    { "$ref": "../../common/base-node.schema.json" },
-    {
-      "type": "object",
-      "required": ["kind", "inquiryId", "title", "statement", "level", "status", "explainsSymptomIds", "falsificationCriteria"],
-      "properties": {
-        "kind": { "const": "investigation.hypothesis" },
-        "inquiryId": { "type": "string", "pattern": "^inquiry_[0-9A-HJKMNP-TV-Z]{26}$" },
-        "title": { "type": "string", "minLength": 1, "maxLength": 240 },
-        "statement": { "type": "string", "minLength": 1, "maxLength": 4000 },
-        "level": { "type": "string", "enum": ["phenomenon", "mechanism", "trigger", "root_cause"] },
-        "status": { "type": "string", "enum": ["proposed", "active", "favored", "weakened", "rejected", "confirmed"] },
-        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
-        "explainsSymptomIds": {
-          "type": "array",
-          "items": { "type": "string", "pattern": "^symptom_[0-9A-HJKMNP-TV-Z]{26}$" },
-          "minItems": 1,
-          "uniqueItems": true
-        },
-        "dependsOnFactIds": { "type": "array", "items": { "type": "string", "pattern": "^fact_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true },
-        "dependsOnHypothesisIds": { "type": "array", "items": { "type": "string", "pattern": "^hypothesis_[0-9A-HJKMNP-TV-Z]{26}$" }, "uniqueItems": true },
-        "falsificationCriteria": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 1000 }, "minItems": 1, "uniqueItems": true },
-        "aboutRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-        "residualRefs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
-      }
-    }
-  ],
-  "unevaluatedProperties": false
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "caseId", "parentNodeId", "statement", "falsificationCriteria", "status"],
+  "properties": {
+    "kind": { "const": "investigation.hypothesis" },
+    "id": { "type": "string", "pattern": "^hypothesis_[0-9A-F]{26}$" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "parentNodeId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "parentNodeKind": { "type": "string", "enum": ["problem", "hypothesis"] },
+    "title": { "type": "string", "maxLength": 240 },
+    "statement": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "falsificationCriteria": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "derivedFromEvidenceIds": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^evidence_[0-9A-F]{26}$" },
+      "uniqueItems": true
+    },
+    "status": { "type": "string", "enum": ["unverified", "blocked", "confirmed", "rejected"] }
+  }
 }

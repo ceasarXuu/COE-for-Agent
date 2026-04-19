@@ -45,9 +45,6 @@ export interface StoredCaseListProjectionRecord {
   status: string | null;
   stage: string | null;
   activeHypothesisCount: number;
-  openGapCount: number;
-  openResidualCount: number;
-  stallRisk: string | null;
   updatedAt: Date;
 }
 
@@ -85,16 +82,7 @@ export type PersistenceCurrentStateTableName =
   | 'repair_attempts'
   | 'evidence_pool'
   | 'evidence_refs'
-  | 'inquiries'
-  | 'entities'
-  | 'symptoms'
-  | 'artifacts'
-  | 'facts'
-  | 'hypotheses'
-  | 'experiments'
-  | 'gaps'
-  | 'residuals'
-  | 'decisions';
+  | 'hypotheses';
 
 export interface PersistenceStore {
   cases: Record<string, StoredCaseRecord>;
@@ -127,16 +115,7 @@ function createEmptyStore(): PersistenceStore {
       repair_attempts: {},
       evidence_pool: {},
       evidence_refs: {},
-      inquiries: {},
-      entities: {},
-      symptoms: {},
-      artifacts: {},
-      facts: {},
-      hypotheses: {},
-      experiments: {},
-      gaps: {},
-      residuals: {},
-      decisions: {}
+      hypotheses: {}
     },
     caseListProjection: {},
     checkpointsByCase: {},
@@ -202,9 +181,6 @@ function reviveCaseListProjectionRecord(record: Record<string, unknown>): Stored
     status: record.status === null || record.status === undefined ? null : String(record.status),
     stage: record.stage === null || record.stage === undefined ? null : String(record.stage),
     activeHypothesisCount: Number(record.activeHypothesisCount ?? 0),
-    openGapCount: Number(record.openGapCount ?? 0),
-    openResidualCount: Number(record.openResidualCount ?? 0),
-    stallRisk: record.stallRisk === null || record.stallRisk === undefined ? null : String(record.stallRisk),
     updatedAt: reviveDate(record.updatedAt)
   };
 }

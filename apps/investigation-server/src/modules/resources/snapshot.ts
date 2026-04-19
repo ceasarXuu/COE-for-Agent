@@ -37,10 +37,11 @@ export async function readSnapshotResource(services: InvestigationServerServices
             }
           : null,
         counts: {
-          inquiries: projectionState.tables.inquiries.size,
-          symptoms: projectionState.tables.symptoms.size,
-          artifacts: projectionState.tables.artifacts.size,
-          facts: projectionState.tables.facts.size
+          problems: projectionState.tables.problems.size,
+          hypotheses: projectionState.tables.hypotheses.size,
+          blockers: projectionState.tables.blockers.size,
+          repairAttempts: projectionState.tables.repair_attempts.size,
+          evidenceRefs: projectionState.tables.evidence_refs.size
         },
         warnings: []
       }

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/evidence_ref.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "caseId", "parentNodeId", "evidenceId", "effectOnParent"],
+  "properties": {
+    "kind": { "const": "investigation.evidence_ref" },
+    "id": { "type": "string", "pattern": "^evidence_ref_[0-9A-F]{26}$" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "parentNodeId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "parentNodeKind": { "type": "string", "enum": ["hypothesis", "repair_attempt"] },
+    "evidenceId": { "type": "string", "pattern": "^evidence_[0-9A-F]{26}$" },
+    "effectOnParent": { "type": "string", "enum": ["supports", "refutes", "neutral", "validates", "invalidates"] },
+    "interpretation": { "type": "string", "maxLength": 4000 },
+    "localConfidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}

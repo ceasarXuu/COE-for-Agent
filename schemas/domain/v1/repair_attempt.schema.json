@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/repair_attempt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "caseId", "parentNodeId", "changeSummary", "status"],
+  "properties": {
+    "kind": { "const": "investigation.repair_attempt" },
+    "id": { "type": "string", "pattern": "^repair_attempt_[0-9A-F]{26}$" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "parentNodeId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "parentNodeKind": { "type": "string", "enum": ["hypothesis", "repair_attempt"] },
+    "changeSummary": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "scope": { "type": "string", "maxLength": 4000 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "status": { "type": "string", "enum": ["proposed", "running", "effective", "ineffective"] }
+  }
+}

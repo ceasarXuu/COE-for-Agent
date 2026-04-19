@@ -137,26 +137,12 @@ export async function syncCaseListProjection(trx: InvestigationServerTransaction
   }
 
   const hypotheses = await currentState.listRecordsByCase('hypotheses', caseId);
-  const gaps = await currentState.listRecordsByCase('gaps', caseId);
-  const residuals = await currentState.listRecordsByCase('residuals', caseId);
   const casePayload = recordPayload(caseRecord);
 
   const activeHypothesisCount = hypotheses.filter((record) => {
     const payload = recordPayload(record);
     const status = stringValue(record.status) ?? stringValue(payload.status) ?? 'proposed';
     return status !== 'rejected';
-  }).length;
-
-  const openGapCount = gaps.filter((record) => {
-    const payload = recordPayload(record);
-    const status = stringValue(record.status) ?? stringValue(payload.status) ?? 'open';
-    return status !== 'resolved' && status !== 'waived';
-  }).length;
-
-  const openResidualCount = residuals.filter((record) => {
-    const payload = recordPayload(record);
-    const status = stringValue(record.status) ?? stringValue(payload.status) ?? 'open';
-    return status !== 'resolved' && status !== 'accepted';
   }).length;
 
   await caseList.upsert({
@@ -166,8 +152,6 @@ export async function syncCaseListProjection(trx: InvestigationServerTransaction
     severity: caseRecord.severity ?? null,
     status: caseRecord.status,
     stage: caseRecord.stage,
-    activeHypothesisCount,
-    openGapCount,
-    openResidualCount
+    activeHypothesisCount
   });
 }

@@ -4,7 +4,6 @@ export type SupportedHost = 'codex' | 'claude' | 'opencode';
 
 export interface BootstrapEnv {
   COE_DATA_DIR?: string;
-  ARTIFACT_ROOT?: string;
   OTEL_EXPORTER_OTLP_ENDPOINT?: string;
   LOCAL_ISSUER_SECRET?: string;
 }
@@ -42,7 +41,6 @@ export function resolveIncludedHosts(
 
 const DEFAULT_ENV: Required<BootstrapEnv> = {
   COE_DATA_DIR: './.var/data',
-  ARTIFACT_ROOT: './artifacts',
   OTEL_EXPORTER_OTLP_ENDPOINT: 'http://localhost:4318',
   LOCAL_ISSUER_SECRET: 'dev-local-issuer-secret'
 };
@@ -69,7 +67,6 @@ export function normalizeBootstrapEnv(env: BootstrapEnv, repoRoot = path.resolve
 
   return {
     COE_DATA_DIR: resolveForHost(env.COE_DATA_DIR ?? DEFAULT_ENV.COE_DATA_DIR),
-    ARTIFACT_ROOT: resolveForHost(env.ARTIFACT_ROOT ?? DEFAULT_ENV.ARTIFACT_ROOT),
     OTEL_EXPORTER_OTLP_ENDPOINT: env.OTEL_EXPORTER_OTLP_ENDPOINT ?? DEFAULT_ENV.OTEL_EXPORTER_OTLP_ENDPOINT,
     LOCAL_ISSUER_SECRET: env.LOCAL_ISSUER_SECRET ?? DEFAULT_ENV.LOCAL_ISSUER_SECRET
   };
@@ -105,14 +102,12 @@ export function renderCodexSkillInstall(options: { codexHome: string; repoRoot: 
 
 function renderCodexRegistrationCommand(repoRoot: string, env: Required<BootstrapEnv>): string[] {
   return [
-      'codex',
-      'mcp',
-      'add',
-      HOST_NAME,
-      '--env',
-      `COE_DATA_DIR=${env.COE_DATA_DIR}`,
-      '--env',
-      `ARTIFACT_ROOT=${env.ARTIFACT_ROOT}`,
+    'codex',
+    'mcp',
+    'add',
+    HOST_NAME,
+    '--env',
+    `COE_DATA_DIR=${env.COE_DATA_DIR}`,
     '--env',
     `OTEL_EXPORTER_OTLP_ENDPOINT=${env.OTEL_EXPORTER_OTLP_ENDPOINT}`,
     '--env',
@@ -126,16 +121,14 @@ function renderCodexRegistrationCommand(repoRoot: string, env: Required<Bootstra
 
 function renderClaudeRegistrationCommand(repoRoot: string, env: Required<BootstrapEnv>): string[] {
   return [
-      'claude',
-      'mcp',
-      'add',
-      '-s',
-      'project',
-      HOST_NAME,
-      '-e',
-      `COE_DATA_DIR=${env.COE_DATA_DIR}`,
-      '-e',
-      `ARTIFACT_ROOT=${env.ARTIFACT_ROOT}`,
+    'claude',
+    'mcp',
+    'add',
+    '-s',
+    'project',
+    HOST_NAME,
+    '-e',
+    `COE_DATA_DIR=${env.COE_DATA_DIR}`,
     '-e',
     `OTEL_EXPORTER_OTLP_ENDPOINT=${env.OTEL_EXPORTER_OTLP_ENDPOINT}`,
     '-e',

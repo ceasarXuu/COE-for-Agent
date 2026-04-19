@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/evidence.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "caseId", "evidenceKind", "title"],
+  "properties": {
+    "kind": { "const": "investigation.evidence" },
+    "id": { "type": "string", "pattern": "^evidence_[0-9A-F]{26}$" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "evidenceKind": { "type": "string", "enum": ["log", "code", "trace", "reasoning", "experiment_result", "document", "other"] },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "summary": { "type": "string", "maxLength": 4000 },
+    "contentRef": { "type": "string", "maxLength": 4000 },
+    "provenance": { "type": "string", "maxLength": 4000 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}

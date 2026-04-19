@@ -48,10 +48,11 @@ describe.sequential('snapshot and timeline resources', () => {
           defaultProblemId: problemId
         },
         counts: {
-          inquiries: 0,
-          symptoms: 0,
-          artifacts: 0,
-          facts: 0
+          problems: 1,
+          hypotheses: 0,
+          blockers: 0,
+          repairAttempts: 0,
+          evidenceRefs: 0
         }
       }
     });

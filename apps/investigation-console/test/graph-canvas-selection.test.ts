@@ -45,10 +45,11 @@ describe('graph canvas selection', () => {
                 objective: 'debug'
               },
               counts: {
-                inquiries: 1,
-                symptoms: 0,
-                artifacts: 0,
-                facts: 0
+                problems: 0,
+                hypotheses: 0,
+                blockers: 0,
+                repairAttempts: 0,
+                evidenceRefs: 0
               },
               warnings: []
             }
@@ -138,10 +139,11 @@ describe('graph canvas selection', () => {
                 objective: 'debug'
               },
               counts: {
-                inquiries: 1,
-                symptoms: 0,
-                artifacts: 0,
-                facts: 0
+                problems: 0,
+                hypotheses: 0,
+                blockers: 0,
+                repairAttempts: 0,
+                evidenceRefs: 0
               },
               warnings: []
             }
@@ -194,10 +196,11 @@ describe('graph canvas selection', () => {
                 objective: 'debug'
               },
               counts: {
-                inquiries: 1,
-                symptoms: 0,
-                artifacts: 0,
-                facts: 0
+                problems: 0,
+                hypotheses: 0,
+                blockers: 0,
+                repairAttempts: 0,
+                evidenceRefs: 0
               },
               warnings: []
             }
@@ -251,10 +254,11 @@ describe('graph canvas selection', () => {
                 objective: 'debug'
               },
               counts: {
-                inquiries: 1,
-                symptoms: 0,
-                artifacts: 0,
-                facts: 0
+                problems: 0,
+                hypotheses: 0,
+                blockers: 0,
+                repairAttempts: 0,
+                evidenceRefs: 0
               },
               warnings: []
             }
@@ -311,10 +315,11 @@ describe('graph canvas selection', () => {
                 objective: 'debug'
               },
               counts: {
-                inquiries: 1,
-                symptoms: 0,
-                artifacts: 0,
-                facts: 0
+                problems: 0,
+                hypotheses: 0,
+                blockers: 0,
+                repairAttempts: 0,
+                evidenceRefs: 0
               },
               warnings: []
             }
@@ -369,10 +374,11 @@ describe('graph canvas selection', () => {
                 objective: 'debug'
               },
               counts: {
-                inquiries: 1,
-                symptoms: 0,
-                artifacts: 0,
-                facts: 0
+                problems: 0,
+                hypotheses: 0,
+                blockers: 0,
+                repairAttempts: 0,
+                evidenceRefs: 0
               },
               warnings: []
             }

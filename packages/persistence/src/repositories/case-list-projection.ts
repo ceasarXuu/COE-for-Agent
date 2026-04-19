@@ -8,9 +8,6 @@ export interface CaseListProjectionRecord {
   status?: string | null;
   stage?: string | null;
   activeHypothesisCount?: number;
-  openGapCount?: number;
-  openResidualCount?: number;
-  stallRisk?: string | null;
 }
 
 export interface ListCaseProjectionQuery {
@@ -39,9 +36,6 @@ export class CaseListProjectionRepository {
         status: record.status ?? null,
         stage: record.stage ?? null,
         activeHypothesisCount: record.activeHypothesisCount ?? 0,
-        openGapCount: record.openGapCount ?? 0,
-        openResidualCount: record.openResidualCount ?? 0,
-        stallRisk: record.stallRisk ?? null,
         updatedAt: new Date()
       };
     });
@@ -57,9 +51,6 @@ export class CaseListProjectionRepository {
         status: row.status,
         stage: row.stage,
         activeHypothesisCount: row.activeHypothesisCount,
-        openGapCount: row.openGapCount,
-        openResidualCount: row.openResidualCount,
-        stallRisk: row.stallRisk,
         headRevision: store.cases[row.caseId]?.revision ?? 0,
         updatedAt: row.updatedAt
       }));

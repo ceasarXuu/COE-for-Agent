@@ -13,7 +13,7 @@ describe('authorization policy', () => {
   test('viewer cannot execute any mutation tool', () => {
     expect(() =>
       authorizeMutationCommand({
-        commandName: 'investigation.symptom.report',
+        commandName: 'investigation.problem.update',
         input: {
           actorContext: {
             ...baseActorContext,
@@ -22,9 +22,8 @@ describe('authorization policy', () => {
           },
           caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
           ifCaseRevision: 1,
-          statement: 'latency spikes',
-          severity: 'high',
-          reproducibility: 'always'
+          problemId: 'problem_01AAAAAAAAAAAAAAAAAAAAA',
+          description: 'latency spikes'
         },
         secret: 'local-test-secret'
       })
@@ -54,7 +53,7 @@ describe('authorization policy', () => {
   test('pure agent actors cannot execute reviewer-only operations', () => {
     expect(() =>
       authorizeMutationCommand({
-        commandName: 'investigation.decision.record',
+        commandName: 'investigation.hypothesis.set_status',
         input: {
           actorContext: {
             ...baseActorContext,
@@ -64,10 +63,9 @@ describe('authorization policy', () => {
           },
           caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
           ifCaseRevision: 7,
-          title: 'ready to patch',
-          decisionKind: 'ready_to_patch',
-          statement: 'evidence is sufficient',
-          supportingFactIds: ['fact_01AAAAAAAAAAAAAAAAAAAAAAAA']
+          hypothesisId: 'hypothesis_01AAAAAAAAAAAAAAAAAAA',
+          newStatus: 'confirmed',
+          reason: 'evidence is sufficient'
         },
         secret: 'local-test-secret'
       })

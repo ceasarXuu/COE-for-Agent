@@ -47,7 +47,6 @@ export async function createTestApp(): Promise<InvestigationApp> {
       COE_DATA_DIR: testDataDir,
       MCP_TRANSPORT: 'stdio',
       LOCAL_ISSUER_SECRET: TEST_LOCAL_ISSUER_SECRET,
-      ARTIFACT_ROOT: './tmp/artifacts',
       APP_VERSION: '0.1.0-test'
     })
   });

@@ -43,7 +43,7 @@ describe.sequential('history replay resources', () => {
         historical: true,
         data: {
           counts: {
-            inquiries: 0
+            problems: 1
           }
         }
       });

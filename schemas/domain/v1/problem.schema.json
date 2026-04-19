@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/problem.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "caseId", "title", "status"],
+  "properties": {
+    "kind": { "const": "investigation.problem" },
+    "id": { "type": "string", "pattern": "^problem_[0-9A-F]{26}$" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "description": { "type": "string", "maxLength": 4000 },
+    "environment": { "type": "string", "maxLength": 4000 },
+    "symptoms": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 1000 }, "uniqueItems": true },
+    "resolutionCriteria": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 1000 }, "uniqueItems": true },
+    "referenceMaterials": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "status": { "type": "string", "enum": ["open", "resolved", "abandoned"] }
+  }
+}

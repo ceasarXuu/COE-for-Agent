@@ -44,38 +44,6 @@ export interface CurrentStateTable {
   updated_at: Date;
 }
 
-export interface CaseEdgesTable {
-  case_id: string;
-  from_id: string;
-  to_id: string;
-  edge_type: string;
-  source_event_id: string;
-  payload: JsonValue;
-  created_at: Date;
-}
-
-export interface CaseSnapshotCacheTable {
-  case_id: string;
-  case_revision: number;
-  payload: JsonValue;
-  updated_at: Date;
-}
-
-export interface CoverageCacheTable {
-  case_id: string;
-  case_revision: number;
-  payload: JsonValue;
-  updated_at: Date;
-}
-
-export interface GuardrailCacheTable {
-  case_id: string;
-  case_revision: number;
-  stall_risk: string | null;
-  ready_to_patch_payload: JsonValue;
-  updated_at: Date;
-}
-
 export interface CaseListProjectionTable {
   case_id: string;
   title: string | null;
@@ -84,9 +52,6 @@ export interface CaseListProjectionTable {
   status: string | null;
   stage: string | null;
   active_hypothesis_count: number;
-  open_gap_count: number;
-  open_residual_count: number;
-  stall_risk: string | null;
   updated_at: Date;
 }
 
@@ -113,14 +78,6 @@ export interface ProjectionOutboxTable {
   updated_at: Date;
 }
 
-export interface ArtifactBlobsTable {
-  artifact_id: string;
-  storage_uri: string;
-  digest: string | null;
-  size_bytes: number | null;
-  created_at: Date;
-}
-
 export interface PersistenceDatabase {
   investigation_events: InvestigationEventsTable;
   command_dedup: CommandDedupTable;
@@ -130,22 +87,8 @@ export interface PersistenceDatabase {
   repair_attempts: CurrentStateTable;
   evidence_pool: CurrentStateTable;
   evidence_refs: CurrentStateTable;
-  inquiries: CurrentStateTable;
-  entities: CurrentStateTable;
-  symptoms: CurrentStateTable;
-  artifacts: CurrentStateTable;
-  facts: CurrentStateTable;
   hypotheses: CurrentStateTable;
-  experiments: CurrentStateTable;
-  gaps: CurrentStateTable;
-  residuals: CurrentStateTable;
-  decisions: CurrentStateTable;
-  case_edges: CaseEdgesTable;
-  case_snapshot_cache: CaseSnapshotCacheTable;
-  coverage_cache: CoverageCacheTable;
-  guardrail_cache: GuardrailCacheTable;
   case_list_projection: CaseListProjectionTable;
   case_projection_checkpoints: CaseProjectionCheckpointTable;
   projection_outbox: ProjectionOutboxTable;
-  artifact_blobs: ArtifactBlobsTable;
 }

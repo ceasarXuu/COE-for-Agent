@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/domain/v1/blocker.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "id", "caseId", "parentNodeId", "description", "status"],
+  "properties": {
+    "kind": { "const": "investigation.blocker" },
+    "id": { "type": "string", "pattern": "^blocker_[0-9A-F]{26}$" },
+    "caseId": { "type": "string", "pattern": "^case_[0-9A-F]{26}$" },
+    "parentNodeId": { "type": "string", "pattern": "^hypothesis_[0-9A-F]{26}$" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "possibleWorkarounds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "uniqueItems": true
+    },
+    "status": { "type": "string", "enum": ["active", "closed"] }
+  }
+}

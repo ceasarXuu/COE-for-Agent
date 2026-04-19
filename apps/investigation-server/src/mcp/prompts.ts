@@ -51,7 +51,7 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             text:
               `Use the COE investigation MCP surface to open a new case for: ${problem}.\n` +
               `Treat ${environment} as the working environment label.\n` +
-              'Before proposing a fix, record issues, artifacts, and facts, then propose hypotheses and experiments.'
+              'Create or update the root problem, derive hypotheses from it, and only branch into repair attempts after a hypothesis is confirmed.'
           }
         }
       ];
@@ -78,7 +78,7 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             type: 'text',
             text:
               `Review investigation case ${caseId} through MCP resources, summarize the current evidence chain, ` +
-              'run the ready_to_patch guardrail, and explain any blocking issues or residual risks.'
+              'run the ready_to_patch guardrail, and explain any active blockers on the confirmed branch.'
           }
         }
       ];
@@ -87,7 +87,7 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
   {
     name: 'coe_reviewer_handoff',
     title: 'COE Reviewer Handoff',
-    description: 'Prepare a concise reviewer handoff grounded in evidence, guardrails, and pending decisions.',
+    description: 'Prepare a concise reviewer handoff grounded in canonical graph state and guardrails.',
     arguments: [
       {
         name: 'caseId',
@@ -105,7 +105,7 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             type: 'text',
             text:
               `Prepare a reviewer handoff for investigation case ${caseId}. ` +
-              'Summarize the case snapshot, timeline, active hypotheses, unresolved issues, residual risks, ' +
+              'Summarize the case snapshot, timeline, root problem state, active hypotheses, blockers, repair attempts, ' +
               'and any reviewer-only actions that still require explicit confirmation.'
           }
         }

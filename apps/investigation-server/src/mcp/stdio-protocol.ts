@@ -41,8 +41,8 @@ export const DEFAULT_HOST_CONFIG: HostProtocolConfig = {
   serverTitle: 'COE Investigation',
   version: '0.1.0',
   instructions:
-    'Use COE investigation tools to keep evidence, hypotheses, experiments, and decisions structured. ' +
-    'Do not skip evidence collection before repair-oriented actions.'
+    'Use COE investigation tools to maintain a strict canonical case graph of problem, hypothesis, blocker, repair attempt, and evidence. ' +
+    'Do not create repair attempts before a hypothesis is confirmed.'
 };
 
 const RESOURCE_METADATA_BY_TEMPLATE: Record<string, { name: string; title: string; description: string }> = {
@@ -69,7 +69,7 @@ const RESOURCE_METADATA_BY_TEMPLATE: Record<string, { name: string; title: strin
   [RESOURCE_URI_TEMPLATES.graph]: {
     name: 'case-graph',
     title: 'Case Graph',
-    description: 'Graph slice of entities, evidence, and relationships.'
+    description: 'Canonical case graph slice of problem, hypotheses, blockers, repair attempts, and evidence references.'
   },
   [RESOURCE_URI_TEMPLATES.evidencePool]: {
     name: 'case-evidence-pool',

@@ -13,7 +13,6 @@ describe('host bootstrap helpers', () => {
   const repoRoot = '/tmp/coe-for-agent';
   const env = {
     COE_DATA_DIR: './.var/data',
-    ARTIFACT_ROOT: './artifacts',
     OTEL_EXPORTER_OTLP_ENDPOINT: 'http://localhost:4318',
     LOCAL_ISSUER_SECRET: 'dev-local-issuer-secret'
   };
@@ -72,8 +71,6 @@ describe('host bootstrap helpers', () => {
       '--env',
       `COE_DATA_DIR=${path.join(repoRoot, '.var/data')}`,
       '--env',
-      `ARTIFACT_ROOT=${path.join(repoRoot, 'artifacts')}`,
-      '--env',
       `OTEL_EXPORTER_OTLP_ENDPOINT=${env.OTEL_EXPORTER_OTLP_ENDPOINT}`,
       '--env',
       `LOCAL_ISSUER_SECRET=${env.LOCAL_ISSUER_SECRET}`,
@@ -91,8 +88,6 @@ describe('host bootstrap helpers', () => {
       'coe-investigation',
       '-e',
       `COE_DATA_DIR=${path.join(repoRoot, '.var/data')}`,
-      '-e',
-      `ARTIFACT_ROOT=${path.join(repoRoot, 'artifacts')}`,
       '-e',
       `OTEL_EXPORTER_OTLP_ENDPOINT=${env.OTEL_EXPORTER_OTLP_ENDPOINT}`,
       '-e',

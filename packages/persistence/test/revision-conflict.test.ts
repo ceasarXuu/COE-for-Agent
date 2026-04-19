@@ -50,8 +50,8 @@ describe.sequential('revision conflict', () => {
       eventStore.appendEvent({
         caseId,
         expectedRevision: 0,
-        eventType: 'symptom.reported',
-        commandName: 'investigation.symptom.report',
+        eventType: 'canonical.hypothesis.created',
+        commandName: 'investigation.hypothesis.create',
         actor: {
           actorType: 'agent',
           actorId: 'copilot',
@@ -60,7 +60,7 @@ describe.sequential('revision conflict', () => {
           issuer: 'local-dev',
           authMode: 'local'
         },
-        payload: { statement: 'still broken' },
+        payload: { hypothesisId: 'hypothesis_01AAAAAAAAAAAAAAAAAAA', parentNodeId: 'problem_01AAAAAAAAAAAAAAAAAAAAA', statement: 'still broken' },
         metadata: { idempotencyKey: 'idem-002' }
       })
     ).rejects.toBeInstanceOf(RevisionConflict);

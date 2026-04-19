@@ -50,13 +50,14 @@ function getRegisteredValidator(ajv: InstanceType<typeof Ajv2020>, schemaId: str
 describe('schema registry', () => {
   test('loads required schema files and conformance fixtures', () => {
     expect(existsSync(join(schemasRoot, 'common/base-node.schema.json'))).toBe(true);
-    expect(existsSync(join(schemasRoot, 'domain/v1/fact.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'domain/v1/problem.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'domain/v1/hypothesis.schema.json'))).toBe(true);
-    expect(existsSync(join(schemasRoot, 'domain/v1/issue.schema.json'))).toBe(true);
-    expect(existsSync(join(schemasRoot, 'domain/v1/decision.schema.json'))).toBe(true);
-    expect(existsSync(join(schemasRoot, 'commands/v1/issue.record.request.schema.json'))).toBe(true);
-    expect(existsSync(join(schemasRoot, 'commands/v1/issue.resolve.request.schema.json'))).toBe(true);
-    expect(existsSync(join(schemasRoot, 'commands/v1/context.register.request.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'domain/v1/blocker.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'domain/v1/repair_attempt.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'domain/v1/evidence.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'domain/v1/evidence_ref.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'events/v1/canonical.evidence.attached.data.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'events/v1/canonical.hypothesis.created.data.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'resources/v1/cases.collection.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'resources/v1/case.diff.schema.json'))).toBe(true);
     expect(existsSync(join(fixturesRoot, 'minimal-case.json'))).toBe(true);
@@ -65,48 +66,30 @@ describe('schema registry', () => {
     expect(existsSync(join(fixturesRoot, 'close-case-gated.json'))).toBe(true);
   });
 
-  test('rejects fact without sourceArtifactIds', () => {
+  test('rejects problem without title', () => {
     const ajv = createAjv();
-    const validate = getRegisteredValidator(ajv, 'https://schemas.coe.local/domain/v1/fact.schema.json');
+    const validate = getRegisteredValidator(ajv, 'https://schemas.coe.local/domain/v1/problem.schema.json');
 
     const valid = validate({
-      kind: 'investigation.fact',
-      id: 'fact_01JQ9Y6M9F6P8J8B0YQ3F4A1M2',
-      schemaVersion: '1.0.0',
+      kind: 'investigation.problem',
+      id: 'problem_01JQ9Y6M9F6P8J8B0YQ3F4A1M2',
       caseId: 'case_01JQ9Y2D3E5H7K9M1N2P3Q4R5S',
-      revision: 1,
-      createdAt: '2026-04-06T10:00:00Z',
-      createdBy: {
-        actorType: 'agent',
-        actorId: 'claude-code'
-      },
-      statement: 'duplicate message observed',
-      factKind: 'direct_observation',
-      polarity: 'positive'
+      status: 'open'
     });
 
     expect(valid).toBe(false);
   });
 
-  test('rejects negative fact without observationScope', () => {
+  test('rejects evidence_ref without effectOnParent', () => {
     const ajv = createAjv();
-    const validate = getRegisteredValidator(ajv, 'https://schemas.coe.local/domain/v1/fact.schema.json');
+    const validate = getRegisteredValidator(ajv, 'https://schemas.coe.local/domain/v1/evidence_ref.schema.json');
 
     const valid = validate({
-      kind: 'investigation.fact',
-      id: 'fact_01JQ9Y6M9F6P8J8B0YQ3F4A1M2',
-      schemaVersion: '1.0.0',
+      kind: 'investigation.evidence_ref',
+      id: 'evidence_ref_01JQ9Y6M9F6P8J8B0YQ3F4A1M2',
       caseId: 'case_01JQ9Y2D3E5H7K9M1N2P3Q4R5S',
-      revision: 1,
-      createdAt: '2026-04-06T10:00:00Z',
-      createdBy: {
-        actorType: 'agent',
-        actorId: 'claude-code'
-      },
-      statement: 'no invalidation found',
-      factKind: 'absence_observation',
-      polarity: 'negative',
-      sourceArtifactIds: ['artifact_01JQ9Y5H2K4M6N8P0Q2R4S6T8U']
+      parentNodeId: 'repair_attempt_01JQ9Y5H2K4M6N8P0Q2R4S6T8U',
+      evidenceId: 'evidence_01JQ9Y5H2K4M6N8P0Q2R4S6T8U'
     });
 
     expect(valid).toBe(false);
@@ -119,43 +102,28 @@ describe('schema registry', () => {
     const valid = validate({
       kind: 'investigation.hypothesis',
       id: 'hypothesis_01JQ9Z12AB34CD56EF78GH90JK',
-      schemaVersion: '1.0.0',
       caseId: 'case_01JQ9Y2D3E5H7K9M1N2P3Q4R5S',
-      inquiryId: 'inquiry_01JQ9Y3F1G2H3J4K5L6M7N8P9Q',
-      revision: 1,
-      createdAt: '2026-04-06T10:00:00Z',
-      createdBy: {
-        actorType: 'agent',
-        actorId: 'claude-code'
-      },
+      parentNodeId: 'problem_01JQ9Y3F1G2H3J4K5L6M7N8P9Q',
+      parentNodeKind: 'problem',
       title: 'cache invalidation missing',
       statement: 'cache invalidation does not fire',
-      level: 'mechanism',
-      status: 'active',
-      explainsSymptomIds: ['symptom_01JQ9Y4P6Q8R0S2T4U6V8W0X2Y']
+      status: 'unverified'
     });
 
     expect(valid).toBe(false);
   });
 
-  test('rejects decision without supporting facts or experiments', () => {
+  test('rejects repair_attempt without changeSummary', () => {
     const ajv = createAjv();
-    const validate = getRegisteredValidator(ajv, 'https://schemas.coe.local/domain/v1/decision.schema.json');
+    const validate = getRegisteredValidator(ajv, 'https://schemas.coe.local/domain/v1/repair_attempt.schema.json');
 
     const valid = validate({
-      kind: 'investigation.decision',
-      id: 'decision_01JQA0QW2E3R4T5Y6U7I8O9P0A',
-      schemaVersion: '1.0.0',
+      kind: 'investigation.repair_attempt',
+      id: 'repair_attempt_01JQA0QW2E3R4T5Y6U7I8O9P0A',
       caseId: 'case_01JQ9Y2D3E5H7K9M1N2P3Q4R5S',
-      revision: 1,
-      createdAt: '2026-04-06T10:00:00Z',
-      createdBy: {
-        actorType: 'agent',
-        actorId: 'claude-code'
-      },
-      title: 'ready to patch',
-      decisionKind: 'ready_to_patch',
-      statement: 'we are ready'
+      parentNodeId: 'hypothesis_01JQ9Z12AB34CD56EF78GH90JK',
+      parentNodeKind: 'hypothesis',
+      status: 'proposed'
     });
 
     expect(valid).toBe(false);
