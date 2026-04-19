@@ -63,8 +63,8 @@ describe.sequential('control plane routes', () => {
       expect(provResponse.json()).toMatchObject({
         caseId: scenario.caseId,
         entities: expect.arrayContaining([
-          expect.objectContaining({ id: scenario.artifactId, kind: 'artifact' }),
-          expect.objectContaining({ id: scenario.factId, kind: 'fact' })
+          expect.objectContaining({ id: scenario.evidenceId, kind: 'evidence' }),
+          expect.objectContaining({ id: scenario.evidenceRefId, kind: 'evidence_ref' })
         ])
       });
 
@@ -73,8 +73,8 @@ describe.sequential('control plane routes', () => {
         caseId: scenario.caseId,
         events: expect.arrayContaining([
           expect.objectContaining({ type: 'case.opened' }),
-          expect.objectContaining({ type: 'artifact.attached' }),
-          expect.objectContaining({ type: 'fact.asserted' })
+          expect.objectContaining({ type: 'canonical.evidence.captured' }),
+          expect.objectContaining({ type: 'canonical.evidence.attached' })
         ])
       });
     } finally {

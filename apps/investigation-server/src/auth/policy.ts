@@ -1,5 +1,4 @@
 import type { ActorContext, ActorRole } from '@coe/domain';
-import type { MutationToolName } from '@coe/mcp-contracts/tool-names';
 
 const ROLE_RANK: Record<ActorRole, number> = {
   Viewer: 0,
@@ -82,7 +81,7 @@ export function parseActorContext(value: unknown): ActorContext {
 }
 
 export function getAuthorizationRequirement(
-  commandName: MutationToolName,
+  commandName: string,
   input: Record<string, unknown>
 ): AuthorizationRequirement {
   switch (commandName) {

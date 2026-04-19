@@ -23,7 +23,7 @@ describe.sequential('graph resource', () => {
     await adminPool.end();
   });
 
-  test('returns a local graph slice around the focused node', async () => {
+  test('returns a local canonical graph slice around the focused node', async () => {
     const app = await createTestApp();
 
     try {
@@ -37,24 +37,18 @@ describe.sequential('graph resource', () => {
           focusId: scenario.focusHypothesisId,
           nodes: expect.arrayContaining([
             expect.objectContaining({ id: scenario.focusHypothesisId, kind: 'hypothesis' }),
-            expect.objectContaining({
-              id: scenario.focusSymptomId,
-              kind: 'symptom',
-              displayKind: 'symptom',
-              issueKind: 'symptom'
-            }),
-            expect.objectContaining({ id: scenario.focusExperimentId, kind: 'experiment' })
+            expect.objectContaining({ id: scenario.problemId, kind: 'problem', displayKind: 'problem' }),
+            expect.objectContaining({ id: scenario.focusRepairAttemptId, kind: 'repair_attempt', displayKind: 'repair_attempt' })
           ]),
           edges: expect.arrayContaining([
-            expect.objectContaining({ type: 'explains', fromId: scenario.focusHypothesisId, toId: scenario.focusSymptomId }),
-            expect.objectContaining({ type: 'tests', fromId: scenario.focusExperimentId, toId: scenario.focusHypothesisId })
+            expect.objectContaining({ type: 'structural', fromId: scenario.problemId, toId: scenario.focusHypothesisId }),
+            expect.objectContaining({ type: 'structural', fromId: scenario.focusHypothesisId, toId: scenario.focusRepairAttemptId })
           ])
         }
       });
 
       const nodeIds = new Set(((graph.data as { data: { nodes: Array<{ id: string }> } }).data.nodes).map((node) => node.id));
       expect(nodeIds.has(scenario.unrelatedHypothesisId)).toBe(false);
-      expect(nodeIds.has(scenario.unrelatedSymptomId)).toBe(false);
     } finally {
       await app.close();
     }

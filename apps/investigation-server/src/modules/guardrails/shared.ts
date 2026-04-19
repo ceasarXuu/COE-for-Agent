@@ -72,6 +72,7 @@ export async function loadCaseGuardrailContext(
     || residuals.length > 0
     || decisions.length > 0
     || hypotheses.some((record) => !isCanonicalHypothesisRecord(record));
+  const hasCanonicalGraphRoot = problems.length > 0;
 
   return {
     caseRecord,
@@ -87,7 +88,7 @@ export async function loadCaseGuardrailContext(
     blockers,
     repairAttempts,
     evidenceRefs,
-    mode: hasCanonicalOnlyNodes || (canonicalHypotheses.length > 0 && !hasLegacyGraphNodes) ? 'canonical' : 'legacy',
+    mode: hasCanonicalOnlyNodes || (hasCanonicalGraphRoot && !hasLegacyGraphNodes) ? 'canonical' : 'legacy',
     events
   };
 }

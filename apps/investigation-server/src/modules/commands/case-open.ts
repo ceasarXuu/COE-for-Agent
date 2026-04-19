@@ -1,4 +1,4 @@
-import { createCaseId, createCommandResult, createInquiryId, createProblemId } from '@coe/domain';
+import { createCaseId, createCommandResult, createProblemId } from '@coe/domain';
 import { CaseListProjectionRepository, CurrentStateRepository, EventStoreRepository } from '@coe/persistence';
 
 import type { InvestigationServerServices, InvestigationServerTransaction } from '../../services.js';
@@ -34,7 +34,6 @@ export async function handleCaseOpen(
         const caseList = new CaseListProjectionRepository(trx);
 
         const caseId = createCaseId();
-        const inquiryId = createInquiryId();
         const problemId = createProblemId();
         const result = await eventStore.appendEventInExecutor(trx, {
           caseId,
@@ -48,7 +47,6 @@ export async function handleCaseOpen(
             objective: payload.objective,
             severity: payload.severity,
             projectDirectory: payload.projectDirectory,
-            defaultInquiryId: inquiryId,
             defaultProblemId: problemId
           }),
           metadata: toJsonValue({
@@ -70,7 +68,6 @@ export async function handleCaseOpen(
             severity: payload.severity,
             projectDirectory: payload.projectDirectory,
             labels: payload.labels ?? [],
-            defaultInquiryId: inquiryId,
             defaultProblemId: problemId,
             status: 'active',
             stage: 'intake'
@@ -95,21 +92,6 @@ export async function handleCaseOpen(
           })
         });
 
-        await currentState.upsertRecord('inquiries', {
-          id: inquiryId,
-          caseId,
-          revision: result.caseRevision,
-          status: 'open',
-          payload: toJsonValue({
-            id: inquiryId,
-            caseId,
-            title: 'Default inquiry',
-            question: payload.objective,
-            priority: payload.severity,
-            status: 'open'
-          })
-        });
-
         await caseList.upsert({
           caseId,
           title: payload.title,
@@ -122,7 +104,7 @@ export async function handleCaseOpen(
         return createCommandResult({
           ok: true,
           eventId: result.eventId,
-          createdIds: [caseId, inquiryId, problemId],
+          createdIds: [caseId, problemId],
           headRevisionBefore: 0,
           headRevisionAfter: result.caseRevision,
           projectionScheduled: false

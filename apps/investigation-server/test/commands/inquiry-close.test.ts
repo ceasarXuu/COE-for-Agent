@@ -24,7 +24,7 @@ describe.sequential('case.open and inquiry.close', () => {
     await adminPool.end();
   });
 
-  test('case.open auto-creates a default inquiry', async () => {
+  test('case.open bootstraps only the canonical problem root', async () => {
     const app = await createTestApp();
     const opened = await app.mcpServer.invokeTool('investigation.case.open', {
       idempotencyKey: 'open-default-inquiry',
@@ -34,16 +34,17 @@ describe.sequential('case.open and inquiry.close', () => {
       projectDirectory: '/workspace/open-default-inquiry'
     });
     const caseId = opened.createdIds?.find((value) => value.startsWith('case_'));
-    const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'));
+    const problemId = opened.createdIds?.find((value) => value.startsWith('problem_'));
 
     expect(caseId).toMatch(/^case_/);
-    expect(inquiryId).toMatch(/^inquiry_/);
+    expect(problemId).toMatch(/^problem_/);
+    expect(opened.createdIds?.some((value) => value.startsWith('inquiry_'))).toBe(false);
 
     const currentState = new CurrentStateRepository(app.services.db);
-    const inquiryRecord = await currentState.getRecord('inquiries', inquiryId!);
+    const problemRecord = await currentState.getRecord('problems', problemId!);
 
-    expect(inquiryRecord).toMatchObject({
-      id: inquiryId,
+    expect(problemRecord).toMatchObject({
+      id: problemId,
       status: 'open'
     });
 
@@ -73,50 +74,21 @@ describe.sequential('case.open and inquiry.close', () => {
     }
   });
 
-  test('inquiry.close updates inquiry lifecycle and writes inquiry.closed to timeline', async () => {
+  test('legacy inquiry.close is no longer exposed through the MCP surface', async () => {
     const app = await createTestApp();
-    const opened = await app.mcpServer.invokeTool('investigation.case.open', {
-      idempotencyKey: 'open-close-inquiry',
-      title: 'Webhook duplication',
-      objective: 'Close initial inquiry after confirmation',
-      severity: 'high',
-      projectDirectory: '/workspace/open-close-inquiry'
-    });
-    const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
-    const inquiryId = opened.createdIds?.find((value) => value.startsWith('inquiry_'))!;
-
-    const closed = await app.mcpServer.invokeTool('investigation.inquiry.close', {
-      idempotencyKey: 'close-inquiry-001',
-      caseId,
-      ifCaseRevision: 1,
-      inquiryId,
-      resolutionKind: 'answered',
-      reason: 'Root branch closed'
-    });
-
-    expect(closed.headRevisionAfter).toBe(2);
-
-    const currentState = new CurrentStateRepository(app.services.db);
-    const inquiryRecord = await currentState.getRecord('inquiries', inquiryId);
-    expect(inquiryRecord).toMatchObject({
-      id: inquiryId,
-      status: 'closed',
-      payload: expect.objectContaining({
-        resolutionKind: 'answered'
-      })
-    });
-
-    const timeline = await app.mcpServer.readResource(`investigation://cases/${caseId}/timeline`);
-    expect(timeline.data).toMatchObject({
-      data: {
-        events: expect.arrayContaining([
-          expect.objectContaining({
-            eventType: 'inquiry.closed'
-          })
-        ])
-      }
-    });
-
-    await app.close();
+    try {
+      await expect(
+        app.mcpServer.invokeTool('investigation.inquiry.close', {
+          idempotencyKey: 'close-inquiry-001',
+          caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
+          ifCaseRevision: 1,
+          inquiryId: 'inquiry_01AAAAAAAAAAAAAAAAAAAA',
+          resolutionKind: 'answered',
+          reason: 'Root branch closed'
+        })
+      ).rejects.toThrow(/Unknown tool/);
+    } finally {
+      await app.close();
+    }
   });
 });

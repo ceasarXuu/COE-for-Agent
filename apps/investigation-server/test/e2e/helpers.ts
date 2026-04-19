@@ -1,10 +1,8 @@
-import type { CommandResult } from '@coe/domain';
-
 import type { InvestigationApp } from '../../src/app.js';
 
 export interface OpenedCase {
   caseId: string;
-  inquiryId: string;
+  problemId: string;
   revision: number;
 }
 
@@ -19,7 +17,7 @@ export async function openCase(app: InvestigationApp, suffix: string): Promise<O
 
   return {
     caseId: requiredId(result, 'case_'),
-    inquiryId: requiredId(result, 'inquiry_'),
+    problemId: requiredId(result, 'problem_'),
     revision: result.headRevisionAfter
   };
 }
@@ -42,123 +40,39 @@ export async function advanceStage(
   return result.headRevisionAfter;
 }
 
-export async function reportSymptom(
+export async function updateProblem(
   app: InvestigationApp,
   caseId: string,
   revision: number,
+  problemId: string,
   suffix: string
-): Promise<{ symptomId: string; revision: number }> {
-  const result = await app.mcpServer.invokeTool('investigation.symptom.report', {
-    idempotencyKey: `e2e-symptom-${suffix}`,
+): Promise<number> {
+  const result = await app.mcpServer.invokeTool('investigation.problem.update', {
+    idempotencyKey: `e2e-problem-update-${suffix}`,
     caseId,
     ifCaseRevision: revision,
-    statement: `critical symptom ${suffix}`,
-    severity: 'critical',
-    reproducibility: 'always'
+    problemId,
+    environment: `env ${suffix}`,
+    symptoms: [`critical symptom ${suffix}`],
+    resolutionCriteria: [`resolution criteria ${suffix}`]
   });
 
-  return {
-    symptomId: requiredId(result, 'symptom_'),
-    revision: result.headRevisionAfter
-  };
+  return result.headRevisionAfter;
 }
 
-export async function registerEntity(
+export async function createHypothesis(
   app: InvestigationApp,
   caseId: string,
   revision: number,
-  suffix: string
-): Promise<{ entityId: string; revision: number }> {
-  const result = await app.mcpServer.invokeTool('investigation.entity.register', {
-    idempotencyKey: `e2e-entity-${suffix}`,
-    caseId,
-    ifCaseRevision: revision,
-    entityKind: 'service',
-    name: `worker-service-${suffix}`,
-    locator: {
-      kind: 'service',
-      name: `worker-service-${suffix}`
-    }
-  });
-
-  return {
-    entityId: requiredId(result, 'entity_'),
-    revision: result.headRevisionAfter
-  };
-}
-
-export async function attachArtifact(
-  app: InvestigationApp,
-  caseId: string,
-  revision: number,
-  suffix: string
-): Promise<{ artifactId: string; revision: number }> {
-  const result = await app.mcpServer.invokeTool('investigation.artifact.attach', {
-    idempotencyKey: `e2e-artifact-${suffix}`,
-    caseId,
-    ifCaseRevision: revision,
-    artifactKind: 'log',
-    title: `worker trace ${suffix}`,
-    source: {
-      uri: `file:///tmp/${suffix}.log`
-    },
-    excerpt: `trace excerpt ${suffix}`
-  });
-
-  return {
-    artifactId: requiredId(result, 'artifact_'),
-    revision: result.headRevisionAfter
-  };
-}
-
-export async function assertFact(
-  app: InvestigationApp,
-  caseId: string,
-  revision: number,
-  artifactId: string,
-  aboutRefs: string[],
-  suffix: string
-): Promise<{ factId: string; revision: number }> {
-  const result = await app.mcpServer.invokeTool('investigation.fact.assert', {
-    idempotencyKey: `e2e-fact-${suffix}`,
-    caseId,
-    ifCaseRevision: revision,
-    statement: `fact ${suffix}`,
-    factKind: 'test_result',
-    polarity: 'positive',
-    sourceArtifactIds: [artifactId],
-    aboutRefs,
-    observationScope: {
-      scopeType: 'manual_observation',
-      query: `query ${suffix}`
-    }
-  });
-
-  return {
-    factId: requiredId(result, 'fact_'),
-    revision: result.headRevisionAfter
-  };
-}
-
-export async function proposeHypothesis(
-  app: InvestigationApp,
-  caseId: string,
-  inquiryId: string,
-  revision: number,
-  symptomId: string,
-  factId: string,
+  parentNodeId: string,
   suffix: string
 ): Promise<{ hypothesisId: string; revision: number }> {
-  const result = await app.mcpServer.invokeTool('investigation.hypothesis.propose', {
-    idempotencyKey: `e2e-hypothesis-${suffix}`,
+  const result = await app.mcpServer.invokeTool('investigation.hypothesis.create', {
+    idempotencyKey: `e2e-hypothesis-create-${suffix}`,
     caseId,
     ifCaseRevision: revision,
-    inquiryId,
-    title: `hypothesis ${suffix}`,
-    statement: `statement ${suffix}`,
-    level: 'mechanism',
-    explainsSymptomIds: [symptomId],
-    dependsOnFactIds: [factId],
+    parentNodeId,
+    statement: `hypothesis ${suffix}`,
     falsificationCriteria: [`falsify ${suffix}`]
   });
 
@@ -168,15 +82,15 @@ export async function proposeHypothesis(
   };
 }
 
-export async function updateHypothesis(
+export async function setHypothesisStatus(
   app: InvestigationApp,
   caseId: string,
   revision: number,
   hypothesisId: string,
-  newStatus: 'active' | 'favored' | 'confirmed',
+  newStatus: 'confirmed' | 'blocked' | 'rejected' | 'unverified',
   suffix: string
 ): Promise<number> {
-  const result = await app.mcpServer.invokeTool('investigation.hypothesis.update_status', {
+  const result = await app.mcpServer.invokeTool('investigation.hypothesis.set_status', {
     idempotencyKey: `e2e-hypothesis-status-${suffix}-${newStatus}`,
     caseId,
     ifCaseRevision: revision,
@@ -188,100 +102,93 @@ export async function updateHypothesis(
   return result.headRevisionAfter;
 }
 
-export async function planExperiment(
+export async function createRepairAttempt(
   app: InvestigationApp,
   caseId: string,
-  inquiryId: string,
   revision: number,
-  hypothesisId: string,
+  parentNodeId: string,
   suffix: string
-): Promise<{ experimentId: string; revision: number }> {
-  const result = await app.mcpServer.invokeTool('investigation.experiment.plan', {
-    idempotencyKey: `e2e-experiment-${suffix}`,
+): Promise<{ repairAttemptId: string; revision: number }> {
+  const result = await app.mcpServer.invokeTool('investigation.repair_attempt.create', {
+    idempotencyKey: `e2e-repair-create-${suffix}`,
     caseId,
     ifCaseRevision: revision,
-    inquiryId,
-    title: `experiment ${suffix}`,
-    objective: `objective ${suffix}`,
-    method: 'patch_probe',
-    testsHypothesisIds: [hypothesisId],
-    expectedOutcomes: [{ when: `when ${suffix}`, expect: `expect ${suffix}` }]
+    parentNodeId,
+    changeSummary: `repair attempt ${suffix}`
   });
 
   return {
-    experimentId: requiredId(result, 'experiment_'),
+    repairAttemptId: requiredId(result, 'repair_attempt_'),
     revision: result.headRevisionAfter
   };
 }
 
-export async function completeExperiment(
+export async function setRepairAttemptStatus(
   app: InvestigationApp,
   caseId: string,
   revision: number,
-  experimentId: string,
+  repairAttemptId: string,
+  newStatus: 'running' | 'effective' | 'ineffective',
   suffix: string
 ): Promise<number> {
-  const result = await app.mcpServer.invokeTool('investigation.experiment.record_result', {
-    idempotencyKey: `e2e-experiment-result-${suffix}`,
+  const result = await app.mcpServer.invokeTool('investigation.repair_attempt.set_status', {
+    idempotencyKey: `e2e-repair-status-${suffix}-${newStatus}`,
     caseId,
     ifCaseRevision: revision,
-    experimentId,
-    status: 'completed',
-    summary: `completed ${suffix}`
+    repairAttemptId,
+    newStatus,
+    reason: `set ${newStatus}`
   });
 
   return result.headRevisionAfter;
 }
 
-export async function closeInquiry(
+export async function attachValidationEvidence(
   app: InvestigationApp,
   caseId: string,
   revision: number,
-  inquiryId: string,
+  parentNodeId: string,
   suffix: string
-): Promise<number> {
-  const result = await app.mcpServer.invokeTool('investigation.inquiry.close', {
-    idempotencyKey: `e2e-inquiry-close-${suffix}`,
+): Promise<{ evidenceRefId: string; revision: number }> {
+  const result = await app.mcpServer.invokeTool('investigation.evidence.capture_and_attach', {
+    idempotencyKey: `e2e-evidence-${suffix}`,
     caseId,
     ifCaseRevision: revision,
-    inquiryId,
-    resolutionKind: 'answered',
-    reason: `close ${suffix}`
+    parentNodeId,
+    kind: 'experiment_result',
+    title: `validation result ${suffix}`,
+    summary: `validation summary ${suffix}`,
+    provenance: `validation-run-${suffix}`,
+    effectOnParent: 'validates',
+    interpretation: `validation interpretation ${suffix}`
+  });
+
+  return {
+    evidenceRefId: requiredId(result, 'evidence_ref_'),
+    revision: result.headRevisionAfter
+  };
+}
+
+export async function resolveProblem(
+  app: InvestigationApp,
+  caseId: string,
+  revision: number,
+  problemId: string,
+  suffix: string
+): Promise<number> {
+  const result = await app.mcpServer.invokeTool('investigation.problem.set_status', {
+    idempotencyKey: `e2e-problem-status-${suffix}`,
+    caseId,
+    ifCaseRevision: revision,
+    problemId,
+    newStatus: 'resolved',
+    reason: `resolved ${suffix}`
   });
 
   return result.headRevisionAfter;
 }
 
-export async function recordDecision(
-  app: InvestigationApp,
-  caseId: string,
-  revision: number,
-  inquiryId: string,
-  factId: string,
-  experimentId: string,
-  hypothesisId: string,
-  suffix: string
-): Promise<{ decisionId: string; revision: number }> {
-  const result = await app.mcpServer.invokeTool('investigation.decision.record', {
-    idempotencyKey: `e2e-decision-${suffix}`,
-    caseId,
-    ifCaseRevision: revision,
-    inquiryId,
-    title: `decision ${suffix}`,
-    decisionKind: 'ready_to_patch',
-    statement: `decision statement ${suffix}`,
-    supportingFactIds: [factId],
-    supportingHypothesisIds: [hypothesisId],
-    rationale: `rationale ${suffix}`
-  });
-
-  return {
-    decisionId: requiredId(result, 'decision_'),
-    revision: result.headRevisionAfter
-  };
-}
-
-function requiredId(result: CommandResult, prefix: string): string {
+function requiredId(result: { createdIds?: string[] }, prefix: string): string {
   const id = result.createdIds?.find((value) => value.startsWith(prefix));
 
   if (!id) {

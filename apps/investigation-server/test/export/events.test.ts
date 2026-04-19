@@ -30,22 +30,22 @@ describe.sequential('event export', () => {
     try {
       const scenario = await buildProvScenario(app);
       const exported = await buildEventExport(app.services, scenario.caseId);
-      const factEvent = exported.events.find((event) => event.type === 'fact.asserted');
+      const evidenceAttachedEvent = exported.events.find((event) => event.type === 'canonical.evidence.attached');
 
-      expect(factEvent).toMatchObject({
-        dataschema: 'https://schemas.coe.local/events/v1/fact.asserted.data.schema.json',
+      expect(evidenceAttachedEvent).toMatchObject({
+        dataschema: 'https://schemas.coe.local/events/v1/canonical.evidence.attached.data.schema.json',
         data: {
           eventId: expect.any(String),
           caseId: scenario.caseId,
-          caseRevision: 3,
-          factId: scenario.factId,
-          statement: 'measured fact',
-          factKind: 'direct_observation',
-          polarity: 'positive'
+          caseRevision: 7,
+          evidenceRefId: scenario.evidenceRefId,
+          evidenceId: scenario.evidenceId,
+          parentNodeId: scenario.repairAttemptId,
+          effectOnParent: 'validates'
         }
       });
-      expect(factEvent?.data).not.toHaveProperty('payload');
-      expect(factEvent?.data).not.toHaveProperty('metadata');
+      expect(evidenceAttachedEvent?.data).not.toHaveProperty('payload');
+      expect(evidenceAttachedEvent?.data).not.toHaveProperty('metadata');
     } finally {
       await app.close();
     }

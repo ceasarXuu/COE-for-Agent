@@ -170,6 +170,7 @@ export function CanonicalActionPanel(props: CanonicalActionPanelProps) {
 
       const result = await invokeTool<{ headRevisionAfter: number }>(commandName, {
         ...payload,
+        ...(typeof payload.idempotencyKey === 'string' ? {} : { idempotencyKey: `${commandName}-${props.selectedNode.id}-${Date.now()}` }),
         ...(confirmToken ? { confirmToken } : {})
       });
       localRevisionRef.current = result.headRevisionAfter;

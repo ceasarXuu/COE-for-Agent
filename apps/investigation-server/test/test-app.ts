@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import type { ActorContext } from '@coe/domain';
-import { MUTATION_TOOL_NAMES, type MutationToolName } from '@coe/mcp-contracts/tool-names';
+import { MUTATION_TOOL_NAMES } from '@coe/mcp-contracts/tool-names';
 
 import { buildInvestigationApp, type InvestigationApp } from '../src/app.js';
 import { issueConfirmToken, hashConfirmationReason } from '../src/auth/confirm-token.js';
@@ -57,7 +57,7 @@ export async function createTestApp(): Promise<InvestigationApp> {
 
   proxiedServer.invokeTool = ((name: string, input: Record<string, unknown>) => {
     const nextInput = MUTATION_TOOL_NAME_SET.has(name)
-      ? withTestAuthEnvelope(name as MutationToolName, input)
+      ? withTestAuthEnvelope(name, input)
       : input;
 
     return baseInvokeTool(name as never, nextInput as never);
@@ -69,7 +69,7 @@ export async function createTestApp(): Promise<InvestigationApp> {
 
 export { TEST_DATA_ROOT as TEST_DATABASE_URL };
 
-function withTestAuthEnvelope(commandName: MutationToolName, input: Record<string, unknown>): Record<string, unknown> {
+function withTestAuthEnvelope(commandName: string, input: Record<string, unknown>): Record<string, unknown> {
   const actorContext = isActorContext(input.actorContext) ? input.actorContext : DEFAULT_TEST_ACTOR_CONTEXT;
   const nextInput: Record<string, unknown> = {
     ...input,

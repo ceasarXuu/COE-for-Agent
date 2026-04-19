@@ -44,7 +44,7 @@ async function main() {
     console.info('[investigation-console] real-backend-e2e-seeded', {
       event: 'real_backend_e2e.case_seeded',
       caseId: seed.caseId,
-      inquiryId: seed.inquiryId,
+      problemId: seed.problemId,
       hypothesisId: seed.hypothesisId,
       searchTerm: seed.searchTerm,
       headRevision: seed.headRevision,
@@ -89,7 +89,7 @@ async function seedRealBackendCase(mcpClient: ConsoleMcpClient) {
     projectDirectory: `/workspace/real-backend-${suffix}`
   });
   const caseId = requiredId(opened, 'case_');
-  const inquiryId = requiredId(opened, 'inquiry_');
+  const problemId = requiredId(opened, 'problem_');
   let revision = opened.headRevisionAfter;
 
   revision = (await invokeMutation(mcpClient, 'investigation.case.advance_stage', {
@@ -108,72 +108,22 @@ async function seedRealBackendCase(mcpClient: ConsoleMcpClient) {
     reason: 'advance to evidence collection'
   })).headRevisionAfter;
 
-  const symptom = await invokeMutation(mcpClient, 'investigation.symptom.report', {
-    idempotencyKey: `console-real-symptom-${suffix}`,
+  revision = (await invokeMutation(mcpClient, 'investigation.problem.update', {
+    idempotencyKey: `console-real-problem-update-${suffix}`,
     caseId,
     ifCaseRevision: revision,
-    statement: `critical symptom ${suffix}`,
-    severity: 'critical',
-    reproducibility: 'always'
-  });
-  const symptomId = requiredId(symptom, 'symptom_');
-  revision = symptom.headRevisionAfter;
+    problemId,
+    environment: `real-backend-env-${suffix}`,
+    symptoms: [`critical symptom ${suffix}`],
+    resolutionCriteria: [`resolution criteria ${suffix}`]
+  })).headRevisionAfter;
 
-  const entity = await invokeMutation(mcpClient, 'investigation.entity.register', {
-    idempotencyKey: `console-real-entity-${suffix}`,
-    caseId,
-    ifCaseRevision: revision,
-    entityKind: 'service',
-    name: `worker-service-${suffix}`,
-    locator: {
-      kind: 'service',
-      name: `worker-service-${suffix}`
-    }
-  });
-  const entityId = requiredId(entity, 'entity_');
-  revision = entity.headRevisionAfter;
-
-  const artifact = await invokeMutation(mcpClient, 'investigation.artifact.attach', {
-    idempotencyKey: `console-real-artifact-${suffix}`,
-    caseId,
-    ifCaseRevision: revision,
-    artifactKind: 'log',
-    title: `worker trace ${suffix}`,
-    source: {
-      uri: `file:///tmp/${suffix}.log`
-    },
-    excerpt: `trace excerpt ${suffix}`
-  });
-  const artifactId = requiredId(artifact, 'artifact_');
-  revision = artifact.headRevisionAfter;
-
-  const fact = await invokeMutation(mcpClient, 'investigation.fact.assert', {
-    idempotencyKey: `console-real-fact-${suffix}`,
-    caseId,
-    ifCaseRevision: revision,
-    statement: `fact ${suffix}`,
-    factKind: 'test_result',
-    polarity: 'positive',
-    sourceArtifactIds: [artifactId],
-    aboutRefs: [symptomId, entityId],
-    observationScope: {
-      scopeType: 'manual_observation',
-      query: `query ${suffix}`
-    }
-  });
-  const factId = requiredId(fact, 'fact_');
-  revision = fact.headRevisionAfter;
-
-  const hypothesis = await invokeMutation(mcpClient, 'investigation.hypothesis.propose', {
+  const hypothesis = await invokeMutation(mcpClient, 'investigation.hypothesis.create', {
     idempotencyKey: `console-real-hypothesis-${suffix}`,
     caseId,
     ifCaseRevision: revision,
-    inquiryId,
-    title: `hypothesis ${suffix}`,
+    parentNodeId: problemId,
     statement: `statement ${suffix}`,
-    level: 'mechanism',
-    explainsSymptomIds: [symptomId],
-    dependsOnFactIds: [factId],
     falsificationCriteria: [`falsify ${suffix}`]
   });
   const hypothesisId = requiredId(hypothesis, 'hypothesis_');
@@ -187,35 +137,9 @@ async function seedRealBackendCase(mcpClient: ConsoleMcpClient) {
     reason: 'advance to hypothesis competition'
   })).headRevisionAfter;
 
-  revision = (await invokeMutation(mcpClient, 'investigation.hypothesis.update_status', {
-    idempotencyKey: `console-real-hypothesis-status-${suffix}-active`,
-    caseId,
-    ifCaseRevision: revision,
-    hypothesisId,
-    newStatus: 'active',
-    reason: 'set active'
-  })).headRevisionAfter;
-
-  revision = (await invokeMutation(mcpClient, 'investigation.hypothesis.update_status', {
-    idempotencyKey: `console-real-hypothesis-status-${suffix}-favored`,
-    caseId,
-    ifCaseRevision: revision,
-    hypothesisId,
-    newStatus: 'favored',
-    reason: 'set favored'
-  })).headRevisionAfter;
-
-  revision = (await invokeMutation(mcpClient, 'investigation.case.advance_stage', {
-    idempotencyKey: `console-real-stage-${suffix}-testing`,
-    caseId,
-    ifCaseRevision: revision,
-    stage: 'discriminative_testing',
-    reason: 'advance to discriminative testing'
-  })).headRevisionAfter;
-
   return {
     caseId,
-    inquiryId,
+    problemId,
     hypothesisId,
     searchTerm: suffix,
     title: `Real backend case ${suffix}`,

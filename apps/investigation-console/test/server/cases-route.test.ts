@@ -49,7 +49,7 @@ describe('cases route', () => {
       ok: true,
       createdIds: [
         'case_01BBBBBBBBBBBBBBBBBBBBBBBB',
-        'inquiry_01BBBBBBBBBBBBBBBBBBBBB'
+        'problem_01BBBBBBBBBBBBBBBBBBBBB'
       ],
       headRevisionAfter: 1
     }));
@@ -103,7 +103,8 @@ describe('cases route', () => {
     expect(response.json()).toMatchObject({
       ok: true,
       caseId: 'case_01BBBBBBBBBBBBBBBBBBBBBBBB',
-      inquiryId: 'inquiry_01BBBBBBBBBBBBBBBBBBBBB',
+      inquiryId: null,
+      problemId: 'problem_01BBBBBBBBBBBBBBBBBBBBB',
       headRevisionAfter: 1
     });
   });

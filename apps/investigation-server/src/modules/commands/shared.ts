@@ -7,7 +7,6 @@ import {
   type CurrentStateTableName,
   type JsonValue
 } from '@coe/persistence';
-import type { MutationToolName } from '@coe/mcp-contracts/tool-names';
 
 import type { InvestigationServerTransaction } from '../../services.js';
 import { recordPayload, stringValue } from '../shared/record-helpers.js';
@@ -46,7 +45,7 @@ export function requireActorContext(input: Record<string, unknown>): ActorContex
 }
 
 interface ExecuteIdempotentMutationOptions {
-  commandName: MutationToolName;
+  commandName: string;
   caseId?: string;
   idempotencyKey: string;
   actorContext: ActorContext;

@@ -8,16 +8,13 @@ import {
 } from '../test-app.js';
 import {
   advanceStage,
-  assertFact,
-  attachArtifact,
-  completeExperiment,
+  attachValidationEvidence,
+  createHypothesis,
+  createRepairAttempt,
   openCase,
-  planExperiment,
-  proposeHypothesis,
-  recordDecision,
-  registerEntity,
-  reportSymptom,
-  updateHypothesis
+  setHypothesisStatus,
+  setRepairAttemptStatus,
+  updateProblem
 } from './helpers.js';
 
 describe.sequential('mcp console flow', () => {
@@ -35,39 +32,17 @@ describe.sequential('mcp console flow', () => {
     await adminPool.end();
   });
 
-  test('builds a full evidence chain and exposes the same case through list, snapshot, graph, timeline, and guardrails', async () => {
+  test('builds a canonical investigation chain and exposes the same case through list, snapshot, graph, timeline, and guardrails', async () => {
     const app = await createTestApp();
 
     try {
       const opened = await openCase(app, 'full-flow');
       let revision = await advanceStage(app, opened.caseId, opened.revision, 'scoping', 'full-flow');
       revision = await advanceStage(app, opened.caseId, revision, 'evidence_collection', 'full-flow');
-
-      const symptom = await reportSymptom(app, opened.caseId, revision, 'full-flow');
-      revision = symptom.revision;
-      const entity = await registerEntity(app, opened.caseId, revision, 'full-flow');
-      revision = entity.revision;
-      const artifact = await attachArtifact(app, opened.caseId, revision, 'full-flow');
-      revision = artifact.revision;
-      const fact = await assertFact(app, opened.caseId, revision, artifact.artifactId, [symptom.symptomId, entity.entityId], 'full-flow');
-      revision = fact.revision;
-
-      const hypothesis = await proposeHypothesis(
-        app,
-        opened.caseId,
-        opened.inquiryId,
-        revision,
-        symptom.symptomId,
-        fact.factId,
-        'full-flow'
-      );
+      revision = await updateProblem(app, opened.caseId, revision, opened.problemId, 'full-flow');
+      const hypothesis = await createHypothesis(app, opened.caseId, revision, opened.problemId, 'full-flow');
       revision = await advanceStage(app, opened.caseId, hypothesis.revision, 'hypothesis_competition', 'full-flow');
-      revision = await updateHypothesis(app, opened.caseId, revision, hypothesis.hypothesisId, 'active', 'full-flow');
-      revision = await updateHypothesis(app, opened.caseId, revision, hypothesis.hypothesisId, 'favored', 'full-flow');
-      revision = await advanceStage(app, opened.caseId, revision, 'discriminative_testing', 'full-flow');
-
-      const experiment = await planExperiment(app, opened.caseId, opened.inquiryId, revision, hypothesis.hypothesisId, 'full-flow');
-      revision = await completeExperiment(app, opened.caseId, experiment.revision, experiment.experimentId, 'full-flow');
+      revision = await setHypothesisStatus(app, opened.caseId, revision, hypothesis.hypothesisId, 'confirmed', 'full-flow');
 
       const readyToPatch = await app.mcpServer.invokeTool('investigation.guardrail.ready_to_patch_check', {
         caseId: opened.caseId
@@ -76,22 +51,17 @@ describe.sequential('mcp console flow', () => {
       expect(readyToPatch).toMatchObject({
         pass: true,
         candidateHypothesisIds: expect.arrayContaining([hypothesis.hypothesisId]),
-        candidatePatchRefs: expect.arrayContaining([entity.entityId]),
-        blockingGapIds: [],
-        blockingResidualIds: []
+        blockingIssueIds: []
       });
 
-      const decision = await recordDecision(
-        app,
-        opened.caseId,
-        revision,
-        opened.inquiryId,
-        fact.factId,
-        experiment.experimentId,
-        hypothesis.hypothesisId,
-        'full-flow'
-      );
-      revision = await advanceStage(app, opened.caseId, decision.revision, 'repair_preparation', 'full-flow');
+      revision = await advanceStage(app, opened.caseId, revision, 'discriminative_testing', 'full-flow');
+      revision = await advanceStage(app, opened.caseId, revision, 'repair_preparation', 'full-flow');
+      const repairAttempt = await createRepairAttempt(app, opened.caseId, revision, hypothesis.hypothesisId, 'full-flow');
+      revision = await setRepairAttemptStatus(app, opened.caseId, repairAttempt.revision, repairAttempt.repairAttemptId, 'running', 'full-flow');
+      revision = await setRepairAttemptStatus(app, opened.caseId, revision, repairAttempt.repairAttemptId, 'effective', 'full-flow');
+      const evidence = await attachValidationEvidence(app, opened.caseId, revision, repairAttempt.repairAttemptId, 'full-flow');
+      revision = evidence.revision;
+      revision = await advanceStage(app, opened.caseId, revision, 'repair_validation', 'full-flow');
 
       const [cases, snapshot, timeline, graph, aggregate] = await Promise.all([
         app.mcpServer.readResource('investigation://cases'),
@@ -106,7 +76,7 @@ describe.sequential('mcp console flow', () => {
           items: expect.arrayContaining([
             expect.objectContaining({
               caseId: opened.caseId,
-              stage: 'repair_preparation',
+              stage: 'repair_validation',
               headRevision: revision
             })
           ])
@@ -117,21 +87,22 @@ describe.sequential('mcp console flow', () => {
         data: {
           case: expect.objectContaining({
             id: opened.caseId,
-            stage: 'repair_preparation',
-            status: 'ready_to_patch'
+            stage: 'repair_validation',
+            status: 'validating'
           }),
           counts: expect.objectContaining({
-            inquiries: 1,
-            symptoms: 1,
-            artifacts: 1,
-            facts: 1
+            inquiries: 0,
+            symptoms: 0,
+            artifacts: 0,
+            facts: 0
           })
         }
       });
       expect(timeline.data).toMatchObject({
         data: {
           events: expect.arrayContaining([
-            expect.objectContaining({ eventType: 'decision.recorded' }),
+            expect.objectContaining({ eventType: 'canonical.repair_attempt.status_updated' }),
+            expect.objectContaining({ eventType: 'canonical.evidence.attached' }),
             expect.objectContaining({ eventType: 'case.stage_advanced', caseRevision: revision })
           ])
         }
@@ -139,9 +110,10 @@ describe.sequential('mcp console flow', () => {
       expect(graph.data).toMatchObject({
         data: {
           nodes: expect.arrayContaining([
+            expect.objectContaining({ id: opened.problemId, kind: 'problem' }),
             expect.objectContaining({ id: hypothesis.hypothesisId, kind: 'hypothesis' }),
-            expect.objectContaining({ id: experiment.experimentId, kind: 'experiment' }),
-            expect.objectContaining({ id: decision.decisionId, kind: 'decision' })
+            expect.objectContaining({ id: repairAttempt.repairAttemptId, kind: 'repair_attempt' }),
+            expect.objectContaining({ id: evidence.evidenceRefId, kind: 'evidence_ref' })
           ])
         }
       });

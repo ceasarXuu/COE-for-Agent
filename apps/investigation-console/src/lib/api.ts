@@ -39,6 +39,7 @@ export interface CreateCaseResult {
   ok: boolean;
   caseId: string | null;
   inquiryId: string | null;
+  problemId?: string | null;
   headRevisionAfter: number;
 }
 

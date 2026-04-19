@@ -6,8 +6,6 @@ import {
   createTestApp,
   resetServerTestDatabase
 } from '../test-app.js';
-import { buildDiffScenario } from '../support/resource-scenarios.js';
-
 describe.sequential('legacy panel resources', () => {
   const adminPool = createAdminPool();
 
@@ -27,17 +25,34 @@ describe.sequential('legacy panel resources', () => {
     const app = await createTestApp();
 
     try {
-      const scenario = await buildDiffScenario(app);
+      const opened = await app.mcpServer.invokeTool('investigation.case.open', {
+        idempotencyKey: 'panel-history-open-001',
+        title: 'Removed panel resources',
+        objective: 'Ensure panel resources stay unavailable',
+        severity: 'medium',
+        projectDirectory: '/workspace/panel-history-open-001'
+      });
+      const caseId = opened.createdIds?.find((value) => value.startsWith('case_'))!;
+      const problemId = opened.createdIds?.find((value) => value.startsWith('problem_'))!;
+      const hypothesis = await app.mcpServer.invokeTool('investigation.hypothesis.create', {
+        idempotencyKey: 'panel-history-hypothesis-001',
+        caseId,
+        ifCaseRevision: 1,
+        parentNodeId: problemId,
+        statement: 'removed panel hypothesis',
+        falsificationCriteria: ['removed panel falsification']
+      });
+      const hypothesisId = hypothesis.createdIds?.find((value) => value.startsWith('hypothesis_'))!;
 
       await expect(
         app.mcpServer.readResource(
-          `investigation://cases/${scenario.caseId}/hypotheses/${scenario.hypothesisId}?atRevision=3`
+          `investigation://cases/${caseId}/hypotheses/${hypothesisId}?atRevision=2`
         )
       ).rejects.toThrow(/Unknown resource/);
 
       await expect(
         app.mcpServer.readResource(
-          `investigation://cases/${scenario.caseId}/inquiries/${scenario.inquiryId}?atRevision=2`
+          `investigation://cases/${caseId}/inquiries/inquiry_01AAAAAAAAAAAAAAAAAAAA?atRevision=1`
         )
       ).rejects.toThrow(/Unknown resource/);
     } finally {

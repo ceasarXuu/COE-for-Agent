@@ -43,7 +43,7 @@ describe.sequential('history replay resources', () => {
         historical: true,
         data: {
           counts: {
-            symptoms: 0
+            inquiries: 0
           }
         }
       });
@@ -55,7 +55,7 @@ describe.sequential('history replay resources', () => {
         requestedRevision: 2,
         historical: true
       });
-      expect(graphNodeIds.has(scenario.symptomId)).toBe(true);
+      expect(graphNodeIds.has(scenario.problemId)).toBe(true);
       expect(graphNodeIds.has(scenario.hypothesisId)).toBe(false);
     } finally {
       await app.close();

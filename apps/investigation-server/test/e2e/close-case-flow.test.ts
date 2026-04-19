@@ -8,15 +8,14 @@ import {
 } from '../test-app.js';
 import {
   advanceStage,
-  assertFact,
-  attachArtifact,
-  closeInquiry,
-  completeExperiment,
+  attachValidationEvidence,
+  createHypothesis,
+  createRepairAttempt,
   openCase,
-  planExperiment,
-  proposeHypothesis,
-  reportSymptom,
-  updateHypothesis
+  resolveProblem,
+  setHypothesisStatus,
+  setRepairAttemptStatus,
+  updateProblem
 } from './helpers.js';
 
 describe.sequential('close case flow', () => {
@@ -46,39 +45,38 @@ describe.sequential('close case flow', () => {
 
       expect(initiallyBlocked).toMatchObject({
         pass: false,
-        blockingInquiryIds: expect.arrayContaining([opened.inquiryId]),
         reasons: expect.arrayContaining([
           expect.stringMatching(/repair_validation/i),
-          expect.stringMatching(/inquiries/i)
+          expect.stringMatching(/problem/i)
         ])
       });
 
       let revision = await advanceStage(app, opened.caseId, opened.revision, 'scoping', 'close-flow');
       revision = await advanceStage(app, opened.caseId, revision, 'evidence_collection', 'close-flow');
-      const symptom = await reportSymptom(app, opened.caseId, revision, 'close-flow');
-      revision = symptom.revision;
-      const artifact = await attachArtifact(app, opened.caseId, revision, 'close-flow');
-      revision = artifact.revision;
-      const fact = await assertFact(app, opened.caseId, revision, artifact.artifactId, [symptom.symptomId], 'close-flow');
-      revision = fact.revision;
-      const hypothesis = await proposeHypothesis(
-        app,
-        opened.caseId,
-        opened.inquiryId,
-        revision,
-        symptom.symptomId,
-        fact.factId,
-        'close-flow'
-      );
+      revision = await updateProblem(app, opened.caseId, revision, opened.problemId, 'close-flow');
+      const hypothesis = await createHypothesis(app, opened.caseId, revision, opened.problemId, 'close-flow');
       revision = await advanceStage(app, opened.caseId, hypothesis.revision, 'hypothesis_competition', 'close-flow');
-      revision = await updateHypothesis(app, opened.caseId, revision, hypothesis.hypothesisId, 'active', 'close-flow');
-      revision = await updateHypothesis(app, opened.caseId, revision, hypothesis.hypothesisId, 'favored', 'close-flow');
+      revision = await setHypothesisStatus(app, opened.caseId, revision, hypothesis.hypothesisId, 'confirmed', 'close-flow');
       revision = await advanceStage(app, opened.caseId, revision, 'discriminative_testing', 'close-flow');
-      const experiment = await planExperiment(app, opened.caseId, opened.inquiryId, revision, hypothesis.hypothesisId, 'close-flow');
-      revision = await completeExperiment(app, opened.caseId, experiment.revision, experiment.experimentId, 'close-flow');
       revision = await advanceStage(app, opened.caseId, revision, 'repair_preparation', 'close-flow');
+      const repairAttempt = await createRepairAttempt(app, opened.caseId, revision, hypothesis.hypothesisId, 'close-flow');
+      revision = await setRepairAttemptStatus(app, opened.caseId, repairAttempt.revision, repairAttempt.repairAttemptId, 'running', 'close-flow');
+      revision = await setRepairAttemptStatus(app, opened.caseId, revision, repairAttempt.repairAttemptId, 'effective', 'close-flow');
+      const evidence = await attachValidationEvidence(app, opened.caseId, revision, repairAttempt.repairAttemptId, 'close-flow');
+      revision = evidence.revision;
       revision = await advanceStage(app, opened.caseId, revision, 'repair_validation', 'close-flow');
-      revision = await closeInquiry(app, opened.caseId, revision, opened.inquiryId, 'close-flow');
+
+      const stillBlocked = await app.mcpServer.invokeTool('investigation.guardrail.close_case_check', {
+        caseId: opened.caseId
+      });
+
+      expect(stillBlocked).toMatchObject({
+        pass: false,
+        blockingInquiryIds: [],
+        reasons: expect.arrayContaining([expect.stringMatching(/problem/i)])
+      });
+
+      revision = await resolveProblem(app, opened.caseId, revision, opened.problemId, 'close-flow');
 
       const readyToClose = await app.mcpServer.invokeTool('investigation.guardrail.close_case_check', {
         caseId: opened.caseId

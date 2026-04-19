@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 
 import type { ActorRole } from '@coe/domain';
-import type { MutationToolName } from '@coe/mcp-contracts/tool-names';
 
 import { issueSignedToken, verifySignedToken } from './token-codec.js';
 
@@ -9,7 +8,7 @@ const DEFAULT_CONFIRM_TTL_MS = 120 * 1000;
 
 interface ConfirmTokenClaims {
   typ: 'confirm';
-  commandName: MutationToolName;
+  commandName: string;
   caseId: string;
   targetIds: string[];
   sessionId: string;
@@ -21,7 +20,7 @@ interface ConfirmTokenClaims {
 }
 
 export interface IssueConfirmTokenInput {
-  commandName: MutationToolName;
+  commandName: string;
   caseId: string;
   targetIds: string[];
   sessionId: string;
@@ -33,7 +32,7 @@ export interface IssueConfirmTokenInput {
 
 export interface VerifyConfirmTokenOptions {
   secret: string;
-  expectedCommandName: MutationToolName;
+  expectedCommandName: string;
   expectedCaseId: string;
   expectedTargetIds: string[];
   expectedSessionId: string;
@@ -61,7 +60,7 @@ function requireStringArray(value: unknown, fieldName: string): string[] {
 function toConfirmClaims(value: Record<string, unknown>): ConfirmTokenClaims {
   return {
     typ: 'confirm',
-    commandName: requireString(value.commandName, 'commandName') as MutationToolName,
+    commandName: requireString(value.commandName, 'commandName'),
     caseId: requireString(value.caseId, 'caseId'),
     targetIds: requireStringArray(value.targetIds, 'targetIds'),
     sessionId: requireString(value.sessionId, 'sessionId'),

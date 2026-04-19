@@ -29,20 +29,20 @@ describe.sequential('diff resource', () => {
     try {
       const scenario = await buildDiffScenario(app);
       const diff = await app.mcpServer.readResource(
-        `investigation://cases/${scenario.caseId}/diff?fromRevision=3&toRevision=4`
+        `investigation://cases/${scenario.caseId}/diff?fromRevision=2&toRevision=3`
       );
 
       expect(diff.data).toMatchObject({
         data: {
-          fromRevision: 3,
-          toRevision: 4,
+          fromRevision: 2,
+          toRevision: 3,
           changedNodeIds: expect.arrayContaining([scenario.hypothesisId]),
           stateTransitions: expect.arrayContaining([
             expect.objectContaining({
               nodeId: scenario.hypothesisId,
               kind: 'hypothesis',
-              fromStatus: 'proposed',
-              toStatus: 'active'
+              fromStatus: 'unverified',
+              toStatus: 'confirmed'
             })
           ])
         }

@@ -19,7 +19,7 @@ async function readSeedState(): Promise<RealBackendSeedState> {
   return JSON.parse(await readFile(seedPath, 'utf8')) as RealBackendSeedState;
 }
 
-test('real backend reviewer flow confirms a favored hypothesis end-to-end', async ({ page }) => {
+test('real backend reviewer flow confirms a canonical hypothesis end-to-end', async ({ page }) => {
   const seed = await readSeedState();
 
   await page.goto(`/cases?q=${seed.searchTerm}`);
@@ -28,12 +28,10 @@ test('real backend reviewer flow confirms a favored hypothesis end-to-end', asyn
 
   await expect(page.getByTestId('snapshot-panel')).toHaveCount(0);
   await page.getByTestId(`graph-node-${seed.hypothesisId}`).click();
-  await expect(page.getByTestId('inspector-status')).toHaveText('Favored');
+  await expect(page.getByTestId('inspector-status')).toHaveText('Unverified');
 
-  await page.getByTestId('hypothesis-rationale').fill('real backend confirmation path is working');
-  await page.getByTestId('action-confirm-hypothesis').click();
-  await expect(page.getByTestId('confirm-dialog')).toBeVisible();
-  await page.getByTestId('confirm-submit').click();
+  await page.getByTestId('canonical-status-reason').fill('real backend confirmation path is working');
+  await page.getByTestId('action-canonical-hypothesis-confirm').click();
 
   await expect(page.getByTestId('inspector-status')).toHaveText('Confirmed');
   await expect(page.getByTestId('revision-value')).toHaveText(String(seed.headRevision + 1));

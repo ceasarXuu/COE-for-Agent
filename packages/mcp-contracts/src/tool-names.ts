@@ -12,25 +12,7 @@ export const MUTATION_TOOL_NAMES = [
   'investigation.repair_attempt.set_status',
   'investigation.evidence.capture',
   'investigation.evidence.attach_existing',
-  'investigation.evidence.capture_and_attach',
-  'investigation.issue.record',
-  'investigation.issue.resolve',
-  'investigation.context.register',
-  'investigation.inquiry.open',
-  'investigation.inquiry.close',
-  'investigation.entity.register',
-  'investigation.symptom.report',
-  'investigation.artifact.attach',
-  'investigation.fact.assert',
-  'investigation.hypothesis.propose',
-  'investigation.hypothesis.update_status',
-  'investigation.experiment.plan',
-  'investigation.experiment.record_result',
-  'investigation.gap.open',
-  'investigation.gap.resolve',
-  'investigation.residual.open',
-  'investigation.residual.update',
-  'investigation.decision.record'
+  'investigation.evidence.capture_and_attach'
 ] as const;
 
 export const GUARDRAIL_TOOL_NAMES = [

@@ -1,11 +1,10 @@
 import type { ActorContext } from '@coe/domain';
-import type { MutationToolName } from '@coe/mcp-contracts/tool-names';
 
 import { hashConfirmationReason, verifyConfirmToken } from './confirm-token.js';
 import { assertAuthorizedActor, getAuthorizationRequirement, parseActorContext } from './policy.js';
 
 export interface AuthorizeMutationCommandOptions {
-  commandName: MutationToolName;
+  commandName: string;
   input: Record<string, unknown>;
   secret: string;
   now?: Date;

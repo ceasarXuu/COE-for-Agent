@@ -42,7 +42,8 @@ describe('session-aware API writes', () => {
         return new Response(JSON.stringify({
           ok: true,
           caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
-          inquiryId: 'inquiry_01AAAAAAAAAAAAAAAAAAAA',
+          inquiryId: null,
+          problemId: 'problem_01AAAAAAAAAAAAAAAAAAAA',
           headRevisionAfter: 1
         }), {
           status: 200,

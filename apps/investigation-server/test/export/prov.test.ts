@@ -34,15 +34,15 @@ describe.sequential('prov export', () => {
       expect(bundle).toMatchObject({
         caseId: scenario.caseId,
         entities: expect.arrayContaining([
-          expect.objectContaining({ id: scenario.artifactId, kind: 'artifact' }),
-          expect.objectContaining({ id: scenario.factId, kind: 'fact' })
+          expect.objectContaining({ id: scenario.evidenceId, kind: 'evidence' }),
+          expect.objectContaining({ id: scenario.evidenceRefId, kind: 'evidence_ref' })
         ]),
         relations: {
           used: expect.arrayContaining([
-            expect.objectContaining({ entityId: scenario.artifactId })
+            expect.objectContaining({ entityId: scenario.evidenceId })
           ]),
           wasGeneratedBy: expect.arrayContaining([
-            expect.objectContaining({ entityId: scenario.factId, activityType: 'fact.asserted' })
+            expect.objectContaining({ entityId: scenario.evidenceRefId, activityType: 'canonical.evidence.attached' })
           ])
         }
       });

@@ -57,7 +57,22 @@ export interface ProvExportPackage {
 function generatedEntityIds(eventType: string, payload: Record<string, unknown>, caseId: string): string[] {
   switch (eventType) {
     case 'case.opened':
-      return [asString(payload.caseId) ?? caseId, ...asString(payload.defaultInquiryId) ? [asString(payload.defaultInquiryId)!] : []];
+      return [
+        asString(payload.caseId) ?? caseId,
+        ...asString(payload.defaultProblemId) ? [asString(payload.defaultProblemId)!] : []
+      ];
+    case 'problem.reference_material_added':
+      return asString(payload.materialId) ? [asString(payload.materialId)!] : [];
+    case 'canonical.hypothesis.created':
+      return asString(payload.hypothesisId) ? [asString(payload.hypothesisId)!] : [];
+    case 'canonical.blocker.opened':
+      return asString(payload.blockerId) ? [asString(payload.blockerId)!] : [];
+    case 'canonical.repair_attempt.created':
+      return asString(payload.repairAttemptId) ? [asString(payload.repairAttemptId)!] : [];
+    case 'canonical.evidence.captured':
+      return asString(payload.evidenceId) ? [asString(payload.evidenceId)!] : [];
+    case 'canonical.evidence.attached':
+      return asString(payload.evidenceRefId) ? [asString(payload.evidenceRefId)!] : [];
     case 'inquiry.opened':
       return asString(payload.inquiryId) ? [asString(payload.inquiryId)!] : [];
     case 'entity.registered':
@@ -85,6 +100,18 @@ function generatedEntityIds(eventType: string, payload: Record<string, unknown>,
 
 function usedEntityIds(eventType: string, payload: Record<string, unknown>): string[] {
   switch (eventType) {
+    case 'canonical.hypothesis.created':
+      return [asString(payload.parentNodeId), ...asStringArray(payload.derivedFromEvidenceIds)].filter(
+        (value): value is string => typeof value === 'string' && value.length > 0
+      );
+    case 'canonical.blocker.opened':
+      return [asString(payload.hypothesisId)].filter((value): value is string => typeof value === 'string' && value.length > 0);
+    case 'canonical.repair_attempt.created':
+      return [asString(payload.parentNodeId)].filter((value): value is string => typeof value === 'string' && value.length > 0);
+    case 'canonical.evidence.attached':
+      return [asString(payload.parentNodeId), asString(payload.evidenceId)].filter(
+        (value): value is string => typeof value === 'string' && value.length > 0
+      );
     case 'fact.asserted':
       return [...asStringArray(payload.sourceArtifactIds), ...asStringArray(payload.aboutRefs)];
     case 'hypothesis.proposed':
