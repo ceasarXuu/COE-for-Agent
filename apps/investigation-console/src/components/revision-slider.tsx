@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 export function RevisionSlider(props: {
   maxRevision: number;
@@ -16,6 +16,7 @@ export function RevisionSlider(props: {
   }>;
 }) {
   const [draftRevision, setDraftRevision] = useState(props.currentRevision);
+  const shellRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setDraftRevision(props.currentRevision);
@@ -36,9 +37,49 @@ export function RevisionSlider(props: {
     props.onChange(revision);
   };
 
+  const handlePointerRevisionChange = (clientX: number) => {
+    const shell = shellRef.current;
+    if (!shell) {
+      return;
+    }
+
+    const rect = shell.getBoundingClientRect();
+    handleRevisionChange(String(getRevisionFromPointer(clientX, rect.left, rect.width, props.maxRevision)));
+  };
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    handlePointerRevisionChange(event.clientX);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+      return;
+    }
+
+    event.preventDefault();
+    handlePointerRevisionChange(event.clientX);
+  };
+
+  const handlePointerRelease = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
   return (
     <div
       className="revision-slider-shell"
+      onPointerCancel={handlePointerRelease}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerRelease}
+      ref={shellRef}
       style={{ '--revision-progress': `${getRevisionMarkerPercent(draftRevision, props.maxRevision)}%` } as CSSProperties}
     >
       <input
@@ -58,7 +99,6 @@ export function RevisionSlider(props: {
             className="revision-marker-slot"
             data-testid={`revision-marker-slot-${marker}`}
             key={marker}
-            onClick={() => handleRevisionChange(String(marker))}
             style={{ left: `${getRevisionMarkerPercent(marker, props.maxRevision)}%` }}
             type="button"
           >
@@ -86,4 +126,13 @@ export function RevisionSlider(props: {
 
 export function getRevisionMarkerPercent(revision: number, maxRevision: number) {
   return maxRevision <= 1 ? 0 : ((revision - 1) / (maxRevision - 1)) * 100;
+}
+
+export function getRevisionFromPointer(clientX: number, railLeft: number, railWidth: number, maxRevision: number) {
+  if (maxRevision <= 1 || railWidth <= 0) {
+    return 1;
+  }
+
+  const progress = Math.min(Math.max((clientX - railLeft) / railWidth, 0), 1);
+  return Math.round(progress * (maxRevision - 1)) + 1;
 }

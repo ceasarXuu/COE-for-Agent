@@ -106,6 +106,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - A quick browser probe is to read `[data-testid^="revision-marker-slot-"]`: for two revisions, slot centers should align with the range `x` and `x + width` endpoints via `left: 0%` and `left: 100%`.
 - Revision markers are not selection indicators. Keep marker classes stable across all revisions and show history position only through the rail fill: `--revision-progress` drives the filled left segment while the right segment stays unfilled.
 - The hidden native range can still inherit global `input:focus` styles. Explicitly reset range focus `box-shadow`, outline, and border inside `.revision-slider-shell`, otherwise a cyan rounded rectangle appears around the full slider after interaction.
+- If custom marker buttons sit above the hidden range, native dragging can regress into click-only behavior. Handle pointer down/move at the slider shell, capture the pointer, and map `clientX` back to the nearest revision so dragging from a marker or the rail both work.
 
 ## Revision Slider Dragging
 

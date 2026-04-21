@@ -5,10 +5,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { describe, expect, test } from 'vitest';
 
-import { getRevisionMarkerPercent, RevisionSlider } from '../src/components/revision-slider.js';
+import { getRevisionFromPointer, getRevisionMarkerPercent, RevisionSlider } from '../src/components/revision-slider.js';
 
 describe('revision slider', () => {
-  test('keeps a local draft value, avoids duplicate input handlers, and makes each revision marker a clickable hover target', () => {
+  test('keeps a local draft value, avoids duplicate input handlers, and makes each revision marker a draggable hover target', () => {
     const source = readFileSync(
       resolve(import.meta.dirname, '../src/components/revision-slider.tsx'),
       'utf8'
@@ -25,12 +25,21 @@ describe('revision slider', () => {
     expect(source).toContain('revision-marker-row');
     expect(source).toContain('revision-marker-slot');
     expect(source).toContain('revision-hover-bubble');
-    expect(source).toContain('onClick={() => handleRevisionChange(String(marker))}');
+    expect(source).toContain('onPointerDown={handlePointerDown}');
+    expect(source).toContain('onPointerMove={handlePointerMove}');
     expect(source).toContain('type="button"');
     expect(source).toContain('data-testid={`revision-marker-${marker}`}');
     expect(css).toContain('inset: 50% 0 auto 0;');
     expect(source).not.toContain('revision-scale');
     expect(source).not.toContain('onInput=');
+  });
+
+  test('maps pointer drag positions to the nearest revision', () => {
+    expect(getRevisionFromPointer(-20, 0, 100, 3)).toBe(1);
+    expect(getRevisionFromPointer(0, 0, 100, 3)).toBe(1);
+    expect(getRevisionFromPointer(50, 0, 100, 3)).toBe(2);
+    expect(getRevisionFromPointer(100, 0, 100, 3)).toBe(3);
+    expect(getRevisionFromPointer(140, 0, 100, 3)).toBe(3);
   });
 
   test('places two revision markers on the slider endpoints instead of centered between native range endpoints', () => {
