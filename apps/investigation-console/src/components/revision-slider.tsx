@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
 
 export function RevisionSlider(props: {
   maxRevision: number;
@@ -37,7 +37,10 @@ export function RevisionSlider(props: {
   };
 
   return (
-    <div className="revision-slider-shell">
+    <div
+      className="revision-slider-shell"
+      style={{ '--revision-progress': `${getRevisionMarkerPercent(draftRevision, props.maxRevision)}%` } as CSSProperties}
+    >
       <input
         aria-label="Revision slider"
         data-testid="revision-slider"
@@ -59,10 +62,7 @@ export function RevisionSlider(props: {
             style={{ left: `${getRevisionMarkerPercent(marker, props.maxRevision)}%` }}
             type="button"
           >
-            <span
-              className={`revision-marker${marker <= draftRevision ? ' is-active' : ''}`}
-              data-testid={`revision-marker-${marker}`}
-            />
+            <span className="revision-marker" data-testid={`revision-marker-${marker}`} />
             {revisionLookup.has(marker) ? (
               <div className="revision-hover-bubble" data-testid={`revision-bubble-${marker}`}>
                 {revisionLookup.get(marker)?.map((event) => (

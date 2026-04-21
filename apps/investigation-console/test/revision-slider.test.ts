@@ -53,6 +53,25 @@ describe('revision slider', () => {
     expect(html).toContain('left:100%');
   });
 
+  test('uses progress fill on the rail without selected marker highlight classes', () => {
+    expect(getRevisionMarkerPercent(1, 3)).toBe(0);
+    expect(getRevisionMarkerPercent(2, 3)).toBe(50);
+    expect(getRevisionMarkerPercent(3, 3)).toBe(100);
+
+    const html = renderToStaticMarkup(
+      createElement(RevisionSlider, {
+        currentRevision: 2,
+        maxRevision: 3,
+        onChange() {
+          return;
+        }
+      })
+    );
+
+    expect(html).toContain('--revision-progress:50%');
+    expect(html).not.toContain('is-active');
+  });
+
   test('hides the native range visuals so custom revision markers are the only visible dots', () => {
     const css = readFileSync(
       resolve(import.meta.dirname, '../src/styles/app.css'),
@@ -63,5 +82,6 @@ describe('revision slider', () => {
     expect(css).toContain('background: transparent;');
     expect(css).toContain('::-webkit-slider-thumb');
     expect(css).toContain('opacity: 0;');
+    expect(css).toContain('var(--revision-progress, 100%)');
   });
 });
