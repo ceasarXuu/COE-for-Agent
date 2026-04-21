@@ -84,4 +84,17 @@ describe('revision slider', () => {
     expect(css).toContain('opacity: 0;');
     expect(css).toContain('var(--revision-progress, 100%)');
   });
+
+  test('suppresses focus rings because the revision strip has no selected state', () => {
+    const css = readFileSync(
+      resolve(import.meta.dirname, '../src/styles/app.css'),
+      'utf8'
+    );
+
+    expect(css).toContain('.revision-slider-shell input[type="range"]:focus');
+    expect(css).toContain('border: 0;');
+    expect(css).toContain('box-shadow: none;');
+    expect(css).toContain('.revision-marker-slot:focus-visible');
+    expect(css).toContain('outline: none;');
+  });
 });

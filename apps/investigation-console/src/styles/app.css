@@ -774,9 +774,16 @@
   z-index: 1;
   margin: 0;
   padding: 0;
+  border: 0;
   appearance: none;
   background: transparent;
   cursor: pointer;
+}
+
+.revision-slider-shell input[type="range"]:focus {
+  outline: none;
+  border: 0;
+  box-shadow: none;
 }
 
 .revision-slider-shell input[type="range"]::-webkit-slider-runnable-track {
@@ -830,7 +837,7 @@
 }
 
 .revision-marker-slot:focus-visible {
-  outline: 2px solid rgba(0, 240, 255, 0.45);
+  outline: none;
   outline-offset: 2px;
   border-radius: 999px;
 }

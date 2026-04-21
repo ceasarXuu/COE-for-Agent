@@ -105,6 +105,7 @@ pnpm --filter @coe/investigation-console test:e2e
 - When the slider has exactly two revisions, the only visible dots should be the two revision markers at the endpoints. Hide native range track/thumb visuals and position custom markers with absolute percentages, otherwise the browser range endpoints plus centered custom markers look like four revision points.
 - A quick browser probe is to read `[data-testid^="revision-marker-slot-"]`: for two revisions, slot centers should align with the range `x` and `x + width` endpoints via `left: 0%` and `left: 100%`.
 - Revision markers are not selection indicators. Keep marker classes stable across all revisions and show history position only through the rail fill: `--revision-progress` drives the filled left segment while the right segment stays unfilled.
+- The hidden native range can still inherit global `input:focus` styles. Explicitly reset range focus `box-shadow`, outline, and border inside `.revision-slider-shell`, otherwise a cyan rounded rectangle appears around the full slider after interaction.
 
 ## Revision Slider Dragging
 
