@@ -15,6 +15,7 @@ import { getCaseGraph, getCaseSnapshot, getCaseTimeline } from '../lib/api.js';
 import { useI18n } from '../lib/i18n.js';
 import { connectConsoleStream } from '../lib/sse.js';
 import { reconcilePersistedDraftSelection } from './case-workspace-draft-reconciliation.js';
+import { workspaceMatchesRouteRevision } from './case-workspace-revision-sync.js';
 import { resetUIState, setRevision, setSelectedNodeId, useUIStore } from '../store/ui-store.js';
 
 interface WorkspaceData {
@@ -70,9 +71,7 @@ export function CaseWorkspaceRoute() {
       .then(([snapshot, timeline, graph]) => ({ snapshot, timeline, graph }))
       .then((data) => {
         if (!cancelled) {
-          startTransition(() => {
-            setWorkspace(data);
-          });
+          setWorkspace(data);
         }
       })
       .catch((reason: unknown) => {
@@ -131,6 +130,21 @@ export function CaseWorkspaceRoute() {
     }
   }, [draftNodes, selectedNodeId, workspace]);
 
+  const workspaceMatchesRevision = workspace ? workspaceMatchesRouteRevision(workspace, revision) : false;
+  useEffect(() => {
+    if (!workspace || workspaceMatchesRevision) {
+      return;
+    }
+
+    console.info('[investigation-console] workspace-revision-pending', {
+      event: 'workspace.revision_pending',
+      routeRevision: revision,
+      snapshotRequestedRevision: workspace.snapshot.requestedRevision,
+      timelineRequestedRevision: workspace.timeline.requestedRevision,
+      graphRequestedRevision: workspace.graph.requestedRevision
+    });
+  }, [revision, workspace, workspaceMatchesRevision]);
+
   const maxRevision = workspace?.snapshot.headRevision ?? 1;
   const currentRevision = revision ?? maxRevision;
   const historical = revision !== null;
@@ -138,7 +152,7 @@ export function CaseWorkspaceRoute() {
   listSearchParams.delete('revision');
   const listSearch = listSearchParams.toString();
   const selectedDraftNode = draftNodes.find((node) => node.id === selectedNodeId) ?? null;
-  const selectedNode = !selectedDraftNode && workspace && selectedNodeId
+  const selectedNode = !selectedDraftNode && workspace && workspaceMatchesRevision && selectedNodeId
     ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
 
@@ -216,7 +230,8 @@ export function CaseWorkspaceRoute() {
       <div className="workspace-grid workspace-grid-editor">
         <section className="workspace-main workspace-main-graph">
           {loading && !workspace ? <section className="panel graph-stage workspace-stage-fill"><p>{t('workspace.replaying')}</p></section> : null}
-          {workspace ? (
+          {workspace && !workspaceMatchesRevision ? <section className="panel graph-stage workspace-stage-fill"><p>{t('workspace.replaying')}</p></section> : null}
+          {workspace && workspaceMatchesRevision ? (
             <GraphCanvas
               draftNodes={draftNodes}
               graph={workspace.graph}
