@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import { describe, expect, test } from 'vitest';
+
+import { getRevisionMarkerPercent, RevisionSlider } from '../src/components/revision-slider.js';
 
 describe('revision slider', () => {
   test('keeps a local draft value, avoids duplicate input handlers, and makes each revision marker a clickable hover target', () => {
@@ -27,5 +31,37 @@ describe('revision slider', () => {
     expect(css).toContain('inset: 50% 0 auto 0;');
     expect(source).not.toContain('revision-scale');
     expect(source).not.toContain('onInput=');
+  });
+
+  test('places two revision markers on the slider endpoints instead of centered between native range endpoints', () => {
+    expect(getRevisionMarkerPercent(1, 2)).toBe(0);
+    expect(getRevisionMarkerPercent(2, 2)).toBe(100);
+
+    const html = renderToStaticMarkup(
+      createElement(RevisionSlider, {
+        currentRevision: 2,
+        maxRevision: 2,
+        onChange() {
+          return;
+        }
+      })
+    );
+
+    expect(html).toContain('data-testid="revision-marker-slot-1"');
+    expect(html).toContain('left:0%');
+    expect(html).toContain('data-testid="revision-marker-slot-2"');
+    expect(html).toContain('left:100%');
+  });
+
+  test('hides the native range visuals so custom revision markers are the only visible dots', () => {
+    const css = readFileSync(
+      resolve(import.meta.dirname, '../src/styles/app.css'),
+      'utf8'
+    );
+
+    expect(css).toContain('appearance: none;');
+    expect(css).toContain('background: transparent;');
+    expect(css).toContain('::-webkit-slider-thumb');
+    expect(css).toContain('opacity: 0;');
   });
 });

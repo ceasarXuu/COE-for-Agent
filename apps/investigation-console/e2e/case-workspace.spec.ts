@@ -359,6 +359,10 @@ test('workspace preserves manually saved hypothesis edits across reloads', async
   await expect.poll(() => graphNodes.count()).toBe(2);
 
   const hypothesisNode = page.locator('.react-flow__node').nth(1);
+  await expect.poll(async () => {
+    const nodeId = await hypothesisNode.getAttribute('data-id');
+    return nodeId !== null && !nodeId.startsWith('draft_');
+  }).toBe(true);
   const firstHypothesisNodeId = await hypothesisNode.getAttribute('data-id');
   expect(firstHypothesisNodeId).toBeTruthy();
 

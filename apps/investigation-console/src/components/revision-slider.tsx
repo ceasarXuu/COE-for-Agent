@@ -56,6 +56,7 @@ export function RevisionSlider(props: {
             data-testid={`revision-marker-slot-${marker}`}
             key={marker}
             onClick={() => handleRevisionChange(String(marker))}
+            style={{ left: `${getRevisionMarkerPercent(marker, props.maxRevision)}%` }}
             type="button"
           >
             <span
@@ -81,4 +82,8 @@ export function RevisionSlider(props: {
       </span>
     </div>
   );
+}
+
+export function getRevisionMarkerPercent(revision: number, maxRevision: number) {
+  return maxRevision <= 1 ? 0 : ((revision - 1) / (maxRevision - 1)) * 100;
 }

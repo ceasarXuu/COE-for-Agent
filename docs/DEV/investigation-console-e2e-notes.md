@@ -102,6 +102,8 @@ pnpm --filter @coe/investigation-console test:e2e
 - Timeline revision controls should stay hidden when the case has fewer than two revisions; showing a `1 -> 1` slider adds noise without adding any history navigation value.
 - The stable regression check is package-local: `pnpm --filter @coe/investigation-console test -- timeline-view.test.ts`.
 - Keep the guard in `TimelineView` itself so any caller that passes revision controls for a single-revision snapshot still renders the correct UI.
+- When the slider has exactly two revisions, the only visible dots should be the two revision markers at the endpoints. Hide native range track/thumb visuals and position custom markers with absolute percentages, otherwise the browser range endpoints plus centered custom markers look like four revision points.
+- A quick browser probe is to read `[data-testid^="revision-marker-slot-"]`: for two revisions, slot centers should align with the range `x` and `x + width` endpoints via `left: 0%` and `left: 100%`.
 
 ## Revision Slider Dragging
 
