@@ -137,7 +137,7 @@ export function WorkspaceTimeline(props: {
               />
               {revisionLookup.has(marker) ? (
                 <div
-                  className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-64 -translate-x-1/2 rounded-lg border border-border bg-popover p-3 text-left text-sm text-popover-foreground shadow-xl group-hover:block"
+                  className={getRevisionBubblePositionClassName(marker, props.maxRevision)}
                   data-testid={`revision-bubble-${marker}`}
                 >
                   <div className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -166,6 +166,20 @@ export function WorkspaceTimeline(props: {
       </div>
     </section>
   );
+}
+
+export function getRevisionBubblePositionClassName(revision: number, maxRevision: number) {
+  const baseClassName = 'pointer-events-none absolute bottom-full z-20 mb-3 hidden w-64 rounded-lg border border-border bg-popover p-3 text-left text-sm text-popover-foreground shadow-xl group-hover:block';
+
+  if (revision <= 1) {
+    return `${baseClassName} left-[calc(50%+0.75rem)] translate-x-0`;
+  }
+
+  if (revision >= maxRevision) {
+    return `${baseClassName} left-auto right-[calc(50%+0.75rem)] translate-x-0`;
+  }
+
+  return `${baseClassName} left-1/2 -translate-x-1/2`;
 }
 
 export function getRevisionMarkerPercent(revision: number, maxRevision: number) {

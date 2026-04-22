@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 
 import { I18nProvider } from '../src/lib/i18n.js';
-import { WorkspaceTimeline } from '../src/components/workspace/workspace-timeline.js';
+import { WorkspaceTimeline, getRevisionBubblePositionClassName } from '../src/components/workspace/workspace-timeline.js';
 
 function renderTimeline(props: {
   currentRevision: number;
@@ -32,6 +32,17 @@ function renderTimeline(props: {
 }
 
 describe('v2 workspace timeline', () => {
+  test('keeps edge revision bubbles inside the viewport with safe margins', () => {
+    expect(getRevisionBubblePositionClassName(1, 7)).toContain('left-[calc(50%+0.75rem)]');
+    expect(getRevisionBubblePositionClassName(1, 7)).not.toContain('-translate-x-1/2');
+
+    expect(getRevisionBubblePositionClassName(7, 7)).toContain('right-[calc(50%+0.75rem)]');
+    expect(getRevisionBubblePositionClassName(7, 7)).toContain('left-auto');
+
+    expect(getRevisionBubblePositionClassName(4, 7)).toContain('left-1/2');
+    expect(getRevisionBubblePositionClassName(4, 7)).toContain('-translate-x-1/2');
+  });
+
   test('renders revision markers for every available revision on the rail', () => {
     const html = renderTimeline({
       currentRevision: 3,
