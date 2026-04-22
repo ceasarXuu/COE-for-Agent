@@ -28,6 +28,15 @@ import {
   type CreateDraftNodeRequest,
   type DraftNodeRecord
 } from '@/lib/workspace/case-node-drafts.js';
+import {
+  buildGraphNodePositionStorageKey,
+  getGraphNodePositionStorage,
+  mergeGraphNodePositions,
+  readGraphNodePositions,
+  upsertGraphNodePosition,
+  writeGraphNodePositions,
+  type GraphNodePositionMap
+} from '@/lib/workspace/graph-node-positions.js';
 import { getPresentationKind } from '@/lib/workspace/graph-node-presentation.js';
 import { computeGraphLayout } from '@/lib/workspace/use-graph-layout.js';
 import { GlowingEdge } from '@/components/workspace/graph/edges/glowing-edge.js';
@@ -83,12 +92,41 @@ export function GraphCanvas(props: GraphCanvasProps) {
   const draftNodes = props.draftNodes ?? [];
   const selectedNodeId = props.selectedNodeId ?? null;
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const positionOverridesRef = useRef<GraphNodePositionMap>({});
+  const storageKey = useMemo(
+    () => caseId
+      ? buildGraphNodePositionStorageKey({
+          caseId,
+          requestedRevision: props.snapshot.requestedRevision
+        })
+      : null,
+    [caseId, props.snapshot.requestedRevision]
+  );
   const [pendingDraftCreate, setPendingDraftCreate] = useState<PendingDraftCreate | null>(null);
+  const [positionOverrides, setPositionOverrides] = useState<GraphNodePositionMap>({});
   const [flowProjector, setFlowProjector] = useState<FlowProjector | null>(null);
   const layout = useMemo(() => computeGraphLayout(props.graph), [props.graph]);
 
+  useEffect(() => {
+    const restoredPositions = readGraphNodePositions(getGraphNodePositionStorage(), storageKey);
+    setPositionOverrides(restoredPositions);
+
+    if (storageKey && Object.keys(restoredPositions).length > 0) {
+      console.info('[investigation-console-v2] graph-node-positions-restored', {
+        event: 'graph.node_positions_restored',
+        caseId,
+        count: Object.keys(restoredPositions).length,
+        storageKey
+      });
+    }
+  }, [caseId, storageKey]);
+
+  useEffect(() => {
+    positionOverridesRef.current = positionOverrides;
+  }, [positionOverrides]);
+
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
-    const persistedNodes = layout.nodes.map((node) => ({
+    const persistedNodes = mergeGraphNodePositions(layout.nodes, positionOverrides).map((node) => ({
       id: node.id,
       type: node.type,
       position: node.position,
@@ -106,7 +144,7 @@ export function GraphCanvas(props: GraphCanvasProps) {
     const transientDraftNodes = draftNodes.map((draftNode) => ({
       id: draftNode.id,
       type: draftNode.kind,
-      position: draftNode.position,
+      position: positionOverrides[draftNode.id] ?? draftNode.position,
       data: {
         ...draftNode,
         isDraft: true,
@@ -120,7 +158,7 @@ export function GraphCanvas(props: GraphCanvasProps) {
     }));
 
     return [...persistedNodes, ...transientDraftNodes];
-  }, [draftNodes, formatEnumLabel, layout.nodes, selectedNodeId, t]);
+  }, [draftNodes, formatEnumLabel, layout.nodes, positionOverrides, selectedNodeId, t]);
 
   const [nodes, setNodes] = useState<Node<GraphNodeViewData>[]>(() => baseNodes);
 
@@ -221,10 +259,41 @@ export function GraphCanvas(props: GraphCanvasProps) {
     props.onClearSelection?.();
   }
 
+  function handleNodeDragStart(
+    _event: React.MouseEvent,
+    node: { id: string }
+  ) {
+    props.onSelectNode(node.id);
+  }
+
   function handleNodeDragStop(
     _event: React.MouseEvent,
     node: { id: string; position: { x: number; y: number } }
   ) {
+    props.onSelectNode(node.id);
+
+    const nextValue = upsertGraphNodePosition(positionOverridesRef.current, node.id, node.position);
+    positionOverridesRef.current = nextValue;
+    setPositionOverrides(nextValue);
+
+    if (!node.id.startsWith('draft_')) {
+      const persistedPositions = Object.fromEntries(
+        Object.entries(nextValue).filter(([key]) => !key.startsWith('draft_'))
+      );
+      writeGraphNodePositions(
+        getGraphNodePositionStorage(),
+        storageKey,
+        persistedPositions
+      );
+      console.info('[investigation-console-v2] graph-node-position-persisted', {
+        event: 'graph.node_position_persisted',
+        caseId,
+        nodeId: node.id,
+        position: node.position,
+        count: Object.keys(persistedPositions).length
+      });
+    }
+
     console.info('[investigation-console-v2] graph-node-repositioned', {
       event: 'graph.node_repositioned',
       caseId,
@@ -288,6 +357,7 @@ export function GraphCanvas(props: GraphCanvasProps) {
           onConnectStart={handleConnectStart}
           onInit={setFlowProjector}
           onMoveEnd={handleMoveEnd}
+          onNodeDragStart={handleNodeDragStart}
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => props.onSelectNode(node.id)}
           onNodeDragStop={handleNodeDragStop}
           onNodesChange={handleNodesChange}

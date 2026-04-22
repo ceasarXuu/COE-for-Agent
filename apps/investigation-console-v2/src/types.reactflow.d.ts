@@ -81,6 +81,7 @@ declare module 'reactflow' {
     onConnectStart?: (event: React.MouseEvent | React.TouchEvent, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => void;
     onConnectEnd?: (event: MouseEvent | TouchEvent) => void;
     onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+    onNodeDragStart?: (event: React.MouseEvent, node: Node) => void;
     onNodeDragStop?: (event: React.MouseEvent, node: Node) => void;
     onNodesChange?: (changes: NodeChange[]) => void;
     onMoveEnd?: (event: MouseEvent | TouchEvent | null, viewport: { x: number; y: number; zoom: number }) => void;

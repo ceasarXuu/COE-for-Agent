@@ -68,3 +68,24 @@ pnpm --filter @coe/investigation-console test
 ```
 
 That is the fastest guard against silently breaking the legacy frontend while v2 is still in parallel rollout.
+
+## 5. Graph drag persistence
+
+The v2 graph now persists dragged node positions in local storage so nodes do not snap back after selection changes or reloads.
+
+Current behavior:
+- drag start selects the dragged node
+- drag stop writes persisted node positions to:
+
+```text
+investigation-console-v2.graph-node-positions:<caseId>:<revision-or-head>
+```
+
+- draft nodes keep their drag position for the current session through in-memory overrides
+- persisted nodes restore from local storage on the next render/load
+
+Operational note:
+- if a future graph change appears to "forget" drag positions, inspect the browser local storage key first
+- logs to look for:
+  - `graph.node_positions_restored`
+  - `graph.node_position_persisted`
