@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "radix-nova",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "olive",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "tabler",
+  "rtl": false,
+  "aliases": {
+    "components": "@coe/ui/components",
+    "utils": "@coe/ui/lib/utils",
+    "ui": "@coe/ui/components",
+    "lib": "@coe/ui/lib",
+    "hooks": "@coe/ui/hooks"
+  },
+  "menuColor": "inverted-translucent",
+  "menuAccent": "subtle",
+  "registries": {}
+}
