@@ -1,12 +1,10 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { Badge } from '@coe/ui/components/badge';
 import { Button } from '@coe/ui/components/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle
 } from '@coe/ui/components/card';
@@ -20,7 +18,7 @@ import {
   NativeSelect,
   NativeSelectOption
 } from '@coe/ui/components/native-select';
-import { IconLoader2, IconPlus, IconSearch } from '@tabler/icons-react';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { buildIdempotencyKey } from '@coe/shared-utils';
 
 import { CaseGallery } from '@/components/case-gallery.js';
@@ -119,8 +117,6 @@ export function CasesPage() {
     };
   }, [compareText, deferredQuery, sort, t]);
 
-  const loadedLabel = useMemo(() => t('cases.loaded', { count: cases.length }), [cases.length, t]);
-
   async function handleCreateCase(draft: ManualCaseDraft) {
     setCreatePending(true);
     setCreateError(null);
@@ -176,23 +172,7 @@ export function CasesPage() {
 
       <Card>
         <CardHeader className="gap-3 border-b">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>{t('root.cases')}</CardTitle>
-              <CardDescription>{loadedLabel}</CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{sort}</Badge>
-              {loading ? (
-                <Badge variant="secondary">
-                  <IconLoader2 className="mr-1 size-3 animate-spin" />
-                  {t('cases.refreshing')}
-                </Badge>
-              ) : (
-                <Badge variant="outline">{t('cases.stableProjection')}</Badge>
-              )}
-            </div>
-          </div>
+          <CardTitle>{t('root.cases')}</CardTitle>
 
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
             <InputGroup>
