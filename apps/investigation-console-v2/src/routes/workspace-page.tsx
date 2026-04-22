@@ -250,6 +250,7 @@ export function WorkspacePage() {
           <WorkspaceTimeline
             currentRevision={currentRevision}
             maxRevision={maxRevision}
+            timeline={workspace.timeline}
             onChange={(nextRevision) => {
               const nextParams = new URLSearchParams(searchParams);
               if (nextRevision >= maxRevision) {

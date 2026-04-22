@@ -15,6 +15,11 @@ test('v2 cases page and workspace basic flow render correctly', async ({ page })
   await firstCaseCard.click();
 
   await expect(page.locator('[data-testid="graph-stage"]').first()).toBeVisible();
+  await expect(page.locator('[data-testid="revision-marker-slot-1"]')).toBeVisible();
+  await expect(page.locator('[data-testid="revision-marker-slot-2"]')).toBeVisible();
+
+  await page.locator('[data-testid="revision-marker-slot-2"]').hover();
+  await expect(page.locator('[data-testid="revision-bubble-2"]')).toBeVisible();
   await expect(page.locator('[data-testid="node-editor-panel"]')).toHaveCount(0);
 
   const firstNode = page.locator('.react-flow__node').first();
