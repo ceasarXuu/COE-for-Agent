@@ -89,3 +89,16 @@ Operational note:
 - logs to look for:
   - `graph.node_positions_restored`
   - `graph.node_position_persisted`
+
+## 6. Numeric typography with Raleway
+
+The shadcn preset uses `Raleway Variable` as the app font. Its default numeral behavior can render digits with uneven heights that look unstable in IDs, counts, and inputs.
+
+The current base style forces:
+
+```css
+font-variant-numeric: lining-nums tabular-nums;
+font-feature-settings: "lnum" 1, "tnum" 1;
+```
+
+Keep these rules unless the product explicitly changes font behavior. If a future preset refresh reintroduces wobbly digits, check `packages/ui/src/styles/globals.css` first.
