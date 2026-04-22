@@ -31,7 +31,7 @@ import {
 import { getPresentationKind } from '@/lib/workspace/graph-node-presentation.js';
 import { computeGraphLayout } from '@/lib/workspace/use-graph-layout.js';
 import { GlowingEdge } from '@/components/workspace/graph/edges/glowing-edge.js';
-import { GraphNodeCard, type GraphNodeViewData } from '@/components/workspace/graph/graph-node-card.js';
+import { type GraphNodeViewData } from '@/components/workspace/graph/graph-node-card.js';
 import { BlockerNode } from '@/components/workspace/graph/nodes/blocker-node.js';
 import { CaseNode } from '@/components/workspace/graph/nodes/case-node.js';
 import { EvidenceRefNode } from '@/components/workspace/graph/nodes/evidence-ref-node.js';
@@ -240,7 +240,7 @@ export function GraphCanvas(props: GraphCanvasProps) {
 
   if (nodes.length === 0) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-border bg-card/80" data-testid="graph-stage">
+      <div className="flex h-full min-h-[560px] items-center justify-center rounded-xl border border-border/70 bg-background/20" data-testid="graph-stage">
         <Empty className="border-none bg-transparent">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -255,14 +255,17 @@ export function GraphCanvas(props: GraphCanvasProps) {
   }
 
   return (
-    <div className="relative min-h-[560px] overflow-hidden rounded-xl border border-border bg-card/90" data-testid="graph-stage">
+    <div className="graph-canvas-root relative h-full min-h-[560px] rounded-xl border border-border/70 bg-background/20" data-testid="graph-stage">
       <div
         ref={containerRef}
-        className="h-[min(72vh,820px)] min-h-[560px] bg-[radial-gradient(circle_at_top,rgba(181,138,70,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_35%)]"
+        className="h-full overflow-hidden rounded-[inherit] bg-[radial-gradient(circle_at_top,rgba(181,138,70,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_35%)]"
       >
         {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
         <ReactFlow
-          className="[&_svg]:outline-none"
+          className={cn(
+            '[&_.react-flow__controls]:!bottom-4 [&_.react-flow__controls]:!left-4 [&_.react-flow__controls]:!rounded-lg [&_.react-flow__controls]:!border [&_.react-flow__controls]:!border-border/70 [&_.react-flow__controls]:!bg-background/94 [&_.react-flow__controls]:!shadow-sm',
+            '[&_.react-flow__minimap]:!bottom-4 [&_.react-flow__minimap]:!right-4 [&_.react-flow__minimap]:!rounded-lg [&_.react-flow__minimap]:!border [&_.react-flow__minimap]:!border-border/70 [&_.react-flow__minimap]:!shadow-sm'
+          )}
           defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
           edgeTypes={edgeTypes}
           edges={baseEdges}
@@ -287,9 +290,9 @@ export function GraphCanvas(props: GraphCanvasProps) {
           selectionOnDrag={false}
         >
           <Background color="rgba(138, 134, 124, 0.18)" gap={18} />
-          <Controls className="!rounded-lg !border !border-border !bg-background/90 !shadow-sm" />
+          <Controls />
           <MiniMap
-            className="!rounded-lg !border !border-border !bg-background/95"
+            bgColor="rgba(15, 15, 13, 0.96)"
             maskColor="rgba(23, 22, 19, 0.72)"
             nodeColor={(node) => getNodeColor(node.type)}
           />
@@ -297,9 +300,7 @@ export function GraphCanvas(props: GraphCanvasProps) {
 
         {pendingDraftCreate && pendingDraftCreate.paneX > 0 ? (
           <div
-            className={cn(
-              'absolute z-20 flex min-w-48 flex-col gap-1 rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-xl'
-            )}
+            className="absolute z-20 flex min-w-48 flex-col gap-1 rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-xl"
             style={{
               left: pendingDraftCreate.paneX,
               top: pendingDraftCreate.paneY

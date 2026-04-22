@@ -8,3 +8,18 @@
     min-height: 100vh;
   }
 }
+
+@layer components {
+  .graph-canvas-root .react-flow__attribution {
+    display: none !important;
+  }
+
+  .graph-canvas-root .react-flow__minimap {
+    background: rgba(15, 15, 13, 0.96) !important;
+    border-color: color-mix(in oklab, var(--border) 100%, transparent) !important;
+  }
+
+  .graph-canvas-root .react-flow__minimap svg {
+    background: rgba(15, 15, 13, 0.96) !important;
+  }
+}

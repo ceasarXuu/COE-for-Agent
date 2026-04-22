@@ -113,8 +113,10 @@ declare module 'reactflow' {
   }>;
   
   export const MiniMap: ComponentType<{
+    bgColor?: string;
     nodeColor?: (node: Node) => string;
     maskColor?: string;
     className?: string;
+    style?: React.CSSProperties;
   }>;
 }

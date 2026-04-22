@@ -3,13 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@coe/ui/components/alert';
 import { Badge } from '@coe/ui/components/badge';
 import { Button } from '@coe/ui/components/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '@coe/ui/components/card';
-import { ScrollArea } from '@coe/ui/components/scroll-area';
+import { Separator } from '@coe/ui/components/separator';
 
 import { getCaseEvidencePool, type GraphNodeRecord } from '@/lib/api.js';
 import { useI18n } from '@/lib/i18n.js';
@@ -135,14 +129,14 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
 
   if (!selectedNode) {
     return (
-      <Card data-testid="node-editor-panel" className="h-full">
-        <CardHeader>
-          <CardTitle>{t('nodeEditor.kicker')}</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground" data-testid="node-editor-empty">
+      <section className="flex h-full min-h-[560px] flex-col" data-testid="node-editor-panel">
+        <header className="border-b border-border/70 pb-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t('nodeEditor.kicker')}</div>
+        </header>
+        <div className="flex flex-1 items-center justify-center px-2 text-center text-sm text-muted-foreground" data-testid="node-editor-empty">
           {t('nodeEditor.empty')}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
@@ -224,20 +218,20 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
   }
 
   return (
-    <Card data-testid="node-editor-panel" className="h-full">
-      <CardHeader className="gap-3 border-b">
+    <section className="flex h-full min-h-[560px] flex-col" data-testid="node-editor-panel">
+      <header className="border-b border-border/70 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t('nodeEditor.kicker')}</div>
-            <CardTitle data-testid="node-editor-title">{selectedNode.label}</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight" data-testid="node-editor-title">{selectedNode.label}</h2>
           </div>
           <Badge data-testid="node-editor-current-status" variant={props.selectedDraftNode ? 'secondary' : 'outline'}>
             {selectedStatusLabel}
           </Badge>
         </div>
-      </CardHeader>
+      </header>
 
-      <CardContent className="flex h-full flex-col gap-4 pt-4">
+      <div className="flex h-full flex-1 flex-col gap-4 pt-4">
         {props.historical ? (
           <Alert>
             <AlertTitle>{t('action.historicalFrozen')}</AlertTitle>
@@ -250,8 +244,8 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
           </Alert>
         ) : null}
 
-        <ScrollArea className="min-h-0 flex-1 pr-3">
-          <div className="space-y-5">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="space-y-5 pb-4">
             {props.selectedDraftNode ? (
               <DraftNodeEditorFields
                 disabled={props.historical || pending}
@@ -273,9 +267,11 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
               />
             )}
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
+        <Separator />
+
+        <div className="flex flex-wrap justify-end gap-2 pt-1">
           {props.selectedDraftNode ? (
             <>
               <Button
@@ -304,10 +300,10 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
               type="button"
             >
               {t('nodeEditor.save')}
-            </Button>
+              </Button>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

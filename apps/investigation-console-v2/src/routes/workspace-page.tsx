@@ -2,7 +2,6 @@ import { startTransition, useCallback, useEffect, useMemo, useState } from 'reac
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { Alert, AlertDescription, AlertTitle } from '@coe/ui/components/alert';
-import { Badge } from '@coe/ui/components/badge';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,13 +10,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@coe/ui/components/breadcrumb';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '@coe/ui/components/card';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@coe/ui/components/resizable';
+import { Card, CardContent } from '@coe/ui/components/card';
 import { Skeleton } from '@coe/ui/components/skeleton';
 
 import { GraphCanvas } from '@/components/workspace/graph/graph-canvas.js';
@@ -51,7 +44,7 @@ interface WorkspaceData {
 }
 
 export function WorkspacePage() {
-  const { formatEnumLabel, t } = useI18n();
+  const { t } = useI18n();
   const params = useParams();
   const caseId = params.caseId ?? '';
   const navigate = useNavigate();
@@ -210,11 +203,9 @@ export function WorkspacePage() {
     requestRefresh();
   }
 
-  const counts = workspace?.snapshot.data.counts;
-
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-3">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -229,15 +220,34 @@ export function WorkspacePage() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {workspace?.snapshot.data.case?.stage ? (
-            <Badge variant="outline">{formatEnumLabel(workspace.snapshot.data.case.stage)}</Badge>
-          ) : null}
-          {workspace?.snapshot.data.case?.status ? (
-            <Badge variant="outline">{formatEnumLabel(workspace.snapshot.data.case.status)}</Badge>
-          ) : null}
-          {historical ? <Badge variant="secondary">{t('snapshot.historical')}</Badge> : null}
-        </div>
+        {workspace ? (
+          <WorkspaceTimeline
+            currentRevision={currentRevision}
+            maxRevision={maxRevision}
+            onChange={(nextRevision) => {
+              const nextParams = new URLSearchParams(searchParams);
+              if (nextRevision >= maxRevision) {
+                nextParams.delete('revision');
+              } else {
+                nextParams.set('revision', String(nextRevision));
+              }
+
+              startTransition(() => {
+                navigate({
+                  pathname: `/cases/${caseId}`,
+                  search: nextParams.toString() ? `?${nextParams.toString()}` : ''
+                });
+              });
+            }}
+          />
+        ) : (
+          <Card>
+            <CardContent className="space-y-4 pt-6">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-12 w-full" />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {error ? (
@@ -247,109 +257,44 @@ export function WorkspacePage() {
         </Alert>
       ) : null}
 
-      {workspace ? (
-        <WorkspaceTimeline
-          currentRevision={currentRevision}
-          maxRevision={maxRevision}
-          timeline={workspace.timeline}
-          onChange={(nextRevision) => {
-            const nextParams = new URLSearchParams(searchParams);
-            if (nextRevision >= maxRevision) {
-              nextParams.delete('revision');
-            } else {
-              nextParams.set('revision', String(nextRevision));
-            }
-
-            startTransition(() => {
-              navigate({
-                pathname: `/cases/${caseId}`,
-                search: nextParams.toString() ? `?${nextParams.toString()}` : ''
-              });
-            });
-          }}
-        />
-      ) : (
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-24 w-full" />
-          </CardContent>
-        </Card>
-      )}
-
-      {counts ? (
-        <div className="grid gap-4 md:grid-cols-5">
-          {([
-            ['Problems', counts.problems],
-            ['Hypotheses', counts.hypotheses],
-            ['Blockers', counts.blockers],
-            ['Repair Attempts', counts.repairAttempts],
-            ['Evidence', counts.evidenceRefs]
-          ] as const).map(([label, value]) => (
-            <Card key={label} size="sm">
-              <CardHeader>
-                <CardTitle className="text-sm">{label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">{value}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : null}
-
-      {workspace ? (
-        <>
-          <div className="hidden h-[min(72vh,920px)] min-h-[640px] lg:block">
-            <ResizablePanelGroup direction="horizontal">
-              <ResizablePanel defaultSize={66} minSize={50}>
-                <GraphCanvas
-                  draftNodes={draftNodes}
-                  graph={workspace.graph}
-                  selectedNodeId={selectedNodeId}
-                  snapshot={workspace.snapshot}
-                  onCreateDraftNode={handleCreateDraftNode}
-                  onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
-                />
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={34} minSize={28}>
-                <CaseNodeEditor
-                  caseId={caseId}
-                  currentRevision={currentRevision}
-                  historical={historical}
-                  selectedDraftNode={selectedDraftNode}
-                  selectedNode={selectedNode}
-                  onDiscardDraftNode={handleDiscardDraftNode}
-                  onMutationComplete={handleMutationComplete}
-                  onPatchDraftNode={handlePatchDraftNode}
-                />
-              </ResizablePanel>
-            </ResizablePanelGroup>
+      <section className="overflow-hidden rounded-2xl border border-border/80 bg-card/70 shadow-sm">
+        {loading && !workspace ? (
+          <div className="grid min-h-[640px] gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="border-b border-border/70 p-4 md:p-5 lg:border-b-0 lg:border-r">
+              <Skeleton className="h-[620px] w-full rounded-xl" />
+            </div>
+            <div className="p-4 md:p-5">
+              <Skeleton className="h-[620px] w-full rounded-xl" />
+            </div>
           </div>
+        ) : workspace ? (
+          <div className="grid min-h-[640px] gap-0 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="min-w-0 border-b border-border/70 bg-background/10 p-4 md:p-5 lg:border-b-0 lg:border-r">
+              <GraphCanvas
+                draftNodes={draftNodes}
+                graph={workspace.graph}
+                selectedNodeId={selectedNodeId}
+                snapshot={workspace.snapshot}
+                onCreateDraftNode={handleCreateDraftNode}
+                onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
+              />
+            </div>
 
-          <div className="flex flex-col gap-4 lg:hidden">
-            <GraphCanvas
-              draftNodes={draftNodes}
-              graph={workspace.graph}
-              selectedNodeId={selectedNodeId}
-              snapshot={workspace.snapshot}
-              onCreateDraftNode={handleCreateDraftNode}
-              onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
-            />
-            <CaseNodeEditor
-              caseId={caseId}
-              currentRevision={currentRevision}
-              historical={historical}
-              selectedDraftNode={selectedDraftNode}
-              selectedNode={selectedNode}
-              onDiscardDraftNode={handleDiscardDraftNode}
-              onMutationComplete={handleMutationComplete}
-              onPatchDraftNode={handlePatchDraftNode}
-            />
+            <aside className="min-w-0 bg-card/50 p-4 md:p-5">
+              <CaseNodeEditor
+                caseId={caseId}
+                currentRevision={currentRevision}
+                historical={historical}
+                selectedDraftNode={selectedDraftNode}
+                selectedNode={selectedNode}
+                onDiscardDraftNode={handleDiscardDraftNode}
+                onMutationComplete={handleMutationComplete}
+                onPatchDraftNode={handlePatchDraftNode}
+              />
+            </aside>
           </div>
-        </>
-      ) : null}
+        ) : null}
+      </section>
     </div>
   );
 }

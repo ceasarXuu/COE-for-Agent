@@ -22,7 +22,7 @@ export function DraftNodeEditorFields(props: {
   disabled: boolean;
   onPatchDraftNode: (draftNodeId: string, patch: DraftNodePatch) => void;
 }) {
-  const { t } = useI18n();
+  const { formatEnumLabel, t } = useI18n();
   const payload = asObject(props.draftNode.payload);
 
   const patchPayload = (nextPayload: Record<string, unknown>) => {
@@ -151,14 +151,14 @@ export function DraftNodeEditorFields(props: {
             onChange={(value) => patchPayload({ ...payload, effectOnParent: value })}
             options={props.draftNode.parentKind === 'repair_attempt'
               ? [
-                  { value: 'validates', label: 'validates' },
-                  { value: 'invalidates', label: 'invalidates' },
-                  { value: 'neutral', label: 'neutral' }
+                  { value: 'validates', label: formatEnumLabel('validates') },
+                  { value: 'invalidates', label: formatEnumLabel('invalidates') },
+                  { value: 'neutral', label: formatEnumLabel('neutral') }
                 ]
               : [
-                  { value: 'supports', label: 'supports' },
-                  { value: 'refutes', label: 'refutes' },
-                  { value: 'neutral', label: 'neutral' }
+                  { value: 'supports', label: formatEnumLabel('supports') },
+                  { value: 'refutes', label: formatEnumLabel('refutes') },
+                  { value: 'neutral', label: formatEnumLabel('neutral') }
                 ]}
           />
         </>
@@ -178,7 +178,7 @@ export function SavedNodeEditorFields(props: {
   onStatusChange: (value: string) => void;
   onStatusReasonChange: (value: string) => void;
 }) {
-  const { t } = useI18n();
+  const { formatEnumLabel, t } = useI18n();
   const selectedNode = props.selectedNode;
 
   if (!selectedNode) {
@@ -229,7 +229,7 @@ export function SavedNodeEditorFields(props: {
           testId="node-editor-status"
           value={props.targetStatus}
           onChange={props.onStatusChange}
-          options={props.statusOptions.map((status) => ({ value: status, label: status }))}
+          options={props.statusOptions.map((status) => ({ value: status, label: formatEnumLabel(status) }))}
         />
         <EditorTextarea
           disabled={props.disabled}
@@ -272,7 +272,7 @@ export function SavedNodeEditorFields(props: {
           testId="node-editor-status"
           value={props.targetStatus}
           onChange={props.onStatusChange}
-          options={props.statusOptions.map((status) => ({ value: status, label: status }))}
+          options={props.statusOptions.map((status) => ({ value: status, label: formatEnumLabel(status) }))}
         />
         <EditorTextarea
           disabled={props.disabled}
@@ -308,7 +308,7 @@ export function SavedNodeEditorFields(props: {
           testId="node-editor-status"
           value={props.targetStatus}
           onChange={props.onStatusChange}
-          options={props.statusOptions.map((status) => ({ value: status, label: status }))}
+          options={props.statusOptions.map((status) => ({ value: status, label: formatEnumLabel(status) }))}
         />
         <EditorTextarea
           disabled={props.disabled}
@@ -344,7 +344,7 @@ export function SavedNodeEditorFields(props: {
           testId="node-editor-status"
           value={props.targetStatus}
           onChange={props.onStatusChange}
-          options={props.statusOptions.map((status) => ({ value: status, label: status }))}
+          options={props.statusOptions.map((status) => ({ value: status, label: formatEnumLabel(status) }))}
         />
         <EditorTextarea
           disabled={props.disabled}
@@ -388,11 +388,11 @@ export function SavedNodeEditorFields(props: {
           value={props.draft.effectOnParent}
           onChange={(value) => props.onDraftChange({ effectOnParent: value })}
           options={[
-            { value: 'supports', label: 'supports' },
-            { value: 'refutes', label: 'refutes' },
-            { value: 'neutral', label: 'neutral' },
-            { value: 'validates', label: 'validates' },
-            { value: 'invalidates', label: 'invalidates' }
+            { value: 'supports', label: formatEnumLabel('supports') },
+            { value: 'refutes', label: formatEnumLabel('refutes') },
+            { value: 'neutral', label: formatEnumLabel('neutral') },
+            { value: 'validates', label: formatEnumLabel('validates') },
+            { value: 'invalidates', label: formatEnumLabel('invalidates') }
           ]}
         />
         <EditorTextarea
