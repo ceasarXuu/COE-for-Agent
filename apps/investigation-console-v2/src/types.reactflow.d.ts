@@ -84,6 +84,7 @@ declare module 'reactflow' {
     onNodeDragStop?: (event: React.MouseEvent, node: Node) => void;
     onNodesChange?: (changes: NodeChange[]) => void;
     onMoveEnd?: (event: MouseEvent | TouchEvent | null, viewport: { x: number; y: number; zoom: number }) => void;
+    onPaneClick?: (event: React.MouseEvent) => void;
     onPaneContextMenu?: (event: React.MouseEvent) => void;
     onInit?: (instance: unknown) => void;
     nodeTypes?: Record<string, ComponentType<NodeProps>>;

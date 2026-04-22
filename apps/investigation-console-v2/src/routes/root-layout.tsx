@@ -14,7 +14,7 @@ export function RootLayout() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-svh bg-background text-foreground">
+      <div className="flex min-h-svh flex-col bg-background text-foreground">
         <header className="sticky top-0 z-20 border-b border-border/70 bg-background/94 backdrop-blur">
           <div className="mx-auto flex h-14 w-full max-w-[1680px] items-center justify-between gap-4 px-4 md:h-16 md:px-6">
             <div className="min-w-0">
@@ -43,7 +43,7 @@ export function RootLayout() {
           </div>
         </header>
 
-        <main className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-[1680px] flex-col px-4 py-4 md:min-h-[calc(100svh-4rem)] md:px-6 md:py-6">
+        <main className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-[1680px] flex-1 flex-col px-4 py-4 md:min-h-[calc(100svh-4rem)] md:px-6 md:py-6">
           <Outlet />
         </main>
         <Toaster />

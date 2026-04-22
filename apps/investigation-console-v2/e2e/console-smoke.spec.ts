@@ -15,11 +15,14 @@ test('v2 cases page and workspace basic flow render correctly', async ({ page })
   await firstCaseCard.click();
 
   await expect(page.locator('[data-testid="graph-stage"]').first()).toBeVisible();
-  await expect(page.locator('[data-testid="node-editor-panel"]').first()).toBeVisible();
+  await expect(page.locator('[data-testid="node-editor-panel"]')).toHaveCount(0);
 
   const firstNode = page.locator('.react-flow__node').first();
   await expect(firstNode).toBeVisible();
   await firstNode.click();
 
   await expect(page.locator('[data-testid="node-editor-title"]').first()).toBeVisible();
+
+  await page.locator('.react-flow__pane').first().click({ position: { x: 40, y: 40 } });
+  await expect(page.locator('[data-testid="node-editor-panel"]')).toHaveCount(0);
 });

@@ -71,6 +71,7 @@ interface GraphCanvasProps {
   snapshot: CaseSnapshotEnvelope;
   graph: CaseGraphEnvelope;
   selectedNodeId?: string | null;
+  onClearSelection?: () => void;
   onCreateDraftNode?: (request: CreateDraftNodeRequest) => void;
   onSelectNode: (nodeId: string) => void;
 }
@@ -215,6 +216,11 @@ export function GraphCanvas(props: GraphCanvasProps) {
       : currentValue);
   }
 
+  function handlePaneClick() {
+    setPendingDraftCreate(null);
+    props.onClearSelection?.();
+  }
+
   function handleNodeDragStop(
     _event: React.MouseEvent,
     node: { id: string; position: { x: number; y: number } }
@@ -285,6 +291,7 @@ export function GraphCanvas(props: GraphCanvasProps) {
           onNodeClick={(_event: React.MouseEvent, node: Node<GraphNodeViewData>) => props.onSelectNode(node.id)}
           onNodeDragStop={handleNodeDragStop}
           onNodesChange={handleNodesChange}
+          onPaneClick={handlePaneClick}
           panActivationKeyCode="Space"
           panOnDrag={[0]}
           selectionOnDrag={false}

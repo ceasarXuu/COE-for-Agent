@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { Alert, AlertDescription, AlertTitle } from '@coe/ui/components/alert';
@@ -54,6 +54,7 @@ export function WorkspacePage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [draftNodes, setDraftNodes] = useState<DraftNodeRecord[]>([]);
+  const workspaceShellRef = useRef<HTMLElement | null>(null);
   const revision = useMemo(() => {
     const rawValue = searchParams.get('revision');
     if (!rawValue) {
@@ -171,6 +172,7 @@ export function WorkspacePage() {
   const selectedNode = !selectedDraftNode && workspace && selectedNodeId
     ? workspace.graph.data.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
+  const hasSelection = Boolean(selectedDraftNode || selectedNode);
 
   const handleCreateDraftNode = useCallback((request: CreateDraftNodeRequest) => {
     const draftNode = createDraftNode({
@@ -203,8 +205,32 @@ export function WorkspacePage() {
     requestRefresh();
   }
 
+  useEffect(() => {
+    if (!hasSelection) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (workspaceShellRef.current?.contains(target)) {
+        return;
+      }
+
+      setSelectedNodeId(null);
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+    };
+  }, [hasSelection]);
+
   return (
-    <div className="flex flex-col gap-4 md:gap-5">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 md:gap-5">
       <div className="flex flex-col gap-3">
         <Breadcrumb>
           <BreadcrumbList>
@@ -257,41 +283,49 @@ export function WorkspacePage() {
         </Alert>
       ) : null}
 
-      <section className="overflow-hidden rounded-2xl border border-border/80 bg-card/70 shadow-sm">
+      <section
+        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/70 shadow-sm"
+        ref={workspaceShellRef}
+      >
         {loading && !workspace ? (
-          <div className="grid min-h-[640px] gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div className="border-b border-border/70 p-4 md:p-5 lg:border-b-0 lg:border-r">
-              <Skeleton className="h-[620px] w-full rounded-xl" />
+              <Skeleton className="h-full min-h-[620px] w-full rounded-xl" />
             </div>
             <div className="p-4 md:p-5">
-              <Skeleton className="h-[620px] w-full rounded-xl" />
+              <Skeleton className="h-full min-h-[620px] w-full rounded-xl" />
             </div>
           </div>
         ) : workspace ? (
-          <div className="grid min-h-[640px] gap-0 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
-            <div className="min-w-0 border-b border-border/70 bg-background/10 p-4 md:p-5 lg:border-b-0 lg:border-r">
+          <div
+            className={`grid min-h-0 flex-1 gap-0 ${hasSelection ? 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]' : 'grid-cols-1'}`}
+          >
+            <div className={`min-w-0 bg-background/10 p-4 md:p-5 ${hasSelection ? 'border-b border-border/70 lg:border-b-0 lg:border-r' : ''}`}>
               <GraphCanvas
                 draftNodes={draftNodes}
                 graph={workspace.graph}
                 selectedNodeId={selectedNodeId}
                 snapshot={workspace.snapshot}
                 onCreateDraftNode={handleCreateDraftNode}
+                onClearSelection={() => setSelectedNodeId(null)}
                 onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
               />
             </div>
 
-            <aside className="min-w-0 bg-card/50 p-4 md:p-5">
-              <CaseNodeEditor
-                caseId={caseId}
-                currentRevision={currentRevision}
-                historical={historical}
-                selectedDraftNode={selectedDraftNode}
-                selectedNode={selectedNode}
-                onDiscardDraftNode={handleDiscardDraftNode}
-                onMutationComplete={handleMutationComplete}
-                onPatchDraftNode={handlePatchDraftNode}
-              />
-            </aside>
+            {hasSelection ? (
+              <aside className="min-w-0 bg-card/50 p-4 md:p-5">
+                <CaseNodeEditor
+                  caseId={caseId}
+                  currentRevision={currentRevision}
+                  historical={historical}
+                  selectedDraftNode={selectedDraftNode}
+                  selectedNode={selectedNode}
+                  onDiscardDraftNode={handleDiscardDraftNode}
+                  onMutationComplete={handleMutationComplete}
+                  onPatchDraftNode={handlePatchDraftNode}
+                />
+              </aside>
+            ) : null}
           </div>
         ) : null}
       </section>
