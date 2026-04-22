@@ -59,6 +59,8 @@ describe.sequential('cases collection resource', () => {
         ]
       }
     });
+    const items = (resource.data as { data: { items: Array<Record<string, unknown>> } }).data.items;
+    expect(items.every((item) => !('stage' in item))).toBe(true);
 
     await app.close();
   });

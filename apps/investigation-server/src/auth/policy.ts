@@ -7,8 +7,6 @@ const ROLE_RANK: Record<ActorRole, number> = {
   Admin: 3
 };
 
-const REVIEWER_ONLY_CASE_STAGES = new Set(['repair_preparation', 'repair_validation', 'closed']);
-
 export interface AuthorizationRequirement {
   minimumRole: ActorRole;
   reviewerOnly: boolean;
@@ -80,15 +78,13 @@ export function getAuthorizationRequirement(
         reasonText: optionalString(input.reason) ?? ''
       });
     }
-    case 'investigation.case.advance_stage': {
-      const stage = optionalString(input.stage) ?? '';
-      const reviewerOnly = REVIEWER_ONLY_CASE_STAGES.has(stage);
+    case 'investigation.case.close': {
       return buildRequirement(input, {
-        minimumRole: reviewerOnly ? 'Reviewer' : 'Operator',
-        reviewerOnly,
-        requiresConfirmToken: reviewerOnly,
+        minimumRole: 'Reviewer',
+        reviewerOnly: true,
+        requiresConfirmToken: true,
         targetIds: [requireStringField(input, 'caseId')],
-        reasonText: optionalString(input.reason) ?? stage
+        reasonText: optionalString(input.reason) ?? 'close'
       });
     }
     default:

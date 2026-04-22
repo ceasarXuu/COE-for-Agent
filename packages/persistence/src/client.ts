@@ -20,7 +20,6 @@ export interface StoredCaseRecord {
   title: string | null;
   severity: string | null;
   status: string;
-  stage: string;
   revision: number;
   payload: JsonValue;
   createdAt: Date;
@@ -43,7 +42,6 @@ export interface StoredCaseListProjectionRecord {
   summary: string | null;
   severity: string | null;
   status: string | null;
-  stage: string | null;
   activeHypothesisCount: number;
   updatedAt: Date;
 }
@@ -164,7 +162,6 @@ function reviveCaseRecord(record: Record<string, unknown>): StoredCaseRecord {
     title: record.title === null || record.title === undefined ? null : String(record.title),
     severity: record.severity === null || record.severity === undefined ? null : String(record.severity),
     status: String(record.status),
-    stage: String(record.stage),
     revision: Number(record.revision),
     payload: (record.payload ?? {}) as JsonValue,
     createdAt: reviveDate(record.createdAt),
@@ -179,7 +176,6 @@ function reviveCaseListProjectionRecord(record: Record<string, unknown>): Stored
     summary: record.summary === null || record.summary === undefined ? null : String(record.summary),
     severity: record.severity === null || record.severity === undefined ? null : String(record.severity),
     status: record.status === null || record.status === undefined ? null : String(record.status),
-    stage: record.stage === null || record.stage === undefined ? null : String(record.stage),
     activeHypothesisCount: Number(record.activeHypothesisCount ?? 0),
     updatedAt: reviveDate(record.updatedAt)
   };

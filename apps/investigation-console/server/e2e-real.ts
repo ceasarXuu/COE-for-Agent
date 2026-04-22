@@ -92,22 +92,6 @@ async function seedRealBackendCase(mcpClient: ConsoleMcpClient) {
   const problemId = requiredId(opened, 'problem_');
   let revision = opened.headRevisionAfter;
 
-  revision = (await invokeMutation(mcpClient, 'investigation.case.advance_stage', {
-    idempotencyKey: `console-real-stage-${suffix}-scoping`,
-    caseId,
-    ifCaseRevision: revision,
-    stage: 'scoping',
-    reason: 'advance to scoping'
-  })).headRevisionAfter;
-
-  revision = (await invokeMutation(mcpClient, 'investigation.case.advance_stage', {
-    idempotencyKey: `console-real-stage-${suffix}-evidence`,
-    caseId,
-    ifCaseRevision: revision,
-    stage: 'evidence_collection',
-    reason: 'advance to evidence collection'
-  })).headRevisionAfter;
-
   revision = (await invokeMutation(mcpClient, 'investigation.problem.update', {
     idempotencyKey: `console-real-problem-update-${suffix}`,
     caseId,
@@ -128,14 +112,6 @@ async function seedRealBackendCase(mcpClient: ConsoleMcpClient) {
   });
   const hypothesisId = requiredId(hypothesis, 'hypothesis_');
   revision = hypothesis.headRevisionAfter;
-
-  revision = (await invokeMutation(mcpClient, 'investigation.case.advance_stage', {
-    idempotencyKey: `console-real-stage-${suffix}-competition`,
-    caseId,
-    ifCaseRevision: revision,
-    stage: 'hypothesis_competition',
-    reason: 'advance to hypothesis competition'
-  })).headRevisionAfter;
 
   return {
     caseId,

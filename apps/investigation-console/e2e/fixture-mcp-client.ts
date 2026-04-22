@@ -149,7 +149,6 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             title: state.caseRecord.title,
             summary: state.caseRecord.summary,
             status: state.caseRecord.status,
-            stage: state.caseRecord.stage,
             severity: state.caseRecord.severity,
             headRevision,
             updatedAt: '2025-01-01T10:16:00.000Z'
@@ -159,7 +158,6 @@ export function createFixtureMcpClient(): ConsoleMcpClient {
             title: mc.title,
             summary: mc.objective,
             status: 'active',
-            stage: 'intake',
             severity: mc.severity,
             headRevision: mc.headRevision,
             updatedAt: mc.updatedAt
@@ -356,7 +354,6 @@ function readManualCaseResource(
               objective: manualCase.objective,
               severity: manualCase.severity,
               status: 'active',
-              stage: 'intake',
               revision: manualCase.headRevision,
               projectDirectory: manualCase.projectDirectory,
               labels: manualCase.labels
@@ -451,7 +448,15 @@ function readFixtureCaseResource(
           projectionRevision: state.revision,
           requestedRevision: state.revision < headRevision ? state.revision : null,
           data: {
-            case: clone(state.caseRecord),
+            case: {
+              id: state.caseRecord.id,
+              title: state.caseRecord.title,
+              severity: state.caseRecord.severity,
+              status: state.caseRecord.status,
+              revision: state.caseRecord.revision,
+              objective: state.caseRecord.objective,
+              summary: state.caseRecord.summary
+            },
             counts: clone(state.counts),
             warnings: []
           }

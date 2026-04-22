@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  transitionCaseStatus,
   transitionCanonicalHypothesisStatus,
   transitionBlockerStatus,
   transitionProblemStatus,
@@ -8,6 +9,11 @@ import {
 } from '../src/index.js';
 
 describe('canonical state machines', () => {
+  test('allows only legal case transitions', () => {
+    expect(transitionCaseStatus('active', 'closed')).toBe('closed');
+    expect(() => transitionCaseStatus('closed', 'active')).toThrow('Invalid case transition');
+  });
+
   test('allows only legal problem transitions', () => {
     expect(transitionProblemStatus('open', 'resolved')).toBe('resolved');
     expect(() => transitionProblemStatus('resolved', 'open')).toThrow('Invalid problem transition');

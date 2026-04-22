@@ -9,7 +9,7 @@ export interface ToolRegistration {
 
 const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
   'investigation.case.open': 'commands/v1/case.open.request.schema.json',
-  'investigation.case.advance_stage': 'commands/v1/case.advance_stage.request.schema.json',
+  'investigation.case.close': 'commands/v1/case.close.request.schema.json',
   'investigation.problem.update': 'commands/v1/problem.update.request.schema.json',
   'investigation.problem.set_status': 'commands/v1/problem.set_status.request.schema.json',
   'investigation.problem.add_reference_material': 'commands/v1/problem.add_reference_material.request.schema.json',
@@ -30,7 +30,7 @@ const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
 
 const TOOL_DESCRIPTION_BY_NAME: Record<string, string> = {
   'investigation.case.open': 'Open a new canonical investigation case with a single problem root.',
-  'investigation.case.advance_stage': 'Advance a case to the next investigation lifecycle stage.',
+  'investigation.case.close': 'Close a canonical investigation case after all closure conditions are satisfied.',
   'investigation.problem.update': 'Update the canonical root problem content for a case.',
   'investigation.problem.set_status': 'Set the canonical root problem status.',
   'investigation.problem.add_reference_material': 'Attach a non-evidentiary reference material item to the canonical root problem.',

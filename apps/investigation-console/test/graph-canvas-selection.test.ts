@@ -46,7 +46,6 @@ describe('graph canvas selection', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },
@@ -112,7 +111,6 @@ describe('graph canvas selection', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },
@@ -168,7 +166,6 @@ describe('graph canvas selection', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },
@@ -241,7 +238,6 @@ describe('graph canvas selection', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },
@@ -311,7 +307,6 @@ describe('graph canvas selection', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },
@@ -388,7 +383,6 @@ describe('graph canvas selection', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },

@@ -3,12 +3,10 @@
   "revisions": [
     {
       "revision": 3,
-      "stage": "hypothesis_competition",
       "selectedNodeId": "hypothesis_01FIXTUREINVESTIGATE"
     },
     {
       "revision": 5,
-      "stage": "discriminative_testing",
       "selectedNodeId": "blocker_01FIXTUREINVESTIGATIO"
     }
   ]

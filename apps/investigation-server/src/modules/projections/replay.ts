@@ -44,7 +44,6 @@ export interface ProjectedCaseRecord {
   title: string | null;
   severity: string | null;
   status: string;
-  stage: string;
   revision: number;
   payload: Record<string, unknown>;
 }
@@ -104,7 +103,6 @@ function toProjectedCaseRecord(record: CaseStateRecord): ProjectedCaseRecord {
     title: record.title ?? null,
     severity: record.severity ?? null,
     status: record.status,
-    stage: record.stage,
     revision: record.revision,
     payload: structuredClone(asObject(record.payload))
   };
@@ -194,14 +192,12 @@ function restoreFromCheckpoint(caseId: string, headRevision: number, checkpoint:
   if (typeof caseRecord === 'object' && caseRecord !== null && !Array.isArray(caseRecord)) {
     const record = caseRecord as Record<string, unknown>;
     const status = asString(record.status);
-    const stage = asString(record.stage);
-    if (status && stage) {
+    if (status) {
       state.caseRecord = {
         id: asString(record.id) ?? caseId,
         title: asString(record.title) ?? null,
         severity: asString(record.severity) ?? null,
         status,
-        stage,
         revision: typeof record.revision === 'number' ? record.revision : projectionRevision,
         payload: structuredClone(asObject(record.payload))
       };
@@ -267,7 +263,6 @@ const STORED_EVENT_HANDLERS: Record<string, StoredEventHandler> = {
       title,
       severity,
       status: 'active',
-      stage: 'intake',
       revision: event.caseRevision,
       payload: {
         id: caseId,
@@ -275,8 +270,7 @@ const STORED_EVENT_HANDLERS: Record<string, StoredEventHandler> = {
         objective,
         severity,
         defaultProblemId: defaultProblemId ?? null,
-        status: 'active',
-        stage: 'intake'
+        status: 'active'
       }
     };
 
@@ -295,17 +289,29 @@ const STORED_EVENT_HANDLERS: Record<string, StoredEventHandler> = {
     }
   },
   'case.stage_advanced': (state, event, payload) => {
-    const stage = asString(payload.stage) ?? state.caseRecord?.stage ?? 'intake';
     const status = asString(payload.status) ?? state.caseRecord?.status ?? 'active';
     if (state.caseRecord) {
       state.caseRecord = {
         ...state.caseRecord,
         status,
-        stage,
         revision: event.caseRevision,
         payload: {
           ...state.caseRecord.payload,
-          stage,
+          status,
+          reason: payload.reason ?? null
+        }
+      };
+    }
+  },
+  'case.closed': (state, event, payload) => {
+    const status = asString(payload.status) ?? 'closed';
+    if (state.caseRecord) {
+      state.caseRecord = {
+        ...state.caseRecord,
+        status,
+        revision: event.caseRevision,
+        payload: {
+          ...state.caseRecord.payload,
           status,
           reason: payload.reason ?? null
         }

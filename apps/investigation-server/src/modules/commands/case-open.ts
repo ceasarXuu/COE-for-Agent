@@ -59,7 +59,6 @@ export async function handleCaseOpen(
           title: payload.title,
           severity: payload.severity,
           status: 'active',
-          stage: 'intake',
           revision: result.caseRevision,
           payload: toJsonValue({
             id: caseId,
@@ -69,8 +68,7 @@ export async function handleCaseOpen(
             projectDirectory: payload.projectDirectory,
             labels: payload.labels ?? [],
             defaultProblemId: problemId,
-            status: 'active',
-            stage: 'intake'
+            status: 'active'
           })
         });
 
@@ -97,8 +95,7 @@ export async function handleCaseOpen(
           title: payload.title,
           summary: payload.objective,
           severity: payload.severity,
-          status: 'active',
-          stage: 'intake'
+          status: 'active'
         });
 
         return createCommandResult({

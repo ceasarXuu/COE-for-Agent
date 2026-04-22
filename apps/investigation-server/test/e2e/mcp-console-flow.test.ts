@@ -7,7 +7,6 @@ import {
   resetServerTestDatabase
 } from '../test-app.js';
 import {
-  advanceStage,
   attachValidationEvidence,
   createHypothesis,
   createRepairAttempt,
@@ -37,11 +36,10 @@ describe.sequential('mcp console flow', () => {
 
     try {
       const opened = await openCase(app, 'full-flow');
-      let revision = await advanceStage(app, opened.caseId, opened.revision, 'scoping', 'full-flow');
-      revision = await advanceStage(app, opened.caseId, revision, 'evidence_collection', 'full-flow');
+      let revision = opened.revision;
       revision = await updateProblem(app, opened.caseId, revision, opened.problemId, 'full-flow');
       const hypothesis = await createHypothesis(app, opened.caseId, revision, opened.problemId, 'full-flow');
-      revision = await advanceStage(app, opened.caseId, hypothesis.revision, 'hypothesis_competition', 'full-flow');
+      revision = hypothesis.revision;
       revision = await setHypothesisStatus(app, opened.caseId, revision, hypothesis.hypothesisId, 'confirmed', 'full-flow');
 
       const readyToPatch = await app.mcpServer.invokeTool('investigation.guardrail.ready_to_patch_check', {
@@ -54,14 +52,11 @@ describe.sequential('mcp console flow', () => {
         blockingIssueIds: []
       });
 
-      revision = await advanceStage(app, opened.caseId, revision, 'discriminative_testing', 'full-flow');
-      revision = await advanceStage(app, opened.caseId, revision, 'repair_preparation', 'full-flow');
       const repairAttempt = await createRepairAttempt(app, opened.caseId, revision, hypothesis.hypothesisId, 'full-flow');
       revision = await setRepairAttemptStatus(app, opened.caseId, repairAttempt.revision, repairAttempt.repairAttemptId, 'running', 'full-flow');
       revision = await setRepairAttemptStatus(app, opened.caseId, revision, repairAttempt.repairAttemptId, 'effective', 'full-flow');
       const evidence = await attachValidationEvidence(app, opened.caseId, revision, repairAttempt.repairAttemptId, 'full-flow');
       revision = evidence.revision;
-      revision = await advanceStage(app, opened.caseId, revision, 'repair_validation', 'full-flow');
 
       const [cases, snapshot, timeline, graph, aggregate] = await Promise.all([
         app.mcpServer.readResource('investigation://cases'),
@@ -76,7 +71,6 @@ describe.sequential('mcp console flow', () => {
           items: expect.arrayContaining([
             expect.objectContaining({
               caseId: opened.caseId,
-              stage: 'repair_validation',
               headRevision: revision
             })
           ])
@@ -87,8 +81,7 @@ describe.sequential('mcp console flow', () => {
         data: {
           case: expect.objectContaining({
             id: opened.caseId,
-            stage: 'repair_validation',
-            status: 'validating'
+            status: 'active'
           }),
           counts: {
             problems: 1,
@@ -103,8 +96,7 @@ describe.sequential('mcp console flow', () => {
         data: {
           events: expect.arrayContaining([
             expect.objectContaining({ eventType: 'canonical.repair_attempt.status_updated' }),
-            expect.objectContaining({ eventType: 'canonical.evidence.attached' }),
-            expect.objectContaining({ eventType: 'case.stage_advanced', caseRevision: revision })
+            expect.objectContaining({ eventType: 'canonical.evidence.attached' })
           ])
         }
       });

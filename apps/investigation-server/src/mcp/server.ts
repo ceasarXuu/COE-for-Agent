@@ -10,7 +10,7 @@ import type { InvestigationServerConfig } from '../config.js';
 import type { InvestigationServerServices } from '../services.js';
 import { authorizeMutationCommand } from '../auth/authorize-command.js';
 import { investigationTelemetry } from '../telemetry.js';
-import { handleCaseAdvanceStage } from '../modules/commands/case-advance-stage.js';
+import { handleCaseClose } from '../modules/commands/case-close.js';
 import { handleCaseOpen } from '../modules/commands/case-open.js';
 import { handleEvidenceAttachExisting } from '../modules/commands/evidence-attach-existing.js';
 import { handleEvidenceCaptureAndAttach } from '../modules/commands/evidence-capture-and-attach.js';
@@ -102,7 +102,7 @@ export class InvestigationMcpServer {
     const toolHandlers: Array<[string, ToolHandler]> = services
       ? [
             ['investigation.case.open', (input) => handleCaseOpen(services, input)],
-            ['investigation.case.advance_stage', (input) => handleCaseAdvanceStage(services, input)],
+            ['investigation.case.close', (input) => handleCaseClose(services, input)],
             ['investigation.problem.update', (input) => handleProblemUpdate(services, input)],
             ['investigation.problem.set_status', (input) => handleProblemSetStatus(services, input)],
             ['investigation.problem.add_reference_material', (input) => handleProblemAddReferenceMaterial(services, input)],

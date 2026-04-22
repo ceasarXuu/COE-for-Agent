@@ -7,9 +7,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, test } from 'vitest';
 
 import { CaseGallery } from '../src/components/case-gallery.js';
+import type { CaseListItem } from '../src/lib/api.js';
 import { I18nProvider } from '../src/lib/i18n.js';
 
-function renderCaseGallery(items: Array<Record<string, unknown>>) {
+function renderCaseGallery(items: CaseListItem[]) {
   return renderToStaticMarkup(
     createElement(MemoryRouter, {
       children: createElement(I18nProvider, {
@@ -34,7 +35,6 @@ describe('v2 case entrypoints', () => {
         summary: 'Summary',
         severity: 'high',
         status: 'active',
-        stage: 'intake',
         headRevision: 3,
         updatedAt: '2026-04-23T00:00:00.000Z'
       }
@@ -52,5 +52,7 @@ describe('v2 case entrypoints', () => {
     );
 
     expect(source).toContain('data-testid="cases-toolbar-create"');
+    expect(source).not.toContain('caseList.stage');
+    expect(source).not.toContain('formatEnumLabel(item.stage');
   });
 });

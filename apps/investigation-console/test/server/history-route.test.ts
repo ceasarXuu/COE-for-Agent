@@ -100,25 +100,23 @@ describe('history and tools routes', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/api/tools/investigation.case.advance_stage',
+      url: '/api/tools/investigation.case.close',
       headers: {
         'x-session-token': session.sessionToken
       },
       payload: {
         caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
         ifCaseRevision: 5,
-        stage: 'repair_preparation',
-        reason: 'ready for patch assembly',
+        reason: 'validated and ready to close',
         confirmToken: 'confirm-token-1'
       }
     });
 
     expect(response.statusCode).toBe(200);
-    expect(invokeTool).toHaveBeenCalledWith('investigation.case.advance_stage', {
+    expect(invokeTool).toHaveBeenCalledWith('investigation.case.close', {
       caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
       ifCaseRevision: 5,
-      stage: 'repair_preparation',
-      reason: 'ready for patch assembly',
+      reason: 'validated and ready to close',
       confirmToken: 'confirm-token-1',
       actorContext: session.actorContext
     });

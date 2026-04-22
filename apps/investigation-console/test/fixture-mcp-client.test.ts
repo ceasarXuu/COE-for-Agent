@@ -13,17 +13,6 @@ const CANONICAL_NODE_KINDS = new Set([
   'evidence_ref'
 ]);
 
-const VALID_CASE_STAGES = new Set([
-  'intake',
-  'scoping',
-  'evidence_collection',
-  'hypothesis_competition',
-  'discriminative_testing',
-  'repair_preparation',
-  'repair_validation',
-  'closed'
-]);
-
 describe('fixture MCP client', () => {
   let client = createFixtureMcpClient();
 
@@ -32,18 +21,14 @@ describe('fixture MCP client', () => {
     client = createFixtureMcpClient();
   });
 
-  test('uses case stages that conform to the published case schema', async () => {
+  test('exposes case summaries without a stage field', async () => {
     const headSnapshot = await client.readResource(`investigation://cases/${FIXTURE_IDS.caseId}/snapshot`);
     const historicalSnapshot = await client.readResource(
       `investigation://cases/${FIXTURE_IDS.caseId}/snapshot?atRevision=3`
     );
 
-    expect(
-      VALID_CASE_STAGES.has((headSnapshot.data as { data: { case: { stage: string } } }).data.case.stage)
-    ).toBe(true);
-    expect(
-      VALID_CASE_STAGES.has((historicalSnapshot.data as { data: { case: { stage: string } } }).data.case.stage)
-    ).toBe(true);
+    expect('stage' in (headSnapshot.data as { data: { case: Record<string, unknown> } }).data.case).toBe(false);
+    expect('stage' in (historicalSnapshot.data as { data: { case: Record<string, unknown> } }).data.case).toBe(false);
   });
 
   test('exposes only canonical snapshot counts and graph node kinds', async () => {

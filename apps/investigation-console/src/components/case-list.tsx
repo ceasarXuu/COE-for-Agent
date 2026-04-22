@@ -63,10 +63,6 @@ export function CaseList(props: { items: CaseListItem[]; onCreateRequest: () => 
               <dd>{formatEnumLabel(item.status ?? 'active')}</dd>
             </div>
             <div>
-              <dt>{t('caseList.stage')}</dt>
-              <dd>{formatEnumLabel(item.stage ?? 'intake')}</dd>
-            </div>
-            <div>
               <dt>{t('caseList.revision')}</dt>
               <dd>{item.headRevision}</dd>
             </div>

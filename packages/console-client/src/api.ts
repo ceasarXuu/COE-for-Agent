@@ -17,7 +17,6 @@ export interface CaseListItem {
   summary?: string | null;
   severity?: string | null;
   status?: string | null;
-  stage?: string | null;
   headRevision: number;
   updatedAt?: string;
 }
@@ -63,7 +62,6 @@ export interface CaseSnapshotEnvelope {
       title?: string | null;
       severity?: string | null;
       status: string;
-      stage: string;
       revision: number;
       objective?: string | null;
     }) | null;

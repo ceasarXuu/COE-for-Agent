@@ -16,12 +16,11 @@ describe('confirm tokens', () => {
   test('rejects high-risk commands when confirmToken is missing', () => {
     expect(() =>
       authorizeMutationCommand({
-        commandName: 'investigation.case.advance_stage',
+        commandName: 'investigation.case.close',
         input: {
           actorContext: reviewerActorContext,
           caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
           ifCaseRevision: 5,
-          stage: 'repair_validation',
           reason: 'patch applied to staging successfully'
         },
         secret: 'local-test-secret'
@@ -32,7 +31,7 @@ describe('confirm tokens', () => {
   test('invalidates expired confirmToken payloads', () => {
     const token = issueConfirmToken(
       {
-        commandName: 'investigation.case.advance_stage',
+        commandName: 'investigation.case.close',
         caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
         targetIds: ['case_01AAAAAAAAAAAAAAAAAAAAAAAA'],
         sessionId: reviewerActorContext.sessionId,
@@ -48,7 +47,7 @@ describe('confirm tokens', () => {
     expect(() =>
       verifyConfirmToken(token, {
         secret: 'local-test-secret',
-        expectedCommandName: 'investigation.case.advance_stage',
+        expectedCommandName: 'investigation.case.close',
         expectedCaseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
         expectedTargetIds: ['case_01AAAAAAAAAAAAAAAAAAAAAAAA'],
         expectedSessionId: reviewerActorContext.sessionId,

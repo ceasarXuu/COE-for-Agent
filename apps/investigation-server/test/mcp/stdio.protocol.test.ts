@@ -201,6 +201,7 @@ describe.sequential('stdio MCP protocol', () => {
 
     expect(toolNames).not.toContain('investigation.inquiry.open');
     expect(toolNames).not.toContain('investigation.inquiry.close');
+    expect(toolNames).not.toContain('investigation.case.advance_stage');
     expect(toolNames).not.toContain('investigation.symptom.report');
     expect(toolNames).not.toContain('investigation.artifact.attach');
     expect(toolNames).not.toContain('investigation.fact.assert');

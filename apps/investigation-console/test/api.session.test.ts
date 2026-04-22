@@ -50,7 +50,7 @@ describe('session-aware API writes', () => {
         });
       }
 
-      if (url === '/api/tools/investigation.case.advance_stage') {
+      if (url === '/api/tools/investigation.case.close') {
         if (sessionToken !== 'session-token-2') {
           return new Response(JSON.stringify({
             statusCode: 500,
@@ -89,10 +89,10 @@ describe('session-aware API writes', () => {
 
     vi.advanceTimersByTime(2 * 60 * 60 * 1000);
 
-    await invokeTool('investigation.case.advance_stage', {
+    await invokeTool('investigation.case.close', {
       caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
       ifCaseRevision: 1,
-      stage: 'scoping'
+      reason: 'close'
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(4);

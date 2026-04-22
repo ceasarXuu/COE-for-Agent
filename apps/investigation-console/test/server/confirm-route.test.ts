@@ -22,7 +22,7 @@ describe('confirm route', () => {
       sessionToken: session.sessionToken,
       secret: 'local-test-secret',
       body: {
-        commandName: 'investigation.case.advance_stage',
+        commandName: 'investigation.case.close',
         caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
         targetIds: ['case_01AAAAAAAAAAAAAAAAAAAAAAAA'],
         rationale: 'repair has passed staging verification'

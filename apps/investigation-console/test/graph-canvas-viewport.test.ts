@@ -46,7 +46,6 @@ describe('graph canvas viewport defaults', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },

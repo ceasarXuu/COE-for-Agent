@@ -8,7 +8,6 @@ export interface CaseStateRecord {
   title?: string | null;
   severity?: string | null;
   status: string;
-  stage: string;
   revision: number;
   payload?: JsonValue;
 }
@@ -33,7 +32,6 @@ export class CurrentStateRepository {
         title: record.title ?? null,
         severity: record.severity ?? null,
         status: record.status,
-        stage: record.stage,
         revision: record.revision,
         payload: structuredClone(record.payload ?? {}),
         createdAt: existing?.createdAt ?? now,
@@ -54,7 +52,6 @@ export class CurrentStateRepository {
         title: row.title,
         severity: row.severity,
         status: row.status,
-        stage: row.stage,
         revision: row.revision,
         payload: structuredClone(row.payload)
       };
@@ -70,7 +67,6 @@ export class CurrentStateRepository {
           title: row.title,
           severity: row.severity,
           status: row.status,
-          stage: row.stage,
           revision: row.revision,
           payload: structuredClone(row.payload)
         }))

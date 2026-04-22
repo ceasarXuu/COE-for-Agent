@@ -33,7 +33,7 @@ describe('authorization policy', () => {
   test('operator cannot execute reviewer-only operations', () => {
     expect(() =>
       authorizeMutationCommand({
-        commandName: 'investigation.case.advance_stage',
+        commandName: 'investigation.case.close',
         input: {
           actorContext: {
             ...baseActorContext,
@@ -42,8 +42,7 @@ describe('authorization policy', () => {
           },
           caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
           ifCaseRevision: 4,
-          stage: 'repair_preparation',
-          reason: 'ready to patch'
+          reason: 'close after validation'
         },
         secret: 'local-test-secret'
       })

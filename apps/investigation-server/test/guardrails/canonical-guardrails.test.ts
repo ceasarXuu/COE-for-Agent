@@ -164,23 +164,6 @@ describe.sequential('canonical guardrails', () => {
       const problemId = opened.createdIds?.find((value) => value.startsWith('problem_'))!;
 
       let revision = 1;
-      for (const stage of [
-        'scoping',
-        'evidence_collection',
-        'hypothesis_competition',
-        'discriminative_testing',
-        'repair_preparation',
-        'repair_validation'
-      ] as const) {
-        const advanced = await app.mcpServer.invokeTool('investigation.case.advance_stage', {
-          idempotencyKey: `canonical-close-stage-${stage}`,
-          caseId,
-          ifCaseRevision: revision,
-          stage,
-          reason: `advance to ${stage}`
-        });
-        revision = advanced.headRevisionAfter;
-      }
 
       const createdHypothesis = await app.mcpServer.invokeTool('investigation.hypothesis.create', {
         idempotencyKey: 'canonical-close-hypothesis-001',

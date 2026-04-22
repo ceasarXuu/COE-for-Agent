@@ -22,19 +22,17 @@ export async function openCase(app: InvestigationApp, suffix: string): Promise<O
   };
 }
 
-export async function advanceStage(
+export async function closeCase(
   app: InvestigationApp,
   caseId: string,
   revision: number,
-  stage: 'scoping' | 'evidence_collection' | 'hypothesis_competition' | 'discriminative_testing' | 'repair_preparation' | 'repair_validation' | 'closed',
   suffix: string
 ): Promise<number> {
-  const result = await app.mcpServer.invokeTool('investigation.case.advance_stage', {
-    idempotencyKey: `e2e-stage-${suffix}-${stage}`,
+  const result = await app.mcpServer.invokeTool('investigation.case.close', {
+    idempotencyKey: `e2e-case-close-${suffix}`,
     caseId,
     ifCaseRevision: revision,
-    stage,
-    reason: `advance to ${stage}`
+    reason: `close ${suffix}`
   });
 
   return result.headRevisionAfter;

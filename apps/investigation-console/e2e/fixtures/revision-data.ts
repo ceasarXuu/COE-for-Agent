@@ -41,7 +41,6 @@ export function buildRevisionStates(): RevisionState[] {
       revision: 1,
       caseRecord: {
         ...baseCase,
-        stage: 'intake',
         revision: 1
       },
       counts: {
@@ -82,7 +81,6 @@ export function buildRevisionStates(): RevisionState[] {
       revision: 2,
       caseRecord: {
         ...baseCase,
-        stage: 'scoping',
         revision: 2
       },
       counts: {
@@ -130,7 +128,6 @@ export function buildRevisionStates(): RevisionState[] {
       revision: 3,
       caseRecord: {
         ...baseCase,
-        stage: 'hypothesis_competition',
         revision: 3
       },
       counts: {
@@ -193,7 +190,6 @@ export function buildRevisionStates(): RevisionState[] {
       revision: 4,
       caseRecord: {
         ...baseCase,
-        stage: 'discriminative_testing',
         revision: 4
       },
       counts: {
@@ -270,7 +266,6 @@ export function buildRevisionStates(): RevisionState[] {
       revision: 5,
       caseRecord: {
         ...baseCase,
-        stage: 'discriminative_testing',
         revision: 5
       },
       counts: {

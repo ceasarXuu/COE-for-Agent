@@ -87,7 +87,6 @@ function appendEventInStore(store: PersistenceStore, input: AppendEventInput): A
     title: currentCase?.title ?? null,
     severity: currentCase?.severity ?? null,
     status: currentCase?.status ?? 'active',
-    stage: currentCase?.stage ?? 'intake',
     revision: nextRevision,
     payload: structuredClone(currentCase?.payload ?? {}),
     createdAt: currentCase?.createdAt ?? now,

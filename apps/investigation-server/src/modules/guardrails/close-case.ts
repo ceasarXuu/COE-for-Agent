@@ -27,9 +27,6 @@ export async function handleGuardrailCloseCaseCheck(
     .map((record) => record.id);
   const reasons: string[] = [];
 
-  if (context.caseRecord.stage !== 'repair_validation' && context.caseRecord.stage !== 'closed') {
-    reasons.push('Case must reach repair_validation before it can be closed.');
-  }
   if (problemStatus !== 'resolved') {
     reasons.push('The canonical root problem must be resolved before case closure.');
   }

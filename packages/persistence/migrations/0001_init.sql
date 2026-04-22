@@ -32,7 +32,6 @@ create table if not exists cases (
   title text,
   severity text,
   status text not null default 'active',
-  stage text not null default 'intake',
   revision integer not null default 0,
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
@@ -105,7 +104,6 @@ create table if not exists case_list_projection (
   summary text,
   severity text,
   status text,
-  stage text,
   active_hypothesis_count integer not null default 0,
   updated_at timestamptz not null default now(),
   search_document tsvector generated always as (

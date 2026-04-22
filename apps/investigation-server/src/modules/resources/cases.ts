@@ -45,7 +45,6 @@ export async function readCasesResource(services: InvestigationServerServices, u
           caseId: item.caseId,
           title: item.title,
           status: item.status,
-          stage: item.stage,
           severity: item.severity,
           headRevision: item.headRevision,
           updatedAt: item.updatedAt.toISOString()

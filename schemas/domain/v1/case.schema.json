@@ -5,14 +5,13 @@
     { "$ref": "../../common/base-node.schema.json" },
     {
       "type": "object",
-      "required": ["kind", "title", "objective", "severity", "status", "stage"],
+      "required": ["kind", "title", "objective", "severity", "status"],
       "properties": {
         "kind": { "const": "investigation.case" },
         "title": { "type": "string", "minLength": 1, "maxLength": 240 },
         "objective": { "type": "string", "minLength": 1, "maxLength": 2000 },
         "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
-        "status": { "type": "string", "enum": ["active", "blocked", "ready_to_patch", "validating", "closed"] },
-        "stage": { "type": "string", "enum": ["intake", "scoping", "evidence_collection", "hypothesis_competition", "discriminative_testing", "repair_preparation", "repair_validation", "closed"] },
+        "status": { "type": "string", "enum": ["active", "closed"] },
         "projectDirectory": { "type": "string", "minLength": 1, "maxLength": 1024 },
         "summary": { "type": "string", "maxLength": 4000 }
       }

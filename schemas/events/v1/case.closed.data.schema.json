@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/events/v1/case.closed.data.schema.json",
+  "title": "Event Payload - case.closed",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "caseId", "caseRevision", "status"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "caseId": { "type": "string" },
+    "caseRevision": { "type": "integer" },
+    "status": { "type": "string", "enum": ["closed"] },
+    "reason": { "type": ["string", "null"] }
+  }
+}

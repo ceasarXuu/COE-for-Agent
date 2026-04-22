@@ -157,7 +157,6 @@ export async function syncCaseListProjection(trx: InvestigationServerTransaction
     summary: stringValue(casePayload.objective) ?? stringValue(casePayload.summary) ?? null,
     severity: caseRecord.severity ?? null,
     status: caseRecord.status,
-    stage: caseRecord.stage,
     activeHypothesisCount
   });
 }

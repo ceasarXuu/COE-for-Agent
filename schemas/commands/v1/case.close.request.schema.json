@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.coe.local/commands/v1/case.close.request.schema.json",
+  "title": "Command Request - investigation.case.close",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["idempotencyKey", "caseId", "ifCaseRevision"],
+  "properties": {
+    "idempotencyKey": { "type": "string", "minLength": 1 },
+    "caseId": { "type": "string", "pattern": "^case_" },
+    "ifCaseRevision": { "type": "integer", "minimum": 1 },
+    "reason": { "type": "string" }
+  }
+}

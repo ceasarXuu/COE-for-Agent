@@ -49,7 +49,6 @@ describe('v2 graph canvas behavior', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },
@@ -114,7 +113,6 @@ describe('v2 graph canvas behavior', () => {
             title: 'debug',
             severity: 'critical',
             status: 'active',
-            stage: 'intake',
             revision: 5,
             objective: 'debug'
           },

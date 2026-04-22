@@ -1,6 +1,6 @@
 export const MUTATION_TOOL_NAMES = [
   'investigation.case.open',
-  'investigation.case.advance_stage',
+  'investigation.case.close',
   'investigation.problem.update',
   'investigation.problem.set_status',
   'investigation.problem.add_reference_material',

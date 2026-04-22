@@ -56,6 +56,8 @@ describe.sequential('snapshot and timeline resources', () => {
         }
       }
     });
+    const snapshotCase = (snapshot.data as { data: { case: Record<string, unknown> } }).data.case;
+    expect('stage' in snapshotCase).toBe(false);
     expect(graph.data).toMatchObject({
       data: {
         nodes: expect.arrayContaining([

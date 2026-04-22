@@ -13,8 +13,12 @@ export const generatedSchemaArtifacts = [
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/blocker.open.request.schema.json"
   },
   {
-    "id": "https://schemas.coe.local/commands/v1/case.advance_stage.request.schema.json",
-    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/case.advance_stage.request.schema.json"
+    "id": "https://schemas.coe.local/commands/v1/blocker.update.request.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/blocker.update.request.schema.json"
+  },
+  {
+    "id": "https://schemas.coe.local/commands/v1/case.close.request.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/case.close.request.schema.json"
   },
   {
     "id": "https://schemas.coe.local/commands/v1/case.open.request.schema.json",
@@ -33,12 +37,20 @@ export const generatedSchemaArtifacts = [
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/evidence.capture_and_attach.request.schema.json"
   },
   {
+    "id": "https://schemas.coe.local/commands/v1/evidence_ref.update.request.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/evidence_ref.update.request.schema.json"
+  },
+  {
     "id": "https://schemas.coe.local/commands/v1/hypothesis.create.request.schema.json",
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/hypothesis.create.request.schema.json"
   },
   {
     "id": "https://schemas.coe.local/commands/v1/hypothesis.set_status.request.schema.json",
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/hypothesis.set_status.request.schema.json"
+  },
+  {
+    "id": "https://schemas.coe.local/commands/v1/hypothesis.update.request.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/hypothesis.update.request.schema.json"
   },
   {
     "id": "https://schemas.coe.local/commands/v1/problem.add_reference_material.request.schema.json",
@@ -59,6 +71,10 @@ export const generatedSchemaArtifacts = [
   {
     "id": "https://schemas.coe.local/commands/v1/repair_attempt.set_status.request.schema.json",
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/repair_attempt.set_status.request.schema.json"
+  },
+  {
+    "id": "https://schemas.coe.local/commands/v1/repair_attempt.update.request.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/commands/v1/repair_attempt.update.request.schema.json"
   },
   {
     "id": "https://schemas.coe.local/common/actor-ref.schema.json",
@@ -109,12 +125,20 @@ export const generatedSchemaArtifacts = [
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.blocker.opened.data.schema.json"
   },
   {
+    "id": "https://schemas.coe.local/events/v1/canonical.blocker.updated.data.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.blocker.updated.data.schema.json"
+  },
+  {
     "id": "https://schemas.coe.local/events/v1/canonical.evidence.attached.data.schema.json",
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.evidence.attached.data.schema.json"
   },
   {
     "id": "https://schemas.coe.local/events/v1/canonical.evidence.captured.data.schema.json",
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.evidence.captured.data.schema.json"
+  },
+  {
+    "id": "https://schemas.coe.local/events/v1/canonical.evidence_ref.updated.data.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.evidence_ref.updated.data.schema.json"
   },
   {
     "id": "https://schemas.coe.local/events/v1/canonical.hypothesis.created.data.schema.json",
@@ -125,6 +149,10 @@ export const generatedSchemaArtifacts = [
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.hypothesis.status_updated.data.schema.json"
   },
   {
+    "id": "https://schemas.coe.local/events/v1/canonical.hypothesis.updated.data.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.hypothesis.updated.data.schema.json"
+  },
+  {
     "id": "https://schemas.coe.local/events/v1/canonical.repair_attempt.created.data.schema.json",
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.repair_attempt.created.data.schema.json"
   },
@@ -133,12 +161,16 @@ export const generatedSchemaArtifacts = [
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.repair_attempt.status_updated.data.schema.json"
   },
   {
-    "id": "https://schemas.coe.local/events/v1/case.opened.data.schema.json",
-    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/case.opened.data.schema.json"
+    "id": "https://schemas.coe.local/events/v1/canonical.repair_attempt.updated.data.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/canonical.repair_attempt.updated.data.schema.json"
   },
   {
-    "id": "https://schemas.coe.local/events/v1/case.stage_advanced.data.schema.json",
-    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/case.stage_advanced.data.schema.json"
+    "id": "https://schemas.coe.local/events/v1/case.closed.data.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/case.closed.data.schema.json"
+  },
+  {
+    "id": "https://schemas.coe.local/events/v1/case.opened.data.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/events/v1/case.opened.data.schema.json"
   },
   {
     "id": "https://schemas.coe.local/events/v1/problem.reference_material_added.data.schema.json",

@@ -32,7 +32,6 @@ export async function readSnapshotResource(services: InvestigationServerServices
               title: caseRecord.title,
               severity: caseRecord.severity,
               status: caseRecord.status,
-              stage: caseRecord.stage,
               revision: caseRecord.revision
             }
           : null,

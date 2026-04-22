@@ -82,14 +82,10 @@ export function CaseGallery(props: {
               <CardDescription>{item.summary ?? t('caseList.defaultSummary')}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 text-sm text-muted-foreground">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="text-xs uppercase tracking-wide text-muted-foreground/80">{t('caseList.status')}</div>
                   <div className="mt-1 text-foreground">{formatEnumLabel(item.status ?? 'active')}</div>
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground/80">{t('caseList.stage')}</div>
-                  <div className="mt-1 text-foreground">{formatEnumLabel(item.stage ?? 'intake')}</div>
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-wide text-muted-foreground/80">{t('caseList.revision')}</div>

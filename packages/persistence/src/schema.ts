@@ -27,7 +27,6 @@ export interface CasesTable {
   title: string | null;
   severity: string | null;
   status: string;
-  stage: string;
   revision: number;
   payload: JsonValue;
   created_at: Date;
@@ -50,7 +49,6 @@ export interface CaseListProjectionTable {
   summary: string | null;
   severity: string | null;
   status: string | null;
-  stage: string | null;
   active_hypothesis_count: number;
   updated_at: Date;
 }

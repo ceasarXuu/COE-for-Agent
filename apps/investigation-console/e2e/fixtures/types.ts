@@ -32,7 +32,6 @@ export interface RevisionState {
     title: string;
     severity: string;
     status: string;
-    stage: string;
     revision: number;
     objective: string;
     summary: string;

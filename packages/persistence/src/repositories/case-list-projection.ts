@@ -6,7 +6,6 @@ export interface CaseListProjectionRecord {
   summary?: string | null;
   severity?: string | null;
   status?: string | null;
-  stage?: string | null;
   activeHypothesisCount?: number;
 }
 
@@ -34,7 +33,6 @@ export class CaseListProjectionRepository {
         summary: record.summary ?? null,
         severity: record.severity ?? null,
         status: record.status ?? null,
-        stage: record.stage ?? null,
         activeHypothesisCount: record.activeHypothesisCount ?? 0,
         updatedAt: new Date()
       };
@@ -49,7 +47,6 @@ export class CaseListProjectionRepository {
         summary: row.summary,
         severity: row.severity,
         status: row.status,
-        stage: row.stage,
         activeHypothesisCount: row.activeHypothesisCount,
         headRevision: store.cases[row.caseId]?.revision ?? 0,
         updatedAt: row.updatedAt
