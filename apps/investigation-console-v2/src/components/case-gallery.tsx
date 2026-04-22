@@ -62,24 +62,6 @@ export function CaseGallery(props: {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3" data-testid="cases-gallery-v2">
-      <button
-        className="rounded-xl border border-dashed border-border bg-muted/20 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
-        data-testid="case-create-card"
-        onClick={props.onCreateRequest}
-        type="button"
-      >
-        <Card className="h-full border-none bg-transparent ring-0">
-          <CardHeader>
-            <CardTitle>{t('caseCreate.galleryTitle')}</CardTitle>
-            <CardDescription>{t('caseCreate.galleryCopy')}</CardDescription>
-          </CardHeader>
-          <CardFooter className="justify-between bg-transparent">
-            <Badge variant="secondary">{t('caseCreate.fields.severity')}</Badge>
-            <IconFolderPlus className="size-4 text-muted-foreground" />
-          </CardFooter>
-        </Card>
-      </button>
-
       {props.items.map((item) => (
         <Link
           key={item.caseId}

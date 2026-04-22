@@ -2,6 +2,7 @@ import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Badge } from '@coe/ui/components/badge';
+import { Button } from '@coe/ui/components/button';
 import {
   Card,
   CardContent,
@@ -19,7 +20,7 @@ import {
   NativeSelect,
   NativeSelectOption
 } from '@coe/ui/components/native-select';
-import { IconLoader2, IconSearch } from '@tabler/icons-react';
+import { IconLoader2, IconPlus, IconSearch } from '@tabler/icons-react';
 import { buildIdempotencyKey } from '@coe/shared-utils';
 
 import { CaseGallery } from '@/components/case-gallery.js';
@@ -193,7 +194,7 @@ export function CasesPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
             <InputGroup>
               <InputGroupAddon>
                 <InputGroupText>
@@ -243,6 +244,23 @@ export function CasesPage() {
               <NativeSelectOption value="priority">{t('cases.sortPriority')}</NativeSelectOption>
               <NativeSelectOption value="title">{t('cases.sortTitle')}</NativeSelectOption>
             </NativeSelect>
+
+            <Button
+              className="justify-center lg:justify-start"
+              data-testid="cases-toolbar-create"
+              onClick={() => {
+                console.info('[investigation-console-v2] case-create-dialog-opened', {
+                  event: 'case.create_dialog.opened',
+                  source: 'cases-toolbar'
+                });
+                setCreateError(null);
+                setCreateOpen(true);
+              }}
+              type="button"
+            >
+              <IconPlus data-icon="inline-start" />
+              {t('caseCreate.submit')}
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
