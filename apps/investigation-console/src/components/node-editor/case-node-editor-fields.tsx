@@ -409,8 +409,12 @@ function EditorInput(props: {
       <span>{props.label}</span>
       <input
         data-testid={props.testId}
-        disabled={props.disabled}
-        onChange={(event) => props.onChange(event.currentTarget.value)}
+        onChange={(event) => {
+          if (!props.disabled) {
+            props.onChange(event.currentTarget.value);
+          }
+        }}
+        readOnly={props.disabled}
         type="text"
         value={props.value}
       />
@@ -430,8 +434,12 @@ function EditorTextarea(props: {
       <span>{props.label}</span>
       <textarea
         data-testid={props.testId}
-        disabled={props.disabled}
-        onChange={(event) => props.onChange(event.currentTarget.value)}
+        onChange={(event) => {
+          if (!props.disabled) {
+            props.onChange(event.currentTarget.value);
+          }
+        }}
+        readOnly={props.disabled}
         rows={3}
         value={props.value}
       />

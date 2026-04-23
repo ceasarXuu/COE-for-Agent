@@ -4,6 +4,9 @@ import { FIXTURE_IDS } from './fixture-mcp-client.js';
 import { clickGraphNode, setControlValue } from './graph-node-helpers.js';
 
 test('loading a historical revision syncs the graph and disables the node editor', async ({ page }) => {
+  const selectAllShortcut = process.platform === 'darwin' ? 'Meta+A' : 'Control+A';
+  const copyShortcut = process.platform === 'darwin' ? 'Meta+C' : 'Control+C';
+
   await page.goto(`/cases/${FIXTURE_IDS.caseId}`);
 
   await expect(page.getByTestId('snapshot-panel')).toHaveCount(0);
@@ -23,7 +26,22 @@ test('loading a historical revision syncs the graph and disables the node editor
   await expect(page.getByTestId(`graph-node-${FIXTURE_IDS.blockerId}`)).toHaveCount(0);
   await expect(page.getByTestId(`graph-node-${FIXTURE_IDS.evidenceRefId}`)).toHaveCount(0);
   await expect(page.getByTestId('node-editor-status')).toBeDisabled();
-  await expect(page.getByTestId('node-editor-save')).toBeDisabled();
+  await expect(page.getByTestId('node-editor-save')).toHaveCount(0);
+
+  const historicalStatement = page.getByTestId('node-editor-hypothesis-statement');
+  await expect(historicalStatement).toBeEnabled();
+  await expect(historicalStatement).toHaveAttribute('readonly', '');
+  const statementValue = await historicalStatement.inputValue();
+
+  await historicalStatement.focus();
+  await page.keyboard.press(selectAllShortcut);
+  await expect.poll(async () =>
+    historicalStatement.evaluate((element) => {
+      const textarea = element as HTMLTextAreaElement;
+      return textarea.value.slice(textarea.selectionStart ?? 0, textarea.selectionEnd ?? 0);
+    })
+  ).toBe(statementValue);
+  await page.keyboard.press(copyShortcut);
 });
 
 test('reviewer can confirm a canonical hypothesis through the node editor', async ({ page }) => {

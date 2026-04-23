@@ -115,6 +115,28 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
     ? t(props.selectedDraftNode.status === 'saving' ? 'nodeEditor.saving' : 'nodeEditor.unsaved')
     : formatEnumLabel(savedNode?.status ?? 'stateless');
 
+  useEffect(() => {
+    if (!props.historical || !selectedNode) {
+      return;
+    }
+
+    console.info('[investigation-console-v2] node-editor-readonly-armed', {
+      caseId: props.caseId,
+      selection: props.selectedDraftNode
+        ? {
+            kind: 'draft',
+            nodeId: props.selectedDraftNode.id,
+            status: props.selectedDraftNode.status
+          }
+        : {
+            kind: selectedNode.kind,
+            nodeId: selectedNode.id,
+            revision: props.selectedNode?.revision
+          },
+      source: 'node-editor'
+    });
+  }, [editorSyncKey, props.caseId, props.currentRevision, props.historical]);
+
   const currentProblemSnapshot = useMemo(() => {
     if (!savedNode) {
       return '';
@@ -269,40 +291,44 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
           </div>
         </div>
 
-        <Separator />
+        {props.historical ? null : (
+          <>
+            <Separator />
 
-        <div className="flex flex-wrap justify-end gap-2 pt-1">
-          {props.selectedDraftNode ? (
-            <>
-              <Button
-                data-testid="node-editor-discard"
-                disabled={props.historical || pending}
-                onClick={() => props.onDiscardDraftNode(props.selectedDraftNode!.id)}
-                type="button"
-                variant="outline"
-              >
-                {t('nodeEditor.discard')}
-              </Button>
-              <Button
-                data-testid="node-editor-save"
-                disabled={props.historical || pending || !canSaveDraft}
-                onClick={() => void handleSaveDraftNode()}
-                type="button"
-              >
-                {t('nodeEditor.save')}
-              </Button>
-            </>
-          ) : savedNode && savedNode.kind !== 'case' ? (
-            <Button
-              data-testid="node-editor-save"
-              disabled={props.historical || pending || !canSaveExistingNode}
-              onClick={() => void handleSaveExistingNode()}
-              type="button"
-            >
-              {t('nodeEditor.save')}
-              </Button>
-          ) : null}
-        </div>
+            <div className="flex flex-wrap justify-end gap-2 pt-1">
+              {props.selectedDraftNode ? (
+                <>
+                  <Button
+                    data-testid="node-editor-discard"
+                    disabled={pending}
+                    onClick={() => props.onDiscardDraftNode(props.selectedDraftNode!.id)}
+                    type="button"
+                    variant="outline"
+                  >
+                    {t('nodeEditor.discard')}
+                  </Button>
+                  <Button
+                    data-testid="node-editor-save"
+                    disabled={pending || !canSaveDraft}
+                    onClick={() => void handleSaveDraftNode()}
+                    type="button"
+                  >
+                    {t('nodeEditor.save')}
+                  </Button>
+                </>
+              ) : savedNode && savedNode.kind !== 'case' ? (
+                <Button
+                  data-testid="node-editor-save"
+                  disabled={pending || !canSaveExistingNode}
+                  onClick={() => void handleSaveExistingNode()}
+                  type="button"
+                >
+                  {t('nodeEditor.save')}
+                </Button>
+              ) : null}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

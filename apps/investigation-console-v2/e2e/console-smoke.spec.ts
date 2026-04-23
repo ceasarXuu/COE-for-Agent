@@ -4,9 +4,9 @@ test('v2 cases page and workspace basic flow render correctly', async ({ page })
   await page.goto('/cases');
 
   await expect(page.locator('[data-testid="cases-gallery-v2"]')).toBeVisible();
-  await expect(page.locator('[data-testid="case-create-card"]')).toBeVisible();
+  await expect(page.locator('[data-testid="cases-toolbar-create"]')).toBeVisible();
 
-  await page.locator('[data-testid="case-create-card"]').click();
+  await page.locator('[data-testid="cases-toolbar-create"]').click();
   await expect(page.locator('[data-testid="create-case-submit"]')).toBeVisible();
   await page.keyboard.press('Escape');
 

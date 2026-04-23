@@ -110,6 +110,28 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
     ? t(props.selectedDraftNode.status === 'saving' ? 'nodeEditor.saving' : 'nodeEditor.unsaved')
     : formatEnumLabel(savedNode?.status ?? 'stateless');
 
+  useEffect(() => {
+    if (!props.historical || !selectedNode) {
+      return;
+    }
+
+    console.info('[investigation-console] node-editor-readonly-armed', {
+      caseId: props.caseId,
+      selection: props.selectedDraftNode
+        ? {
+            kind: 'draft',
+            nodeId: props.selectedDraftNode.id,
+            status: props.selectedDraftNode.status
+          }
+        : {
+            kind: selectedNode.kind,
+            nodeId: selectedNode.id,
+            revision: props.selectedNode?.revision
+          },
+      source: 'node-editor'
+    });
+  }, [editorSyncKey, props.caseId, props.currentRevision, props.historical]);
+
   const currentProblemSnapshot = useMemo(() => {
     if (!savedNode) {
       return '';
@@ -244,40 +266,42 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
         />
       )}
 
-      <div className="node-editor-actions">
-        {props.selectedDraftNode ? (
-          <>
+      {props.historical ? null : (
+        <div className="node-editor-actions">
+          {props.selectedDraftNode ? (
+            <>
+              <button
+                className="action-button"
+                data-testid="node-editor-save"
+                disabled={pending || !canSaveDraft}
+                onClick={() => void handleSaveDraftNode()}
+                type="button"
+              >
+                {t('nodeEditor.save')}
+              </button>
+              <button
+                className="ghost-button"
+                data-testid="node-editor-discard"
+                disabled={pending}
+                onClick={() => props.onDiscardDraftNode(props.selectedDraftNode!.id)}
+                type="button"
+              >
+                {t('nodeEditor.discard')}
+              </button>
+            </>
+          ) : savedNode && savedNode.kind !== 'case' ? (
             <button
               className="action-button"
               data-testid="node-editor-save"
-              disabled={props.historical || pending || !canSaveDraft}
-              onClick={() => void handleSaveDraftNode()}
+              disabled={pending || !canSaveExistingNode}
+              onClick={() => void handleSaveExistingNode()}
               type="button"
             >
               {t('nodeEditor.save')}
             </button>
-            <button
-              className="ghost-button"
-              data-testid="node-editor-discard"
-              disabled={props.historical || pending}
-              onClick={() => props.onDiscardDraftNode(props.selectedDraftNode!.id)}
-              type="button"
-            >
-              {t('nodeEditor.discard')}
-            </button>
-          </>
-        ) : savedNode && savedNode.kind !== 'case' ? (
-          <button
-            className="action-button"
-            data-testid="node-editor-save"
-            disabled={props.historical || pending || !canSaveExistingNode}
-            onClick={() => void handleSaveExistingNode()}
-            type="button"
-          >
-            {t('nodeEditor.save')}
-          </button>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      )}
     </section>
   );
 }
