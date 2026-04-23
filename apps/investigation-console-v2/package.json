@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "concurrently -k \"pnpm dev:server\" \"pnpm dev:web\"",
-    "dev:server": "tsx watch ../investigation-console/server/index.ts",
+    "dev:server": "tsx watch server/index.ts",
     "dev:web": "vite",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test:e2e": "node scripts/run-e2e.mjs",
@@ -16,11 +16,14 @@
   "dependencies": {
     "@coe/console-client": "workspace:*",
     "@coe/domain": "workspace:*",
+    "@coe/investigation-server": "workspace:*",
     "@coe/shared-utils": "workspace:*",
+    "@coe/telemetry": "workspace:*",
     "@coe/ui": "workspace:*",
     "@tabler/icons-react": "^3.41.1",
     "@tailwindcss/vite": "^4.2.1",
     "concurrently": "^9.2.1",
+    "fastify": "^5.6.1",
     "next-themes": "^0.4.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

@@ -20,29 +20,24 @@ Working practice for this repo:
 
 This keeps the monorepo boundary correct even when the CLI path resolution is imperfect.
 
-## 2. Current v2 startup shape
+## 2. Current startup shape
 
-The v2 app is a new frontend only. It intentionally reuses the existing Fastify BFF entry from `apps/investigation-console/server/index.ts`.
+The v2 app is now the default Investigation Console frontend and owns its Fastify BFF entry under `apps/investigation-console-v2/server/index.ts`.
 
 Current dev commands:
 
 ```bash
+pnpm dev:console
 pnpm --filter @coe/investigation-console-v2 dev
 pnpm --filter @coe/investigation-console-v2 dev:web
 pnpm --filter @coe/investigation-console-v2 dev:server
 ```
 
 Default local ports:
-- v2 web: `http://127.0.0.1:4273`
-- shared console BFF: `http://127.0.0.1:4318`
+- console web: `http://127.0.0.1:4173`
+- console BFF: `http://127.0.0.1:4318`
 
-Root shortcut:
-
-```bash
-pnpm dev:v2
-```
-
-## 3. Current v2 verification shape
+## 3. Current verification shape
 
 Use this order:
 
@@ -54,20 +49,18 @@ pnpm --filter @coe/investigation-console-v2 test:e2e
 ```
 
 The e2e runner starts:
-- existing fixture BFF from `apps/investigation-console/server/e2e.ts`
+- real-backend seeded BFF from `apps/investigation-console-v2/server/e2e-real.ts`
 - v2 Vite web server
-- Playwright smoke flow in `apps/investigation-console-v2/e2e/console-smoke.spec.ts`
+- Playwright smoke and real-backend flows in `apps/investigation-console-v2/e2e/*.spec.ts`
 
-## 4. v1 compatibility check
+## 4. Shared-client follow-up checks
 
-Because `apps/investigation-console/src/lib/api.ts`, `src/lib/sse.ts`, and `src/store/ui-store.ts` now re-export shared code from `@coe/console-client`, any shared-client refactor should be followed by:
+Because `apps/investigation-console-v2/src/lib/api.ts` and `src/lib/sse.ts` re-export shared code from `@coe/console-client`, any shared-client refactor should be followed by:
 
 ```bash
-pnpm --filter @coe/investigation-console typecheck
-pnpm --filter @coe/investigation-console test
+pnpm --filter @coe/investigation-console-v2 typecheck
+pnpm --filter @coe/investigation-console-v2 test
 ```
-
-That is the fastest guard against silently breaking the legacy frontend while v2 is still in parallel rollout.
 
 ## 5. Graph drag persistence
 

@@ -2,7 +2,7 @@
 
 ## Startup
 
-- `pnpm --filter @coe/investigation-console test:e2e` now prefers `CONSOLE_BFF_PORT=4318` and `CONSOLE_WEB_PORT=4173`, but when those defaults are already occupied it automatically scans upward to the next free pair.
+- `pnpm --filter @coe/investigation-console-v2 test:e2e` now prefers `CONSOLE_BFF_PORT=4318` and `CONSOLE_WEB_PORT=4173`, but when those defaults are already occupied it automatically scans upward to the next free pair.
 - If you explicitly pin `CONSOLE_BFF_PORT` or `CONSOLE_WEB_PORT`, the script treats those ports as strict requirements and will still fail fast when the requested port is already in use.
 - If you want to inspect or reclaim a specific occupied port, use:
 
@@ -15,7 +15,7 @@ kill <pid>
 - The same override pattern works for the full console e2e script as well, for example:
 
 ```bash
-CONSOLE_WEB_PORT=4200 CONSOLE_BFF_PORT=4340 pnpm --filter @coe/investigation-console test:e2e
+CONSOLE_WEB_PORT=4200 CONSOLE_BFF_PORT=4340 pnpm --filter @coe/investigation-console-v2 test:e2e
 ```
 
 ## Form Stability
@@ -40,14 +40,14 @@ CONSOLE_WEB_PORT=4200 CONSOLE_BFF_PORT=4340 pnpm --filter @coe/investigation-con
 - Stable local verification for the web console remains:
 
 ```bash
-pnpm --filter @coe/investigation-console typecheck
-pnpm --filter @coe/investigation-console test
-pnpm --filter @coe/investigation-console test:e2e
+pnpm --filter @coe/investigation-console-v2 typecheck
+pnpm --filter @coe/investigation-console-v2 test
+pnpm --filter @coe/investigation-console-v2 test:e2e
 ```
 
 - When doing ad hoc browser probes against the Vite dev server, prefer `domcontentloaded` plus an explicit short wait over `networkidle`; the latter can hang on persistent local activity and slow down quick regression checks.
 - For graph-create regressions, the fixture e2e lane is the quickest signal because it exercises drag-create on the real canvas without waiting on the seeded real-backend bootstrap path.
-- If `test:e2e` fails only in the real-backend phase with the page stuck on `Loading workspace…`, inspect `apps/investigation-console/test-results/*/error-context.md` and the retained Playwright trace before assuming the graph create path regressed; the timeout can happen before the first graph resource is rendered.
+- If `test:e2e` fails only in the real-backend phase with the page stuck on `Loading workspace…`, inspect `apps/investigation-console-v2/test-results/*/error-context.md` and the retained Playwright trace before assuming the graph create path regressed; the timeout can happen before the first graph resource is rendered.
 
 ## Drawer Header Layout
 
@@ -55,8 +55,8 @@ pnpm --filter @coe/investigation-console test:e2e
 
 ## Workspace Layout Regression
 
-- When verifying `cases.$caseId.tsx` layout order, run Vitest with package-local paths such as `pnpm --filter @coe/investigation-console test -- test/case-workspace-layout.test.ts`.
-- Passing workspace-root style paths into the package test script can miss the intended file filter because the script executes from `apps/investigation-console`.
+- When verifying workspace layout or timeline regressions, run Vitest with package-local paths such as `pnpm --filter @coe/investigation-console-v2 test -- test/workspace-timeline.test.ts`.
+- Passing workspace-root style paths into the package test script can miss the intended file filter because the script executes from `apps/investigation-console-v2`.
 - Keep a dedicated regression test for the main-column panel order so “案件图在上、时间线在下” does not silently flip during future workspace refactors.
 
 ## Graph Selection Behavior
@@ -100,7 +100,7 @@ pnpm --filter @coe/investigation-console test:e2e
 ## Revision Slider Visibility
 
 - Timeline revision controls should stay hidden when the case has fewer than two revisions; showing a `1 -> 1` slider adds noise without adding any history navigation value.
-- The stable regression check is package-local: `pnpm --filter @coe/investigation-console test -- timeline-view.test.ts`.
+- The stable regression check is package-local: `pnpm --filter @coe/investigation-console-v2 test -- test/workspace-timeline.test.ts`.
 - Keep the guard in `TimelineView` itself so any caller that passes revision controls for a single-revision snapshot still renders the correct UI.
 - When the slider has exactly two revisions, the only visible dots should be the two revision markers at the endpoints. Hide native range track/thumb visuals and position custom markers with absolute percentages, otherwise the browser range endpoints plus centered custom markers look like four revision points.
 - A quick browser probe is to read `[data-testid^="revision-marker-slot-"]`: for two revisions, slot centers should align with the range `x` and `x + width` endpoints via `left: 0%` and `left: 100%`.

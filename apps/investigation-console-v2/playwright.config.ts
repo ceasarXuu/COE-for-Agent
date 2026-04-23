@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-const consoleWebPort = Number(process.env.CONSOLE_WEB_V2_PORT ?? '4273');
+const consoleWebPort = Number(process.env.CONSOLE_WEB_PORT ?? '4173');
 
 export default defineConfig({
   testDir: './e2e',

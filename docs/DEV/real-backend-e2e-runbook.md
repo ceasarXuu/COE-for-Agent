@@ -2,7 +2,7 @@
 
 ## 背景
 
-`apps/investigation-console/server/e2e-real.ts` 会通过真实后端命令流创建一条完整案件，用于 `apps/investigation-console/e2e/real-backend.spec.ts` 的端到端验证。
+`apps/investigation-console-v2/server/e2e-real.ts` 会通过真实后端命令流创建一条完整案件，用于 `apps/investigation-console-v2/e2e/real-backend.spec.ts` 与 `apps/investigation-console-v2/e2e/console-smoke.spec.ts` 的端到端验证。
 
 如果这条脚本直接复用仓库默认的 `COE_DATA_DIR=./.var/data`，测试种子案件会落进日常本地数据，随后在 `/cases` 列表里表现成一张普通案件卡片，例如：
 

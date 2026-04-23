@@ -10,15 +10,14 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
-    "dev:v2": "turbo run dev --filter=@coe/investigation-console-v2",
+    "dev:console": "turbo run dev --filter=@coe/investigation-console-v2",
     "lint": "turbo run lint",
     "mcp:stdio": "pnpm --filter @coe/investigation-server mcp:stdio",
     "setup:agents": "pnpm --filter @coe/investigation-server bootstrap:hosts --apply",
     "setup:agents:plan": "pnpm --filter @coe/investigation-server bootstrap:hosts",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "test:e2e": "pnpm --filter @coe/investigation-console test:e2e",
-    "test:e2e:v2": "pnpm --filter @coe/investigation-console-v2 test:e2e"
+    "test:e2e": "pnpm --filter @coe/investigation-console-v2 test:e2e"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

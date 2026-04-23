@@ -24,8 +24,10 @@
     }
   },
   "include": [
+    "server/**/*.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
+    "scripts/**/*.d.mts",
     "test/**/*.ts",
     "vite.config.ts",
     "playwright.config.ts",

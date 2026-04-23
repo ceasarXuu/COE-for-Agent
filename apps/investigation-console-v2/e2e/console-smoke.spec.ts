@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
 
+import { readSeedState } from './real-backend-seed.js';
+
 test('v2 cases page and workspace basic flow render correctly', async ({ page }) => {
-  await page.goto('/cases');
+  const seed = await readSeedState();
+
+  await page.goto(`/cases?q=${seed.searchTerm}`);
 
   await expect(page.locator('[data-testid="cases-gallery-v2"]')).toBeVisible();
   await expect(page.locator('[data-testid="cases-toolbar-create"]')).toBeVisible();
@@ -10,9 +14,9 @@ test('v2 cases page and workspace basic flow render correctly', async ({ page })
   await expect(page.locator('[data-testid="create-case-submit"]')).toBeVisible();
   await page.keyboard.press('Escape');
 
-  const firstCaseCard = page.locator('[data-testid^="case-card-"]').first();
-  await expect(firstCaseCard).toBeVisible();
-  await firstCaseCard.click();
+  const seededCaseCard = page.getByTestId(`case-card-${seed.caseId}`);
+  await expect(seededCaseCard).toBeVisible();
+  await seededCaseCard.click();
 
   await expect(page.locator('[data-testid="graph-stage"]').first()).toBeVisible();
   await expect(page.locator('[data-testid="revision-marker-slot-1"]')).toBeVisible();

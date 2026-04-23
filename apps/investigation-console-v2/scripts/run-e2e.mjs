@@ -12,12 +12,13 @@ import {
 const cwd = process.cwd();
 const childProcesses = [];
 const REQUESTED_CONSOLE_BFF_PORT = Number(process.env.CONSOLE_BFF_PORT ?? String(DEFAULT_CONSOLE_BFF_PORT));
-const REQUESTED_CONSOLE_WEB_PORT = Number(process.env.CONSOLE_WEB_V2_PORT ?? '4273');
+const REQUESTED_CONSOLE_WEB_PORT = Number(process.env.CONSOLE_WEB_PORT ?? String(DEFAULT_CONSOLE_WEB_PORT));
 const EXPLICIT_CONSOLE_BFF_PORT = Object.hasOwn(process.env, 'CONSOLE_BFF_PORT');
-const EXPLICIT_CONSOLE_WEB_PORT = Object.hasOwn(process.env, 'CONSOLE_WEB_V2_PORT');
+const EXPLICIT_CONSOLE_WEB_PORT = Object.hasOwn(process.env, 'CONSOLE_WEB_PORT');
 const PLAYWRIGHT_BIN = path.join(cwd, 'node_modules', '.bin', 'playwright');
 const TSX_BIN = path.join(cwd, 'node_modules', '.bin', 'tsx');
 const VITE_BIN = path.join(cwd, 'node_modules', '.bin', 'vite');
+const REAL_E2E_SEED_FILE = path.join(cwd, '.tmp', 'real-backend-seed.json');
 
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -102,6 +103,25 @@ function waitForUrlOrExit(handle, url) {
   ]);
 }
 
+async function ensurePlaywrightRuntime() {
+  const probeScript = `
+    import { chromium } from '@playwright/test';
+    const browser = await chromium.launch({ channel: 'chrome', headless: true });
+    await browser.close();
+  `;
+  const probe = startProcess(process.execPath, ['--input-type=module', '-e', probeScript], {
+    label: 'playwright chrome probe'
+  });
+  const exitCode = await new Promise((resolve, reject) => {
+    probe.child.once('exit', (code) => resolve(code ?? 1));
+    probe.child.once('error', reject);
+  });
+
+  if (Number(exitCode) !== 0) {
+    throw new Error('Playwright could not launch local Chrome. Install Google Chrome and retry `pnpm --filter @coe/investigation-console-v2 test:e2e`.');
+  }
+}
+
 process.on('SIGINT', async () => {
   await cleanup();
   process.exit(130);
@@ -113,6 +133,7 @@ process.on('SIGTERM', async () => {
 });
 
 async function main() {
+  await ensurePlaywrightRuntime();
   const { webPort, bffPort } = await resolvePortPlan({
     requestedWebPort: REQUESTED_CONSOLE_WEB_PORT,
     requestedBffPort: REQUESTED_CONSOLE_BFF_PORT,
@@ -122,8 +143,9 @@ async function main() {
   });
 
   const sharedEnv = {
-    CONSOLE_WEB_V2_PORT: String(webPort),
-    CONSOLE_BFF_PORT: String(bffPort)
+    CONSOLE_WEB_PORT: String(webPort),
+    CONSOLE_BFF_PORT: String(bffPort),
+    REAL_E2E_SEED_FILE
   };
 
   if (webPort !== REQUESTED_CONSOLE_WEB_PORT || bffPort !== REQUESTED_CONSOLE_BFF_PORT) {
@@ -135,8 +157,8 @@ async function main() {
     });
   }
 
-  const bff = startProcess(TSX_BIN, ['../investigation-console/server/e2e.ts'], {
-    label: 'fixture e2e bff',
+  const bff = startProcess(TSX_BIN, ['server/e2e-real.ts'], {
+    label: 'real backend e2e bff',
     env: sharedEnv
   });
   const web = startProcess(VITE_BIN, ['--host', '127.0.0.1', '--port', String(webPort), '--strictPort'], {
@@ -150,7 +172,7 @@ async function main() {
       waitForUrlOrExit(web, `http://127.0.0.1:${webPort}`)
     ]);
 
-    const runner = startProcess('sh', [PLAYWRIGHT_BIN, 'test', '--reporter=line'], {
+    const runner = startProcess('sh', [PLAYWRIGHT_BIN, 'test', 'e2e/console-smoke.spec.ts', 'e2e/real-backend.spec.ts', '--reporter=line'], {
       label: 'playwright test',
       env: sharedEnv
     });
