@@ -8,6 +8,7 @@ RUN_DIR="$ROOT_DIR/.run"
 PID_FILE="$RUN_DIR/dev.pid"
 LOG_FILE="$RUN_DIR/dev.log"
 WEB_URL="${COE_WEB_URL:-http://127.0.0.1:4173}"
+DEV_CMD="${COE_DEV_CMD:-pnpm dev:console}"
 
 mkdir -p "$RUN_DIR"
 
@@ -44,6 +45,23 @@ wait_for_url() {
   return 1
 }
 
+stop_pid_tree() {
+  local pid="$1"
+  local child_pid
+
+  if ! kill -0 "$pid" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  while IFS= read -r child_pid; do
+    if [ -n "$child_pid" ]; then
+      stop_pid_tree "$child_pid"
+    fi
+  done < <(pgrep -P "$pid" || true)
+
+  kill "$pid" >/dev/null 2>&1 || true
+}
+
 require_cmd pnpm
 require_cmd curl
 
@@ -54,7 +72,13 @@ fi
 if [ -f "$PID_FILE" ]; then
   EXISTING_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
   if [ -n "${EXISTING_PID:-}" ] && kill -0 "$EXISTING_PID" >/dev/null 2>&1; then
-    echo "Development stack already running with PID $EXISTING_PID"
+    if wait_for_url "$WEB_URL" 3; then
+      echo "Development stack already running with PID $EXISTING_PID"
+    else
+      echo "Tracked dev PID $EXISTING_PID is alive but $WEB_URL is not responding; restarting stack..."
+      stop_pid_tree "$EXISTING_PID"
+      rm -f "$PID_FILE"
+    fi
   else
     rm -f "$PID_FILE"
   fi
@@ -62,7 +86,7 @@ fi
 
 if [ ! -f "$PID_FILE" ]; then
   echo "Starting application services..."
-  nohup pnpm dev >"$LOG_FILE" 2>&1 &
+  nohup ${DEV_CMD} >"$LOG_FILE" 2>&1 &
   echo $! >"$PID_FILE"
 fi
 
