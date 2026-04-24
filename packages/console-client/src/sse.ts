@@ -34,11 +34,29 @@ export function createConsoleStreamClient(options: ConsoleStreamClientOptions = 
       });
 
       source.addEventListener('case.head_revision.changed', (event) => {
-        handlers.onHeadRevisionChanged?.(JSON.parse((event as MessageEvent).data) as HeadRevisionChangedEvent);
+        try {
+          const data = JSON.parse((event as MessageEvent).data) as HeadRevisionChangedEvent;
+          handlers.onHeadRevisionChanged?.(data);
+        } catch (error) {
+          console.error(`${logScope} failed-to-parse-head-revision-event`, {
+            event: 'stream.parse_error',
+            originalEvent: (event as MessageEvent).data,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
       });
 
       source.addEventListener('case.projection.updated', (event) => {
-        handlers.onProjectionUpdated?.(JSON.parse((event as MessageEvent).data) as ProjectionUpdatedEvent);
+        try {
+          const data = JSON.parse((event as MessageEvent).data) as ProjectionUpdatedEvent;
+          handlers.onProjectionUpdated?.(data);
+        } catch (error) {
+          console.error(`${logScope} failed-to-parse-projection-updated-event`, {
+            event: 'stream.parse_error',
+            originalEvent: (event as MessageEvent).data,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
       });
 
       return () => {

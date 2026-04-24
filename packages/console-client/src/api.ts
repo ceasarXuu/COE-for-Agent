@@ -172,6 +172,7 @@ export interface ConsoleApiClientOptions {
 }
 
 const SESSION_REFRESH_WINDOW_MS = 60 * 1000;
+const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 
 function withRevision(path: string, revision?: number | null): string {
   if (!revision) {
@@ -190,19 +191,43 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
   let inflightSession: Promise<SessionBundle> | null = null;
 
   async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const response = await fetchImpl(path, {
-      ...init,
-      headers: {
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(init.headers ?? {})
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), DEFAULT_FETCH_TIMEOUT_MS);
+
+    try {
+      const response = await fetchImpl(path, {
+        ...init,
+        signal: controller.signal,
+        headers: {
+          ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+          ...(init.headers ?? {})
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const status = response.status;
+        const statusText = response.statusText;
+        console.error(`${logScope} request-failed`, {
+          event: 'api.request_failed',
+          path,
+          status,
+          statusText
+        });
+        throw new Error(`Request failed: ${status} ${statusText}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(await response.text());
+      return response.json() as Promise<T>;
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${DEFAULT_FETCH_TIMEOUT_MS}ms`);
+      }
+
+      throw error;
     }
-
-    return response.json() as Promise<T>;
   }
 
   function sessionExpiresSoon(session: SessionBundle, now: number = Date.now()): boolean {

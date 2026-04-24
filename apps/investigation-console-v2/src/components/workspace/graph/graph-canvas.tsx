@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -106,6 +106,7 @@ export function GraphCanvas(props: GraphCanvasProps) {
   const [positionOverrides, setPositionOverrides] = useState<GraphNodePositionMap>({});
   const [flowProjector, setFlowProjector] = useState<FlowProjector | null>(null);
   const layout = useMemo(() => computeGraphLayout(props.graph), [props.graph]);
+  const writePositionsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const restoredPositions = readGraphNodePositions(getGraphNodePositionStorage(), storageKey);
@@ -124,6 +125,15 @@ export function GraphCanvas(props: GraphCanvasProps) {
   useEffect(() => {
     positionOverridesRef.current = positionOverrides;
   }, [positionOverrides]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (writePositionsTimerRef.current) {
+        clearTimeout(writePositionsTimerRef.current);
+      }
+    };
+  }, []);
 
   const baseNodes: Node<GraphNodeViewData>[] = useMemo(() => {
     const persistedNodes = mergeGraphNodePositions(layout.nodes, positionOverrides).map((node) => ({
@@ -277,21 +287,29 @@ export function GraphCanvas(props: GraphCanvasProps) {
     setPositionOverrides(nextValue);
 
     if (!node.id.startsWith('draft_')) {
-      const persistedPositions = Object.fromEntries(
-        Object.entries(nextValue).filter(([key]) => !key.startsWith('draft_'))
-      );
-      writeGraphNodePositions(
-        getGraphNodePositionStorage(),
-        storageKey,
-        persistedPositions
-      );
-      console.info('[investigation-console-v2] graph-node-position-persisted', {
-        event: 'graph.node_position_persisted',
-        caseId,
-        nodeId: node.id,
-        position: node.position,
-        count: Object.keys(persistedPositions).length
-      });
+      // Clear existing timer
+      if (writePositionsTimerRef.current) {
+        clearTimeout(writePositionsTimerRef.current);
+      }
+
+      // Debounce localStorage write to avoid frequent writes
+      writePositionsTimerRef.current = setTimeout(() => {
+        const persistedPositions = Object.fromEntries(
+          Object.entries(nextValue).filter(([key]) => !key.startsWith('draft_'))
+        );
+        writeGraphNodePositions(
+          getGraphNodePositionStorage(),
+          storageKey,
+          persistedPositions
+        );
+        console.info('[investigation-console-v2] graph-node-position-persisted', {
+          event: 'graph.node_position_persisted',
+          caseId,
+          nodeId: node.id,
+          position: node.position,
+          count: Object.keys(persistedPositions).length
+        });
+      }, 1000);
     }
 
     console.info('[investigation-console-v2] graph-node-repositioned', {
