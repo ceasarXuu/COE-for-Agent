@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.coe.local/resources/v1/cases.collection.schema.json",
+  "$id": "https://schemas.coe.local/resources/v1/case.evidence-pool.schema.json",
   "type": "object",
   "additionalProperties": false,
   "required": ["headRevision", "projectionRevision", "requestedRevision", "stale", "historical", "data"],
@@ -20,14 +20,15 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["caseId", "title", "status", "severity", "headRevision", "updatedAt"],
+            "required": ["evidenceId", "kind", "title", "summary", "provenance", "confidence", "revision"],
             "properties": {
-              "caseId": { "type": "string", "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$" },
-              "title": { "type": ["string", "null"] },
-              "status": { "type": ["string", "null"] },
-              "severity": { "type": ["string", "null"] },
-              "headRevision": { "type": "integer", "minimum": 1 },
-              "updatedAt": { "type": "string", "format": "date-time" }
+              "evidenceId": { "type": "string", "pattern": "^evidence_" },
+              "kind": { "type": "string" },
+              "title": { "type": "string" },
+              "summary": { "type": ["string", "null"] },
+              "provenance": { "type": ["string", "null"] },
+              "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+              "revision": { "type": "integer", "minimum": 1 }
             }
           }
         }

@@ -9,20 +9,20 @@
 
 本文解决的是“怎么实现”，不是“产品为什么做”。产品目标、对象定义和验收口径以 PRD 为准。
 
-本版已经完成此前收口内容的并入，本文现在是该项目在 `docs/DEV` 下唯一的技术真相源，不再维护独立的补遗文档。
+本版保留当前实现状态与长期目标架构。若本文后续历史段落与代码不一致，以本节、`@coe/mcp-contracts`、`schemas/resources/v1/*` 和实际 server/client 契约为准。
 
 当前技术验收边界有一个明确前提：**本项目以本地单机运行、验证和演示为主要目标**。因此本文中的“完成”是指 MCP Server、Console、历史回放、guardrail 与本地验证链路在开发机上可顺利工作，而不是生产化、企业化或平台化收口。
 
 ## 1.1 当前实现状态
 
-截至当前仓库状态，本文中的 MVP 主链路已经有对应实现，不再只是设计草图。已落地的关键能力包括：
+截至当前仓库状态，MVP 主链路已经有对应实现，不再只是设计草图。已落地的关键能力包括：
 
 - Investigation Server 的 MCP tools/resources、事件流、projection、checkpoint + replay、guardrails、export 与 control plane 路由
-- Investigation Console 的 Case List、Snapshot、Graph Slice、Timeline、Coverage、Guardrail、Inspector、Reviewer Action Panel
-- history mode、revision diff、reviewer confirmToken、高风险写操作冻结
+- Investigation Console v2 的 Case List、Snapshot、Graph Slice、Timeline、Evidence Pool、canonical node editor
+- history mode、revision diff、reviewer confirmToken 基础设施、高风险写操作冻结
 - OpenAPI control plane 资产、fixture-backed e2e、根级 typecheck/test/test:e2e 回归链路
 
-因此，阅读本文时应把它理解成“当前实现遵循的技术真相源”，而不是一份尚未开始编码的前置设计文档。
+当前 runtime surface 固定为 canonical case graph：`problem`、`hypothesis`、`blocker`、`repair_attempt`、`evidence`、`evidence_ref`。旧的 `inquiry`、`symptom`、`fact`、`experiment`、`gap`、`residual`、`decision` 和 `coverage` resource 只保留在历史计划文档或 PRD 背景中，不再是当前 MCP surface。
 
 ## 2. 设计结论
 
@@ -32,10 +32,10 @@ MVP 采用两个 deployable：Investigation Server 和 Investigation Console。S
 
 - 协议层：MCP 作为唯一业务读写标准面，OpenAPI 只保留健康检查、导出和管理操作。
 - 写入模型：所有业务写入先落 append-only 事件，再更新当前态投影；不允许直接改图。
-- 存储模型：MVP 使用 PostgreSQL 16 作为唯一主存储，Artifact 内容放对象存储或本地文件系统；不引入图数据库和外部消息队列。
+- 存储模型：当前本地 MVP 使用 `COE_DATA_DIR` 下的 JSON file store 作为主存储；PostgreSQL/Kysely 只作为未来生产 adapter 的目标方向，不是当前 runtime 依赖。
 - 服务实现：TypeScript + Node.js 22，统一服务端语言，最大化复用 MCP SDK、JSON Schema、OpenTelemetry 与前端共享类型。
 - 前端实现：React + TypeScript 的 Web Console，前面接一个 BFF 连接器，把浏览器与 MCP 连接细节隔离开。
-- Surface 约束：MVP 固定为 17 个变更型 tools、4 个 evaluation/guardrail tools、9 个 resource family。
+- Surface 约束：当前固定为 19 个变更型 tools、4 个 evaluation/guardrail tools、7 个 resource family。
 - 一致性策略：除 `investigation.case.open` 外，所有现有 case 的写命令都必须携带 `ifCaseRevision`；读路径统一返回 revision-aware resource envelope。
 - 回放策略：head 视图读当前态投影，历史视图按 `atRevision` 从 checkpoint + event replay 构建；`diff` 资源负责 revision 对比。
 - 治理策略：Case List 走 MCP collection resource；Reviewer-only 高风险操作必须经过 `confirmToken`，且不对纯 agent 会话开放。
@@ -46,9 +46,9 @@ MVP 采用两个 deployable：Investigation Server 和 Investigation Console。S
 
 ### 3.1 MVP 范围
 
-- 11 类领域对象的持久化与资源投影
-- 17 个变更型 MCP tools、4 个 evaluation/guardrail tools、9 个 resource family
-- Console 的 Case List、Snapshot、Graph Slice、Inspector、Timeline、Coverage、Guardrails、人工介入面板
+- 6 类 canonical 状态表的本地持久化与资源投影：problem、hypothesis、blocker、repair_attempt、evidence、evidence_ref
+- 19 个变更型 MCP tools、4 个 evaluation/guardrail tools、7 个 resource family
+- Console v2 的 Case List、Snapshot、Graph Slice、Timeline、Evidence Pool、canonical node editor
 - OTel trace/log/metric 基础埋点
 - PROV-compatible 导出
 
@@ -101,8 +101,8 @@ flowchart LR
   end
 
   subgraph Data[数据平面]
-    Postgres[(主存储<br/>PostgreSQL<br/>事件流 + 当前态 + 缓存)]
-    Blob[(证据正文存储<br/>Artifact Blob Store)]
+    LocalStore[(主存储<br/>COE_DATA_DIR JSON store<br/>事件流 + 当前态 + checkpoint)]
+    Blob[(证据正文存储<br/>本地文件或未来对象存储)]
     OTel[(可观测性汇聚<br/>OTel Collector)]
   end
 
@@ -120,7 +120,7 @@ flowchart LR
   Server -->|对外暴露唯一业务读写入口| McpSurface
   Server -->|执行角色、票据与 guardrail 校验| PolicyGuard
   Server -->|维护投影、回放、diff 与历史读取| ReplayProjection
-  ReplayProjection -->|读写事件流、当前态与资源缓存| Postgres
+  ReplayProjection -->|读写事件流、当前态与 checkpoint| LocalStore
   Server -->|写入或读取 Artifact 正文| Blob
   Server -->|上报 trace / log / metric| OTel
   ConsoleBFF -->|上报前端访问与操作链路| OTel
@@ -130,7 +130,7 @@ flowchart LR
   class AgentHost,HumanReviewer,AdminOperator actor;
   class ConsoleWeb,ConsoleBFF,ConfirmIssuer access;
   class Server,McpSurface,PolicyGuard,ReplayProjection core;
-  class Postgres,Blob,OTel data;
+  class LocalStore,Blob,OTel data;
   class ProvExport,EventExport export;
 ```
 

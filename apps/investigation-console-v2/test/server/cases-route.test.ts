@@ -64,9 +64,18 @@ describe('cases route', () => {
     });
     servers.push(app);
 
+    const sessionResponse = await app.inject({
+      method: 'GET',
+      url: '/api/session'
+    });
+    const session = sessionResponse.json() as { sessionToken: string };
+
     const response = await app.inject({
       method: 'POST',
       url: '/api/cases',
+      headers: {
+        'x-session-token': session.sessionToken
+      },
       payload: {
         title: 'Manual case from console',
         objective: 'Capture a new investigation from the gallery entry point',
@@ -107,6 +116,37 @@ describe('cases route', () => {
       headRevisionAfter: 1
     });
     expect(response.json()).not.toHaveProperty('inquiryId');
+  });
+
+  test('POST /api/cases rejects writes without an explicit session token', async () => {
+    const invokeTool = vi.fn();
+
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource: vi.fn(),
+        invokeTool,
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/cases',
+      payload: {
+        title: 'Manual case from console',
+        objective: 'Capture a new investigation from the gallery entry point',
+        severity: 'high',
+        projectDirectory: '/workspace/customer-a'
+      }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({
+      message: 'x-session-token header is required for console write requests'
+    });
+    expect(invokeTool).not.toHaveBeenCalled();
   });
 
   test('GET /api/session issues a still-valid session after the server has been running past the session TTL', async () => {

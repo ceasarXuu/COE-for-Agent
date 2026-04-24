@@ -6,6 +6,7 @@ import {
   createTestApp,
   resetServerTestDatabase
 } from '../test-app.js';
+import { expectResourceToMatchSchema } from '../support/resource-schema.js';
 
 describe.sequential('cases collection resource', () => {
   const adminPool = createAdminPool();
@@ -50,6 +51,7 @@ describe.sequential('cases collection resource', () => {
     const resource = await app.mcpServer.readResource(
       'investigation://cases?status=active&search=timeout&sort=title:asc&page=1&pageSize=2'
     );
+    expectResourceToMatchSchema('resources/v1/cases.collection.schema.json', resource.data);
 
     expect(resource.data).toMatchObject({
       data: {

@@ -1,11 +1,20 @@
-import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-export const TEST_DATABASE_URL =
-  process.env.COE_PERSISTENCE_TEST_DATA_DIR ?? path.join(os.tmpdir(), 'coe_for_agent_test');
+function createTestDataDir(): string {
+  const parentDir = process.env.COE_PERSISTENCE_TEST_DATA_DIR ?? os.tmpdir();
+  mkdirSync(parentDir, { recursive: true });
+  return mkdtempSync(path.join(parentDir, 'coe_for_agent_persistence_test-'));
+}
 
-export function createAdminPool() {
+let currentTestDataDir = createTestDataDir();
+
+export function getTestDataDir(): string {
+  return currentTestDataDir;
+}
+
+export function createLocalPersistenceTestHandle() {
   return {
     async end(): Promise<void> {
       return Promise.resolve();
@@ -13,11 +22,16 @@ export function createAdminPool() {
   };
 }
 
-export async function assertPostgresAvailable(_pool: ReturnType<typeof createAdminPool>): Promise<void> {
+export async function assertLocalPersistenceAvailable(_handle: ReturnType<typeof createLocalPersistenceTestHandle>): Promise<void> {
   return Promise.resolve();
 }
 
-export async function resetTestDatabase(_pool: ReturnType<typeof createAdminPool>): Promise<void> {
-  rmSync(TEST_DATABASE_URL, { recursive: true, force: true });
-  mkdirSync(TEST_DATABASE_URL, { recursive: true });
+export async function resetLocalPersistenceDataDir(
+  _handle: ReturnType<typeof createLocalPersistenceTestHandle>
+): Promise<void> {
+  currentTestDataDir = createTestDataDir();
+  console.info('[persistence-test] local-data-dir.created', {
+    event: 'persistence_test.local_data_dir_created',
+    dataDir: currentTestDataDir
+  });
 }

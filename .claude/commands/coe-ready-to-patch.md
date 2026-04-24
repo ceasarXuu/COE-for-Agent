@@ -5,4 +5,4 @@ argument-hint: [caseId]
 
 Use the connected `coe-investigation` MCP server to inspect case `$ARGUMENTS`.
 
-Summarize snapshot, timeline, graph, and coverage state, then run `investigation.guardrail.ready_to_patch_check`. Explain what is still blocking if the guardrail fails.
+Summarize snapshot, timeline, graph, evidence-pool, and diff state, then run `investigation.guardrail.ready_to_patch_check`. Explain which hypotheses, blockers, repair attempts, or evidence references are still blocking if the guardrail fails.

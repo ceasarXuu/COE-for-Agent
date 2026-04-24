@@ -1,22 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 import { resolveLocalSession } from '../auth/session.js';
 import type { ConsoleMcpClient } from '../mcp-types.js';
-
-interface SessionBundle {
-  sessionToken: string;
-  actorContext: {
-    actorType: string;
-    actorId: string;
-    sessionId: string;
-    role: string;
-    issuer: string;
-    authMode: string;
-  };
-  expiresAt: string;
-}
 
 interface ManualCaseCreateInput {
   title?: unknown;
@@ -40,13 +27,27 @@ function buildQueryString(query: Record<string, unknown>): string {
   return serialized.length > 0 ? `?${serialized}` : '';
 }
 
-function headerSessionToken(headers: Record<string, unknown>): string | null {
-  const rawHeader = headers['x-session-token'];
+function headerSessionToken(request: FastifyRequest): string | null {
+  const rawHeader = request.headers['x-session-token'];
   if (Array.isArray(rawHeader)) {
     return typeof rawHeader[0] === 'string' ? rawHeader[0] : null;
   }
 
   return typeof rawHeader === 'string' ? rawHeader : null;
+}
+
+function requireSessionToken(request: FastifyRequest, reply: FastifyReply): string | null {
+  const sessionToken = headerSessionToken(request);
+  if (sessionToken) {
+    return sessionToken;
+  }
+
+  request.log.warn({
+    event: 'console_bff.session_token_missing',
+    route: request.url
+  }, 'console write request missing x-session-token');
+  reply.code(401);
+  return null;
 }
 
 function asPayload(body: unknown): ManualCaseCreateInput {
@@ -87,7 +88,6 @@ export async function registerCasesRoutes(
   options: {
     mcpClient: ConsoleMcpClient;
     sessionSecret: string;
-    getDefaultSession: () => SessionBundle;
   }
 ) {
   app.get('/api/cases', async (request) => {
@@ -99,7 +99,7 @@ export async function registerCasesRoutes(
     return resource.data;
   });
 
-  app.post('/api/cases', async (request) => {
+  app.post('/api/cases', async (request, reply) => {
     const body = asPayload(request.body);
     const title = requireString(body.title, 'title');
     const objective = requireString(body.objective, 'objective');
@@ -109,7 +109,10 @@ export async function registerCasesRoutes(
     const idempotencyKey = typeof body.idempotencyKey === 'string' && body.idempotencyKey.trim().length > 0
       ? body.idempotencyKey.trim()
       : `console-case-open-${randomUUID()}`;
-    const sessionToken = headerSessionToken(request.headers as Record<string, unknown>) ?? options.getDefaultSession().sessionToken;
+    const sessionToken = requireSessionToken(request, reply);
+    if (!sessionToken) {
+      return { message: 'x-session-token header is required for console write requests' };
+    }
     const actorContext = resolveLocalSession(sessionToken, options.sessionSecret);
 
     request.log.info({

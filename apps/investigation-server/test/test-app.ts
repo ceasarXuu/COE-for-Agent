@@ -66,8 +66,6 @@ export async function createTestApp(): Promise<InvestigationApp> {
   return app;
 }
 
-export { TEST_DATA_ROOT as TEST_DATABASE_URL };
-
 function withTestAuthEnvelope(commandName: string, input: Record<string, unknown>): Record<string, unknown> {
   const actorContext = isActorContext(input.actorContext) ? input.actorContext : DEFAULT_TEST_ACTOR_CONTEXT;
   const nextInput: Record<string, unknown> = {

@@ -20,12 +20,13 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["eventId", "eventType", "caseRevision", "occurredAt"],
+            "required": ["eventId", "eventType", "caseRevision", "occurredAt", "editorOrigin", "summary"],
             "properties": {
               "eventId": { "type": "string" },
               "eventType": { "type": "string" },
               "caseRevision": { "type": "integer", "minimum": 1 },
               "occurredAt": { "type": "string", "format": "date-time" },
+              "editorOrigin": { "type": "string", "enum": ["agent", "web_ui"] },
               "summary": { "type": "string" }
             }
           }

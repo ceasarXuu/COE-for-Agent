@@ -1,8 +1,8 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 import { handleConfirmIntentRequest } from '../auth/confirm.js';
 import { resolveLocalSession } from '../auth/session.js';
-import type { ConsoleMcpClient } from '../mcp-types.js';
+import { isConsoleMcpToolName, type ConsoleMcpClient } from '../mcp-types.js';
 
 interface SessionBundle {
   sessionToken: string;
@@ -24,6 +24,20 @@ function headerSessionToken(request: FastifyRequest): string | null {
   }
 
   return typeof rawHeader === 'string' ? rawHeader : null;
+}
+
+function requireSessionToken(request: FastifyRequest, reply: FastifyReply): string | null {
+  const sessionToken = headerSessionToken(request);
+  if (sessionToken) {
+    return sessionToken;
+  }
+
+  request.log.warn({
+    event: 'console_bff.session_token_missing',
+    route: request.url
+  }, 'console write request missing x-session-token');
+  reply.code(401);
+  return null;
 }
 
 function asPayload(body: unknown): Record<string, unknown> {
@@ -52,8 +66,11 @@ export async function registerToolRoutes(
     return session;
   });
 
-  app.post('/api/confirm-intent', async (request) => {
-    const sessionToken = headerSessionToken(request) ?? options.getDefaultSession().sessionToken;
+  app.post('/api/confirm-intent', async (request, reply) => {
+    const sessionToken = requireSessionToken(request, reply);
+    if (!sessionToken) {
+      return { message: 'x-session-token header is required for console write requests' };
+    }
     const body = asPayload(request.body);
 
     return handleConfirmIntentRequest({
@@ -68,16 +85,28 @@ export async function registerToolRoutes(
     });
   });
 
-  app.post('/api/tools/:toolName', async (request) => {
+  app.post('/api/tools/:toolName', async (request, reply) => {
     const params = request.params as { toolName: string };
     const body = asPayload(request.body);
+    if (!isConsoleMcpToolName(params.toolName)) {
+      request.log.warn({
+        event: 'console_bff.tool_name_rejected',
+        toolName: params.toolName
+      }, 'console tool request rejected unknown tool');
+      reply.code(404);
+      return { message: `Unknown investigation tool: ${params.toolName}` };
+    }
+
+    const sessionToken = requireSessionToken(request, reply);
+    if (!sessionToken) {
+      return { message: 'x-session-token header is required for console write requests' };
+    }
     const isGuardrailTool = params.toolName.startsWith('investigation.guardrail.');
-    const sessionToken = headerSessionToken(request) ?? options.getDefaultSession().sessionToken;
-    const actorContext = isGuardrailTool ? null : resolveLocalSession(sessionToken, options.sessionSecret);
+    const actorContext = resolveLocalSession(sessionToken, options.sessionSecret);
 
     const result = await options.mcpClient.invokeTool(params.toolName, {
       ...body,
-      ...(actorContext ? { actorContext } : {})
+      ...(isGuardrailTool ? {} : { actorContext })
     });
 
     return result;

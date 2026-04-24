@@ -59,6 +59,7 @@ describe('schema registry', () => {
     expect(existsSync(join(schemasRoot, 'events/v1/canonical.evidence.attached.data.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'events/v1/canonical.hypothesis.created.data.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'resources/v1/cases.collection.schema.json'))).toBe(true);
+    expect(existsSync(join(schemasRoot, 'resources/v1/case.evidence-pool.schema.json'))).toBe(true);
     expect(existsSync(join(schemasRoot, 'resources/v1/case.diff.schema.json'))).toBe(true);
     expect(existsSync(join(fixturesRoot, 'minimal-case.json'))).toBe(true);
     expect(existsSync(join(fixturesRoot, 'history-replay.json'))).toBe(true);

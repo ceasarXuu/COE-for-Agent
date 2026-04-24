@@ -121,4 +121,88 @@ describe('history and tools routes', () => {
       actorContext: session.actorContext
     });
   });
+
+  test('POST /api/tools/:toolName rejects writes without an explicit session token', async () => {
+    const invokeTool = vi.fn();
+
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource: vi.fn(),
+        invokeTool,
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/tools/investigation.case.close',
+      payload: {
+        caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
+        ifCaseRevision: 5,
+        reason: 'validated and ready to close'
+      }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({
+      message: 'x-session-token header is required for console write requests'
+    });
+    expect(invokeTool).not.toHaveBeenCalled();
+  });
+
+  test('POST /api/tools/:toolName rejects unknown investigation tools before invoking MCP', async () => {
+    const invokeTool = vi.fn();
+
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource: vi.fn(),
+        invokeTool,
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/tools/investigation.legacy.fact.assert',
+      payload: {}
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({
+      message: 'Unknown investigation tool: investigation.legacy.fact.assert'
+    });
+    expect(invokeTool).not.toHaveBeenCalled();
+  });
+
+  test('POST /api/confirm-intent rejects confirmation without an explicit session token', async () => {
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource: vi.fn(),
+        invokeTool: vi.fn(),
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/confirm-intent',
+      payload: {
+        commandName: 'investigation.case.close',
+        caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA',
+        targetIds: ['case_01AAAAAAAAAAAAAAAAAAAAAAAA'],
+        rationale: 'validated and ready to close'
+      }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({
+      message: 'x-session-token header is required for console write requests'
+    });
+  });
 });

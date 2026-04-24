@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ConsoleMcpClient } from './mcp-types.js';
+import type { ConsoleMcpClient, ConsoleMcpToolName } from './mcp-types.js';
 import { buildConsoleServer } from './index.js';
 import { createLocalMcpClient } from './mcp-client.js';
 import { prepareRealE2ERuntime } from './real-e2e-runtime.js';
@@ -123,7 +123,7 @@ async function seedRealBackendCase(mcpClient: ConsoleMcpClient) {
   };
 }
 
-async function invokeMutation(mcpClient: ConsoleMcpClient, toolName: string, payload: Record<string, unknown>) {
+async function invokeMutation(mcpClient: ConsoleMcpClient, toolName: ConsoleMcpToolName, payload: Record<string, unknown>) {
   return mcpClient.invokeTool(toolName, {
     ...payload,
     actorContext: ACTOR_CONTEXT

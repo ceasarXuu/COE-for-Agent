@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./console-adapter": "./src/console-adapter.ts"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "bootstrap:hosts": "node --import tsx ./src/bootstrap/host-bootstrap-cli.ts",

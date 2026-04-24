@@ -15,8 +15,19 @@
       "additionalProperties": false,
       "required": ["case", "counts"],
       "properties": {
-        "case": { "type": "object", "additionalProperties": true },
-        "counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "case": { "type": ["object", "null"], "additionalProperties": true },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["problems", "hypotheses", "blockers", "repairAttempts", "evidenceRefs"],
+          "properties": {
+            "problems": { "type": "integer", "minimum": 0 },
+            "hypotheses": { "type": "integer", "minimum": 0 },
+            "blockers": { "type": "integer", "minimum": 0 },
+            "repairAttempts": { "type": "integer", "minimum": 0 },
+            "evidenceRefs": { "type": "integer", "minimum": 0 }
+          }
+        },
         "warnings": { "type": "array", "items": { "type": "string" } }
       }
     }

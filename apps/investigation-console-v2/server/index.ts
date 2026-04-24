@@ -35,8 +35,7 @@ export async function buildConsoleServer(options: BuildConsoleServerOptions = {}
 
   await registerCasesRoutes(app, {
     mcpClient,
-    sessionSecret,
-    getDefaultSession
+    sessionSecret
   });
   await registerResourceRoutes(app, { mcpClient });
   await registerToolRoutes(app, {

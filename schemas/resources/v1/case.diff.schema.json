@@ -13,12 +13,26 @@
     "data": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["fromRevision", "toRevision", "changedNodeIds", "changedEdgeIds", "summary"],
+      "required": ["fromRevision", "toRevision", "changedNodeIds", "changedEdgeKeys", "stateTransitions", "summary"],
       "properties": {
         "fromRevision": { "type": "integer", "minimum": 0 },
         "toRevision": { "type": "integer", "minimum": 0 },
         "changedNodeIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-        "changedEdgeIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "changedEdgeKeys": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "stateTransitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["nodeId", "kind", "fromStatus", "toStatus"],
+            "properties": {
+              "nodeId": { "type": "string" },
+              "kind": { "type": "string" },
+              "fromStatus": { "type": ["string", "null"] },
+              "toStatus": { "type": ["string", "null"] }
+            }
+          }
+        },
         "summary": { "type": "array", "items": { "type": "string" } }
       }
     }

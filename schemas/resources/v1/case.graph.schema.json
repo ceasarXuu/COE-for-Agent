@@ -13,8 +13,10 @@
     "data": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["nodes", "edges"],
+      "required": ["focusId", "projectionModel", "nodes", "edges"],
       "properties": {
+        "focusId": { "type": ["string", "null"] },
+        "projectionModel": { "type": "string", "enum": ["canonical", "legacy"] },
         "nodes": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
         "edges": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
       }

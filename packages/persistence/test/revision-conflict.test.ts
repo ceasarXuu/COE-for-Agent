@@ -5,25 +5,30 @@ import { RevisionConflict } from '@coe/domain';
 import { createPersistenceClient } from '../src/client.js';
 import { migrateToLatest } from '../src/migrate.js';
 import { EventStoreRepository } from '../src/repositories/event-store.js';
-import { assertPostgresAvailable, createAdminPool, resetTestDatabase, TEST_DATABASE_URL } from './test-db.js';
+import {
+  assertLocalPersistenceAvailable,
+  createLocalPersistenceTestHandle,
+  getTestDataDir,
+  resetLocalPersistenceDataDir
+} from './test-db.js';
 
 describe.sequential('revision conflict', () => {
-  const adminPool = createAdminPool();
+  const persistenceTestHandle = createLocalPersistenceTestHandle();
 
   beforeAll(async () => {
-    await assertPostgresAvailable(adminPool);
+    await assertLocalPersistenceAvailable(persistenceTestHandle);
   });
 
   beforeEach(async () => {
-    await resetTestDatabase(adminPool);
+    await resetLocalPersistenceDataDir(persistenceTestHandle);
   });
 
   afterAll(async () => {
-    await adminPool.end();
+    await persistenceTestHandle.end();
   });
 
   test('rejects append when expected revision does not match current revision', async () => {
-    const persistence = createPersistenceClient({ connectionString: TEST_DATABASE_URL });
+    const persistence = createPersistenceClient({ dataDir: getTestDataDir() });
     await migrateToLatest(persistence.db);
 
     const eventStore = new EventStoreRepository(persistence.db);

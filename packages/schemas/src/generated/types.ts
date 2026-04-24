@@ -189,6 +189,10 @@ export const generatedSchemaArtifacts = [
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/resources/v1/case.diff.schema.json"
   },
   {
+    "id": "https://schemas.coe.local/resources/v1/case.evidence-pool.schema.json",
+    "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/resources/v1/case.evidence-pool.schema.json"
+  },
+  {
     "id": "https://schemas.coe.local/resources/v1/case.graph.schema.json",
     "filePath": "/Volumes/XU-1TB-NPM/projects/COE-for-Agent/schemas/resources/v1/case.graph.schema.json"
   },

@@ -17,6 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@coe/mcp-contracts": "workspace:*",
     "react": "^19.1.0"
   },
   "devDependencies": {

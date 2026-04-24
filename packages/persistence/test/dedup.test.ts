@@ -3,25 +3,30 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { createPersistenceClient } from '../src/client.js';
 import { migrateToLatest } from '../src/migrate.js';
 import { CommandDedupRepository } from '../src/repositories/dedup.js';
-import { assertPostgresAvailable, createAdminPool, resetTestDatabase, TEST_DATABASE_URL } from './test-db.js';
+import {
+  assertLocalPersistenceAvailable,
+  createLocalPersistenceTestHandle,
+  getTestDataDir,
+  resetLocalPersistenceDataDir
+} from './test-db.js';
 
 describe.sequential('command dedup', () => {
-  const adminPool = createAdminPool();
+  const persistenceTestHandle = createLocalPersistenceTestHandle();
 
   beforeAll(async () => {
-    await assertPostgresAvailable(adminPool);
+    await assertLocalPersistenceAvailable(persistenceTestHandle);
   });
 
   beforeEach(async () => {
-    await resetTestDatabase(adminPool);
+    await resetLocalPersistenceDataDir(persistenceTestHandle);
   });
 
   afterAll(async () => {
-    await adminPool.end();
+    await persistenceTestHandle.end();
   });
 
   test('returns existing record for repeated idempotency key', async () => {
-    const persistence = createPersistenceClient({ connectionString: TEST_DATABASE_URL });
+    const persistence = createPersistenceClient({ dataDir: getTestDataDir() });
     await migrateToLatest(persistence.db);
 
     const dedup = new CommandDedupRepository(persistence.db);
@@ -51,7 +56,7 @@ describe.sequential('command dedup', () => {
   });
 
   test('claims a key once and returns the stored command result for duplicates', async () => {
-    const persistence = createPersistenceClient({ connectionString: TEST_DATABASE_URL });
+    const persistence = createPersistenceClient({ dataDir: getTestDataDir() });
     await migrateToLatest(persistence.db);
 
     const dedup = new CommandDedupRepository(persistence.db);

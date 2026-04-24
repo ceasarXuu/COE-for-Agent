@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, renameSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -13,7 +13,9 @@ describe('file persistence client', () => {
     while (tempDirs.length > 0) {
       const dir = tempDirs.pop();
       if (dir) {
-        rmSync(dir, { recursive: true, force: true });
+        if (existsSync(dir)) {
+          renameSync(dir, `${dir}.completed`);
+        }
       }
     }
   });

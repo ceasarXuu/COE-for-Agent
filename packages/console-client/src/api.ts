@@ -1,3 +1,7 @@
+import type { GuardrailToolName, MutationToolName } from '@coe/mcp-contracts/tool-names';
+
+export type ConsoleToolName = MutationToolName | GuardrailToolName;
+
 export interface SessionBundle {
   sessionToken: string;
   actorContext: {
@@ -329,7 +333,7 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
       return fetchJson<CaseDiffEnvelope>(`${basePath}/cases/${encodeURIComponent(caseId)}/diff?from=${from}&to=${to}`);
     },
 
-    async invokeTool<T = unknown>(toolName: string, payload: Record<string, unknown>): Promise<T> {
+    async invokeTool<T = unknown>(toolName: ConsoleToolName, payload: Record<string, unknown>): Promise<T> {
       const session = await ensureSession();
 
       return fetchJson<T>(`${basePath}/tools/${toolName}`, {

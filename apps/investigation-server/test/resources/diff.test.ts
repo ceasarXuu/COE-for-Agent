@@ -7,6 +7,7 @@ import {
   resetServerTestDatabase
 } from '../test-app.js';
 import { buildDiffScenario } from '../support/resource-scenarios.js';
+import { expectResourceToMatchSchema } from '../support/resource-schema.js';
 
 describe.sequential('diff resource', () => {
   const adminPool = createAdminPool();
@@ -31,6 +32,7 @@ describe.sequential('diff resource', () => {
       const diff = await app.mcpServer.readResource(
         `investigation://cases/${scenario.caseId}/diff?fromRevision=2&toRevision=3`
       );
+      expectResourceToMatchSchema('resources/v1/case.diff.schema.json', diff.data);
 
       expect(diff.data).toMatchObject({
         data: {

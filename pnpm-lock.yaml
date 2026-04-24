@@ -145,6 +145,9 @@ importers:
 
   packages/console-client:
     dependencies:
+      '@coe/mcp-contracts':
+        specifier: workspace:*
+        version: link:../mcp-contracts
       react:
         specifier: ^19.1.0
         version: 19.2.4

@@ -7,6 +7,7 @@ import {
   resetServerTestDatabase
 } from '../test-app.js';
 import { buildGraphScenario } from '../support/resource-scenarios.js';
+import { expectResourceToMatchSchema } from '../support/resource-schema.js';
 
 describe.sequential('graph resource', () => {
   const adminPool = createAdminPool();
@@ -31,6 +32,7 @@ describe.sequential('graph resource', () => {
       const graph = await app.mcpServer.readResource(
         `investigation://cases/${scenario.caseId}/graph?focusId=${scenario.focusHypothesisId}`
       );
+      expectResourceToMatchSchema('resources/v1/case.graph.schema.json', graph.data);
 
       expect(graph.data).toMatchObject({
         data: {
@@ -111,6 +113,7 @@ describe.sequential('graph resource', () => {
       const evidenceRefId = evidence.createdIds?.find((value) => value.startsWith('evidence_ref_'))!;
 
       const graph = await app.mcpServer.readResource(`investigation://cases/${caseId}/graph?focusId=${hypothesisId}&depth=2`);
+      expectResourceToMatchSchema('resources/v1/case.graph.schema.json', graph.data);
 
       expect(graph.data).toMatchObject({
         data: {

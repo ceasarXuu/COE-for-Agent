@@ -4,4 +4,4 @@ description: Open a COE investigation case for a new issue
 
 Use the connected `coe-investigation` MCP server to start a structured investigation for: $ARGUMENTS
 
-Read `investigation://profile`, open a case, and record the first symptoms and evidence targets before suggesting any repair.
+Read `investigation://profile`, open a case, keep the canonical root problem current, and capture or attach the first evidence targets before suggesting any repair.

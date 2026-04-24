@@ -1,4 +1,4 @@
-import { closeSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
+import { closeSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
 import type { JsonValue } from './schema.js';
@@ -100,7 +100,6 @@ export interface PersistenceClient {
 
 export interface CreatePersistenceClientOptions {
   dataDir?: string;
-  connectionString?: string;
 }
 
 function createEmptyStore(): PersistenceStore {
@@ -408,8 +407,8 @@ export async function writePersistenceStore<T>(
   return executor.transaction().execute(async (trx) => writer(trx.store));
 }
 
-export function createPersistenceClient({ dataDir, connectionString }: CreatePersistenceClientOptions): PersistenceClient {
-  const resolvedDataDir = dataDir ?? connectionString ?? path.resolve(process.cwd(), '.var/data');
+export function createPersistenceClient({ dataDir }: CreatePersistenceClientOptions = {}): PersistenceClient {
+  const resolvedDataDir = dataDir ?? path.resolve(process.cwd(), '.var/data');
   const db = new LocalPersistenceDatabase(resolvedDataDir);
 
   return {
@@ -422,5 +421,15 @@ export function createPersistenceClient({ dataDir, connectionString }: CreatePer
 }
 
 export function resetPersistenceDataDir(dataDir: string): void {
-  rmSync(dataDir, { recursive: true, force: true });
+  if (!existsSync(dataDir)) {
+    return;
+  }
+
+  const backupPath = `${dataDir}.backup-${Date.now()}`;
+  renameSync(dataDir, backupPath);
+  console.info('[persistence] data-dir.moved-for-reset', {
+    event: 'persistence.data_dir_moved_for_reset',
+    dataDir,
+    backupPath
+  });
 }

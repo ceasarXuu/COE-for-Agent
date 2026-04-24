@@ -3,25 +3,30 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { createPersistenceClient } from '../src/client.js';
 import { migrateToLatest } from '../src/migrate.js';
 import { ProjectionOutboxRepository } from '../src/repositories/outbox.js';
-import { assertPostgresAvailable, createAdminPool, resetTestDatabase, TEST_DATABASE_URL } from './test-db.js';
+import {
+  assertLocalPersistenceAvailable,
+  createLocalPersistenceTestHandle,
+  getTestDataDir,
+  resetLocalPersistenceDataDir
+} from './test-db.js';
 
 describe.sequential('projection outbox', () => {
-  const adminPool = createAdminPool();
+  const persistenceTestHandle = createLocalPersistenceTestHandle();
 
   beforeAll(async () => {
-    await assertPostgresAvailable(adminPool);
+    await assertLocalPersistenceAvailable(persistenceTestHandle);
   });
 
   beforeEach(async () => {
-    await resetTestDatabase(adminPool);
+    await resetLocalPersistenceDataDir(persistenceTestHandle);
   });
 
   afterAll(async () => {
-    await adminPool.end();
+    await persistenceTestHandle.end();
   });
 
   test('claims tasks idempotently and recovers after failure', async () => {
-    const persistence = createPersistenceClient({ connectionString: TEST_DATABASE_URL });
+    const persistence = createPersistenceClient({ dataDir: getTestDataDir() });
     await migrateToLatest(persistence.db);
 
     const outbox = new ProjectionOutboxRepository(persistence.db);

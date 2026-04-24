@@ -4,25 +4,30 @@ import { createPersistenceClient } from '../src/client.js';
 import { migrateToLatest } from '../src/migrate.js';
 import { CheckpointRepository } from '../src/repositories/checkpoints.js';
 import { EventStoreRepository } from '../src/repositories/event-store.js';
-import { assertPostgresAvailable, createAdminPool, resetTestDatabase, TEST_DATABASE_URL } from './test-db.js';
+import {
+  assertLocalPersistenceAvailable,
+  createLocalPersistenceTestHandle,
+  getTestDataDir,
+  resetLocalPersistenceDataDir
+} from './test-db.js';
 
 describe.sequential('checkpoint replay', () => {
-  const adminPool = createAdminPool();
+  const persistenceTestHandle = createLocalPersistenceTestHandle();
 
   beforeAll(async () => {
-    await assertPostgresAvailable(adminPool);
+    await assertLocalPersistenceAvailable(persistenceTestHandle);
   });
 
   beforeEach(async () => {
-    await resetTestDatabase(adminPool);
+    await resetLocalPersistenceDataDir(persistenceTestHandle);
   });
 
   afterAll(async () => {
-    await adminPool.end();
+    await persistenceTestHandle.end();
   });
 
   test('loads nearest checkpoint and remaining events for replay', async () => {
-    const persistence = createPersistenceClient({ connectionString: TEST_DATABASE_URL });
+    const persistence = createPersistenceClient({ dataDir: getTestDataDir() });
     await migrateToLatest(persistence.db);
 
     const eventStore = new EventStoreRepository(persistence.db);

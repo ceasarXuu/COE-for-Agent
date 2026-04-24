@@ -6,6 +6,7 @@ import {
   createTestApp,
   resetServerTestDatabase
 } from '../test-app.js';
+import { expectResourceToMatchSchema } from '../support/resource-schema.js';
 
 describe.sequential('snapshot and timeline resources', () => {
   const adminPool = createAdminPool();
@@ -37,6 +38,9 @@ describe.sequential('snapshot and timeline resources', () => {
     const snapshot = await app.mcpServer.readResource(`investigation://cases/${caseId}/snapshot`);
     const graph = await app.mcpServer.readResource(`investigation://cases/${caseId}/graph`);
     const timeline = await app.mcpServer.readResource(`investigation://cases/${caseId}/timeline`);
+    expectResourceToMatchSchema('resources/v1/case.snapshot.schema.json', snapshot.data);
+    expectResourceToMatchSchema('resources/v1/case.graph.schema.json', graph.data);
+    expectResourceToMatchSchema('resources/v1/case.timeline.schema.json', timeline.data);
 
     expect(snapshot.data).toMatchObject({
       data: {
@@ -113,6 +117,7 @@ describe.sequential('snapshot and timeline resources', () => {
     });
 
     const timeline = await app.mcpServer.readResource(`investigation://cases/${caseId}/timeline`);
+    expectResourceToMatchSchema('resources/v1/case.timeline.schema.json', timeline.data);
 
     expect(timeline.data).toMatchObject({
       data: {
