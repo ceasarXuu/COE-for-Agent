@@ -42,14 +42,12 @@ import { computeGraphLayout } from '@/lib/workspace/use-graph-layout.js';
 import { GlowingEdge } from '@/components/workspace/graph/edges/glowing-edge.js';
 import { type GraphNodeViewData } from '@/components/workspace/graph/graph-node-card.js';
 import { BlockerNode } from '@/components/workspace/graph/nodes/blocker-node.js';
-import { CaseNode } from '@/components/workspace/graph/nodes/case-node.js';
 import { EvidenceRefNode } from '@/components/workspace/graph/nodes/evidence-ref-node.js';
 import { HypothesisNode } from '@/components/workspace/graph/nodes/hypothesis-node.js';
 import { ProblemNode } from '@/components/workspace/graph/nodes/problem-node.js';
 import { RepairAttemptNode } from '@/components/workspace/graph/nodes/repair-attempt-node.js';
 
 const nodeTypes = {
-  case: CaseNode,
   problem: ProblemNode,
   hypothesis: HypothesisNode,
   blocker: BlockerNode,
@@ -441,7 +439,6 @@ export function GraphCanvas(props: GraphCanvasProps) {
 
 function getNodeColor(nodeType: string | undefined): string {
   const colors: Record<string, string> = {
-    case: '#4f87ff',
     problem: '#b58a46',
     hypothesis: '#7765f2',
     blocker: '#e29c3d',

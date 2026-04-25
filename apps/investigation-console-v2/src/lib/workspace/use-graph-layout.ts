@@ -3,8 +3,6 @@ import type { CaseGraphEnvelope } from '../api.js';
 export interface GraphNodeRecord {
   id: string;
   kind: string;
-  displayKind?: string;
-  issueKind?: string | null;
   label: string;
   payload?: Record<string, unknown>;
   summary?: string | null;
@@ -19,10 +17,6 @@ const ROW_GAP = 32;
 const PAD_X = 40;
 const PAD_Y = 40;
 
-function getDisplayKind(node: Pick<GraphNodeRecord, 'kind' | 'displayKind'>): string {
-  return node.displayKind ?? node.kind;
-}
-
 export function computeGraphLayout(
   graph: CaseGraphEnvelope,
   compareText: (left: string, right: string) => number = (left, right) => left.localeCompare(right)
@@ -32,7 +26,7 @@ export function computeGraphLayout(
   const laneLookup = new Map<string, number>();
 
   const LANE_ORDER = [
-    ['case', 'problem'],
+    ['problem'],
     ['hypothesis'],
     ['blocker', 'repair_attempt'],
     ['evidence_ref']
@@ -48,7 +42,7 @@ export function computeGraphLayout(
   const lanes = Array.from({ length: laneCount }, () => [] as GraphNodeRecord[]);
 
   for (const node of graph.data.nodes) {
-    const lane = laneLookup.get(getDisplayKind(node)) ?? laneCount - 1;
+    const lane = laneLookup.get(node.kind) ?? laneCount - 1;
     const laneNodes = lanes[lane];
 
     if (!laneNodes) {
@@ -58,8 +52,6 @@ export function computeGraphLayout(
     laneNodes.push({
       id: node.id,
       kind: node.kind,
-      displayKind: node.displayKind,
-      issueKind: node.issueKind,
       label: node.label,
       payload: node.payload,
       summary: node.summary,
@@ -116,7 +108,7 @@ export function computeGraphLayout(
     lane.forEach((node, index) => {
       nodes.push({
         id: node.id,
-        type: getDisplayKind(node),
+        type: node.kind,
         position: {
           x,
           y: PAD_Y + index * (NODE_HEIGHT + ROW_GAP)

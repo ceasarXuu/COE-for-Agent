@@ -41,8 +41,8 @@ export const DEFAULT_HOST_CONFIG: HostProtocolConfig = {
   serverTitle: 'COE Investigation',
   version: '0.1.0',
   instructions:
-    'Use COE investigation tools to maintain a strict canonical case graph of problem, hypothesis, blocker, repair attempt, and evidence. ' +
-    'Do not create repair attempts before a hypothesis is confirmed.'
+    'Start by reading investigation://profile, then use COE investigation tools to maintain a strict canonical case graph of problem, hypothesis, blocker, repair attempt, evidence, and evidence_ref. ' +
+    'Use snapshot, timeline, graph, evidence-pool, and diff resources for context. Do not create repair attempts before a hypothesis is confirmed.'
 };
 
 const RESOURCE_METADATA_BY_TEMPLATE: Record<string, { name: string; title: string; description: string }> = {

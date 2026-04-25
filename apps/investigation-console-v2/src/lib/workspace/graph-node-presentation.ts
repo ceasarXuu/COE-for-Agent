@@ -1,9 +1,5 @@
 import type { GraphNodeRecord } from './use-graph-layout.js';
 
-export function getDisplayKind(node: Pick<GraphNodeRecord, 'kind' | 'displayKind'>): string {
-  return node.displayKind ?? node.kind;
-}
-
 export function summarizeGraphNodes(nodes: GraphNodeRecord[]): Array<{ kind: string; count: number }> {
   const counts = new Map<string, number>();
   for (const node of nodes) {
@@ -20,6 +16,6 @@ export function summarizeGraphNodes(nodes: GraphNodeRecord[]): Array<{ kind: str
   ].filter((item) => item.count > 0);
 }
 
-export function getPresentationKind(node: Pick<GraphNodeRecord, 'kind' | 'displayKind' | 'issueKind'>): string {
-  return getDisplayKind(node);
+export function getPresentationKind(node: Pick<GraphNodeRecord, 'kind'>): string {
+  return node.kind;
 }

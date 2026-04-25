@@ -16,9 +16,41 @@
       "required": ["focusId", "projectionModel", "nodes", "edges"],
       "properties": {
         "focusId": { "type": ["string", "null"] },
-        "projectionModel": { "type": "string", "enum": ["canonical", "legacy"] },
-        "nodes": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
-        "edges": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+        "projectionModel": { "type": "string", "enum": ["canonical"] },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "label", "status", "revision"],
+            "properties": {
+              "id": { "type": "string" },
+              "kind": {
+                "type": "string",
+                "enum": ["problem", "hypothesis", "blocker", "repair_attempt", "evidence_ref"]
+              },
+              "label": { "type": "string" },
+              "payload": { "type": "object", "additionalProperties": true },
+              "summary": { "type": ["string", "null"] },
+              "status": { "type": ["string", "null"] },
+              "revision": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "type", "fromId", "toId"],
+            "properties": {
+              "key": { "type": "string" },
+              "type": { "type": "string", "enum": ["structural"] },
+              "fromId": { "type": "string" },
+              "toId": { "type": "string" }
+            }
+          }
+        }
       }
     }
   }

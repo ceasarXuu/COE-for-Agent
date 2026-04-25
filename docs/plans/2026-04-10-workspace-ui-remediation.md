@@ -8,7 +8,7 @@ Scope:
 - Restore graph orientation copy, cases-list guidance, and stronger panel hierarchy.
 
 Execution order:
-1. Add regression coverage for cases index guidance and responsive workspace ordering.
+1. Add regression tests for cases index guidance and responsive workspace ordering.
 2. Unify workspace layout rules into one source of truth and remove dead overlap.
 3. Rebuild workspace grid areas for desktop, tablet, and mobile breakpoints.
 4. Add graph orientation shell, restore list entry guidance, and rebalance panel emphasis.

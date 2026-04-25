@@ -24,7 +24,7 @@ describe.sequential('canonical problem commands', () => {
     await adminPool.end();
   });
 
-  test('case.open creates a canonical problem root alongside the legacy inquiry', async () => {
+  test('case.open creates the canonical problem root', async () => {
     const app = await createTestApp();
 
     try {

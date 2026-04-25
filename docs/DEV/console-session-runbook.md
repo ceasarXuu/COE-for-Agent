@@ -48,12 +48,14 @@
 ## 当前实现约束
 
 - 服务端 `GET /api/session` 每次都会签发新的 reviewer session
-- 服务端在没有显式 `x-session-token` 时，也会动态生成 fallback session
+- 服务端写路由和确认路由在没有显式 `x-session-token` 时返回 401
 - 前端在 session 剩余有效期不足 60 秒时主动续租
 - 前端刷新 session 时会输出结构化日志：
   - `[investigation-console] session-refreshed`
 - 服务端签发 session 时会输出结构化日志：
   - `[investigation-console] session-issued`
+- 服务端拒绝缺失 token 的写请求时会输出结构化日志：
+  - `console_bff.session_token_missing`
 
 ## 排查建议
 
@@ -62,4 +64,5 @@
 1. 看浏览器控制台是否出现 `session-refreshed`
 2. 看 BFF 日志是否出现 `session-issued`
 3. 检查失败请求携带的 token 是否已经超过 `expiresAt`
-4. 如果失败发生在确认流，继续检查是否因为 session 被错误轮换导致 `sessionId` 变化
+4. 如果返回 401，先确认请求是否携带 `x-session-token`
+5. 如果失败发生在确认流，继续检查是否因为 session 被错误轮换导致 `sessionId` 变化

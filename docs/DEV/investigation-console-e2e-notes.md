@@ -66,14 +66,14 @@ pnpm --filter @coe/investigation-console-v2 test:e2e
 - Regression coverage should verify both the route contract and the React Flow props so future graph work does not silently reintroduce focus chips, pane-clear behavior, or selection-driven layout changes.
 - For graph context-menu regressions, verify both sides of the React Flow contract: the canvas menu must bind through `onPaneContextMenu`, and the flow instance used for `screenToFlowPosition` must come from `onInit` instead of the wrapper `ref`.
 - For graph context-menu dismissal, do not restrict outside-click detection to `HTMLElement` targets or bubble-phase listeners. React Flow can route canvas clicks through SVG elements and internal handlers, so the stable fix is a capture-phase listener that treats any non-`.context-menu` `Element` as an outside click.
-- The blank-canvas graph context menu should expose only context-free concepts that can be persisted immediately: `issue` and `artifact`. Keep `fact`, `hypothesis`, `experiment`, and `decision` on context-aware flows such as the Action Panel, where the required supporting refs already exist.
+- The blank-canvas graph context menu should not create committed nodes. Canonical graph creation starts from an existing parent node so the UI can present only allowed child kinds for that parent state.
 - For graph edge-creation regressions, check both the React Flow contract and the physical layout. `nodesConnectable` plus `onConnect` must both be wired on the controlled canvas, and the rendered card width in CSS must stay aligned with `useGraphLayout` lane width; otherwise adjacent nodes can visually overlap and cover each other's handles even when connection logic is enabled.
-- Case detail edits are now split across two persistence lanes: domain-safe mutations such as blank-canvas `issue` / `artifact` creation must go through backend tools immediately, while case-detail drafts and graph-only overlay edits such as textarea input, node repositioning, and manual edges must autosave to case-scoped local storage and survive reloads.
-- Do not infer canonical mode from the mere presence of a `problem` node. Mixed legacy cases also carry a canonical root as sidecar state, and the stable client rule is: switch to canonical UI only when the graph has no legacy node kinds, or when canonical-only node kinds such as `blocker`, `repair_attempt`, or `evidence_ref` are present.
+- Case detail edits are split across committed MCP mutations and local graph layout state. Node content saves through canonical backend tools; graph-only position edits autosave to case-scoped local storage and survive reloads.
+- The graph resource is canonical-only. The client should not branch into alternate presentation models.
 
 ## Snapshot Placement
 
-- Snapshot context no longer renders as a standalone side-rail card in the workspace; stage, severity, objective, and the inquiry/symptom/artifact/fact badges now live in the graph header area.
+- Snapshot context no longer renders as a standalone side-rail card in the workspace; stage, severity, objective, and canonical counts live in the graph header area.
 - If the workspace layout changes again, verify both the route structure and the graph header rendering together so a blank summary rail is not reintroduced.
 
 ## Workspace Pruning

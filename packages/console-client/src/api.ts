@@ -101,8 +101,6 @@ export interface CaseTimelineEnvelope {
 export interface GraphNodeRecord {
   id: string;
   kind: string;
-  displayKind?: string;
-  issueKind?: string | null;
   label: string;
   payload?: Record<string, unknown>;
   summary?: string | null;
@@ -118,7 +116,7 @@ export interface CaseGraphEnvelope {
   historical: boolean;
   data: {
     focusId: string | null;
-    projectionModel?: 'legacy' | 'canonical';
+    projectionModel: 'canonical';
     nodes: GraphNodeRecord[];
     edges: Array<{
       key: string;

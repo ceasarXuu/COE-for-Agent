@@ -36,11 +36,12 @@ describe.sequential('graph resource', () => {
 
       expect(graph.data).toMatchObject({
         data: {
+          projectionModel: 'canonical',
           focusId: scenario.focusHypothesisId,
           nodes: expect.arrayContaining([
             expect.objectContaining({ id: scenario.focusHypothesisId, kind: 'hypothesis' }),
-            expect.objectContaining({ id: scenario.problemId, kind: 'problem', displayKind: 'problem' }),
-            expect.objectContaining({ id: scenario.focusRepairAttemptId, kind: 'repair_attempt', displayKind: 'repair_attempt' })
+            expect.objectContaining({ id: scenario.problemId, kind: 'problem' }),
+            expect.objectContaining({ id: scenario.focusRepairAttemptId, kind: 'repair_attempt' })
           ]),
           edges: expect.arrayContaining([
             expect.objectContaining({ type: 'structural', fromId: scenario.problemId, toId: scenario.focusHypothesisId }),
@@ -51,6 +52,11 @@ describe.sequential('graph resource', () => {
 
       const nodeIds = new Set(((graph.data as { data: { nodes: Array<{ id: string }> } }).data.nodes).map((node) => node.id));
       expect(nodeIds.has(scenario.unrelatedHypothesisId)).toBe(false);
+      for (const node of (graph.data as { data: { nodes: Array<Record<string, unknown>> } }).data.nodes) {
+        expect(node).not.toHaveProperty('displayKind');
+        expect(node).not.toHaveProperty('issueKind');
+        expect(node.kind).not.toBe('evidence');
+      }
     } finally {
       await app.close();
     }
@@ -117,12 +123,13 @@ describe.sequential('graph resource', () => {
 
       expect(graph.data).toMatchObject({
         data: {
+          projectionModel: 'canonical',
           focusId: hypothesisId,
           nodes: expect.arrayContaining([
-            expect.objectContaining({ id: problemId, kind: 'problem', displayKind: 'problem' }),
-            expect.objectContaining({ id: hypothesisId, kind: 'hypothesis', displayKind: 'hypothesis' }),
-            expect.objectContaining({ id: repairAttemptId, kind: 'repair_attempt', displayKind: 'repair_attempt' }),
-            expect.objectContaining({ id: evidenceRefId, kind: 'evidence_ref', displayKind: 'evidence_ref' })
+            expect.objectContaining({ id: problemId, kind: 'problem' }),
+            expect.objectContaining({ id: hypothesisId, kind: 'hypothesis' }),
+            expect.objectContaining({ id: repairAttemptId, kind: 'repair_attempt' }),
+            expect.objectContaining({ id: evidenceRefId, kind: 'evidence_ref' })
           ]),
           edges: expect.arrayContaining([
             expect.objectContaining({ type: 'structural', fromId: problemId, toId: hypothesisId }),
@@ -131,6 +138,11 @@ describe.sequential('graph resource', () => {
           ])
         }
       });
+      for (const node of (graph.data as { data: { nodes: Array<Record<string, unknown>> } }).data.nodes) {
+        expect(node).not.toHaveProperty('displayKind');
+        expect(node).not.toHaveProperty('issueKind');
+        expect(node.kind).not.toBe('evidence');
+      }
     } finally {
       await app.close();
     }

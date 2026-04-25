@@ -51,7 +51,8 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             text:
               `Use the COE investigation MCP surface to open a new case for: ${problem}.\n` +
               `Treat ${environment} as the working environment label.\n` +
-              'Create or update the root problem, derive hypotheses from it, and only branch into repair attempts after a hypothesis is confirmed.'
+              'Read investigation://profile first, open the case, create or update the root problem, ' +
+              'derive hypotheses from it, capture evidence, and only branch into repair attempts after a hypothesis is confirmed.'
           }
         }
       ];
@@ -77,8 +78,11 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
           content: {
             type: 'text',
             text:
-              `Review investigation case ${caseId} through MCP resources, summarize the current evidence chain, ` +
-              'run the ready_to_patch guardrail, and explain any active blockers on the confirmed branch.'
+              `Review investigation case ${caseId} through investigation://cases/${caseId}/snapshot, ` +
+              `investigation://cases/${caseId}/timeline, investigation://cases/${caseId}/graph, ` +
+              `investigation://cases/${caseId}/evidence-pool, and investigation://cases/${caseId}/diff. ` +
+              'Summarize the current evidence chain, run the ready_to_patch guardrail, ' +
+              'and explain any active blockers on the confirmed branch.'
           }
         }
       ];
@@ -105,8 +109,9 @@ export const PROMPT_DEFINITIONS: PromptDefinition[] = [
             type: 'text',
             text:
               `Prepare a reviewer handoff for investigation case ${caseId}. ` +
-              'Summarize the case snapshot, timeline, root problem state, active hypotheses, blockers, repair attempts, ' +
-              'and any reviewer-only actions that still require explicit confirmation.'
+              'Use the case snapshot, timeline, graph, evidence-pool, and diff resources. ' +
+              'Summarize the root problem state, active hypotheses, blockers, repair attempts, evidence references, ' +
+              'guardrail results, and any reviewer-only actions that still require explicit confirmation.'
           }
         }
       ];

@@ -21,7 +21,7 @@ Use this skill when a task should be handled as an evidence-driven investigation
    - `investigation.guardrail.stall_check`
    - `investigation.guardrail.ready_to_patch_check`
    - `investigation.guardrail.close_case_check`
-7. Use `investigation://cases/{caseId}/snapshot`, `timeline`, `graph`, `evidence-pool`, and `diff` to summarize progress.
+7. Use `investigation://cases/{caseId}/snapshot`, `investigation://cases/{caseId}/timeline`, `investigation://cases/{caseId}/graph`, `investigation://cases/{caseId}/evidence-pool`, and `investigation://cases/{caseId}/diff` to summarize progress.
 8. Escalate reviewer-only actions instead of faking them in an agent session.
 
 ## Rules

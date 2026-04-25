@@ -4,8 +4,6 @@ import { listProjectedNodes, type ProjectedCaseState } from './replay.js';
 export interface GraphNode {
   id: string;
   kind: string;
-  displayKind?: string;
-  issueKind?: string | null;
   label: string;
   payload?: Record<string, unknown>;
   summary?: null | string;
@@ -15,7 +13,7 @@ export interface GraphNode {
 
 export interface GraphSlice {
   focusId: string | null;
-  projectionModel: 'legacy' | 'canonical';
+  projectionModel: 'canonical';
   nodes: GraphNode[];
   edges: ProjectionEdge[];
 }
@@ -59,13 +57,11 @@ export function buildGraphSlice(
 ): GraphSlice {
   const nodes = new Map<string, GraphNode>();
 
-  for (const record of listProjectedNodes(state)) {
+  for (const record of listProjectedNodes(state).filter((node) => node.kind !== 'evidence')) {
     const payload = asObject(record.payload);
     nodes.set(record.id, {
       id: record.id,
       kind: record.kind,
-      displayKind: record.kind,
-      issueKind: null,
       label: record.kind === 'evidence_ref'
         ? asString(canonicalEvidencePayload(payload, state).title) ?? graphNodeLabel(payload, record.id)
         : graphNodeLabel(payload, record.id),
@@ -78,25 +74,21 @@ export function buildGraphSlice(
     });
   }
 
-  const isCanonical = state.tables.problems.size > 0;
-
-  return focusGraphSlice(nodes, deriveProjectionEdges(state), isCanonical, options);
+  return focusGraphSlice(nodes, deriveProjectionEdges(state), options);
 }
 
 function focusGraphSlice(
   nodes: Map<string, GraphNode>,
   edges: ProjectionEdge[],
-  isCanonical: boolean,
   options: { focusId?: string | null; depth?: number } = {}
 ): GraphSlice {
   const focusId = options.focusId ?? null;
   const depth = Math.max(options.depth ?? 1, 1);
-  const projectionModel = isCanonical ? 'canonical' as const : 'legacy' as const;
 
   if (!focusId || !nodes.has(focusId)) {
     return {
       focusId,
-      projectionModel,
+      projectionModel: 'canonical',
       nodes: [...nodes.values()].sort((left, right) => left.id.localeCompare(right.id)),
       edges
     };
@@ -128,7 +120,7 @@ function focusGraphSlice(
 
   return {
     focusId,
-    projectionModel,
+    projectionModel: 'canonical',
     nodes: [...nodes.values()]
       .filter((node) => selectedNodeIds.has(node.id))
       .sort((left, right) => left.id.localeCompare(right.id)),
