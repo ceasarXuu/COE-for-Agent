@@ -58,6 +58,26 @@ This is the full local gate. It is intentionally boring: TypeScript catches
 contract drift, Vitest catches domain/server/client regressions, and Playwright
 checks the browser-visible console path.
 
+Before running the gate, state the expected signal in concrete terms. Do not
+declare a lane useful by reading a green result backward. A useful lane has a
+predefined failure meaning, such as contract drift, schema mismatch, broken
+resource output, missing session boundary, or browser-visible console failure.
+
+Turbo cache replay is not enough when evaluating whether tests actually work.
+For efficacy checks, force execution:
+
+```bash
+pnpm exec turbo run lint --force
+pnpm exec turbo run typecheck --force
+pnpm exec turbo run test --force
+pnpm test:e2e
+```
+
+Treat `Cached: 0 cached` plus fresh Vitest or Playwright output as the evidence
+that the tests ran. A cached green result is still useful for normal developer
+feedback, but it must not be used as proof that the test suite itself exercised
+the current runtime.
+
 For documentation-only changes, run at least:
 
 ```bash
@@ -66,6 +86,16 @@ pnpm typecheck
 
 If the documentation changes commands, runtime behavior, public contracts, test
 expectations, or runbooks, use the full local gate.
+
+If `pnpm` is not available in the shell but Node and npm are, use the repository
+declared version through `npx`:
+
+```bash
+PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npx -y pnpm@10.8.1 <command>
+```
+
+Record this fallback in the verification notes because it is an environment
+finding, not a product signal.
 
 ## Fast Smoke Gate
 

@@ -27,12 +27,15 @@
   ```
 
 - 实现过程中可以先跑影响面对应的 targeted regression lane，但最终交付前必须回到完整本地门禁。
+- 评估测试体系是否真正有效时，必须先写明预期验证目标和失败判定，再执行测试；禁止根据已经得到的结果反推测试是否“有效”。
+- 不能把 Turbo cache replay 当成测试实际发生效用的证据。需要验证测试本身时，使用 `turbo run <task> --force` 或等效方式强制重跑，并在结果中确认 `Cached: 0 cached` 或具体测试进程确实执行。
 - 文档-only 变更至少执行 `pnpm typecheck`；如果文档改变命令、运行时行为、公共契约、测试预期或 runbook，必须执行完整本地门禁。
 - bug 修复必须先复现或明确原始症状，再增加或复用回归验证；不能只凭代码推理宣布修复。
 - Console UI、Graph、Timeline、Node Editor、Session、ConfirmToken、E2E 启动链路相关变更，必须覆盖 `@coe/investigation-console-v2` 的 package 测试，并在最终 gate 中跑 `pnpm test:e2e`。
 - MCP tools、resources、prompts、agent docs、command files 相关变更，必须跑 `apps/investigation-server/test/mcp/agent-surface-alignment.test.ts` 或更完整的 server test lane。
 - 资源 schema、generated validators、resource output 相关变更，必须同时验证 `@coe/schemas` 和 server resource tests。
 - E2E 测试必须使用隔离 runtime root，禁止把测试种子写入默认 `.var/data`。
+- 如果当前 shell 没有全局 `pnpm`，使用仓库声明版本执行，例如 `PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npx -y pnpm@10.8.1 <command>`，并把该环境差异记录在验证结果中。
 - 具体分层策略以 `docs/DEV/smoke-regression-test-strategy.md` 为准；如果实际流程变化，要同步更新该文档。
 
 # 前端开发
