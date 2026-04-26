@@ -4,7 +4,10 @@ Updated: 2026-04-27
 
 This document defines the local test system for COE for Agent. The goal is to
 run the right verification immediately after each change, expose severe breaks
-before human review, and keep every failure actionable.
+before human review, and keep every failure actionable. The system must balance
+static contract checks with real runtime checks; a green TypeScript or Vitest
+run is not enough when the changed surface depends on spawned processes, ports,
+stdio framing, browser interaction, or persisted runtime state.
 
 ## Core Functions Under Test
 
@@ -97,6 +100,107 @@ PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npx -y pnpm@10.8.1 <command>
 Record this fallback in the verification notes because it is an environment
 finding, not a product signal.
 
+## Verification Layers
+
+Use these layers deliberately. Do not treat a lower layer as a substitute for a
+higher layer when the changed behavior only exists at runtime.
+
+| Layer | Purpose | Current executable lane | What it proves | What it does not prove |
+| --- | --- | --- | --- | --- |
+| L0 Static contract | TypeScript package boundaries and import/export drift | `pnpm lint`, `pnpm typecheck` | Code compiles under declared contracts | Processes start, ports bind, browser works |
+| L1 In-process behavior | Domain, persistence, server modules, BFF handlers, component logic | `pnpm test` | Core rules and module behavior are correct in test harnesses | CLI entrypoints, process lifecycle, real browser rendering |
+| L2 Browser runtime | Console web + BFF + real-backend seeded case | `pnpm test:e2e` | Vite, BFF, Playwright, real backend seed, reviewer flow, and browser-visible paths work together | `start.sh`, MCP stdio host behavior, restart recovery |
+| L3 Runtime black-box smoke | Public local entrypoints as spawned processes | Planned `pnpm test:runtime` | Real CLI/process contracts work from the outside | Deep UI interaction coverage |
+| L4 Manual diagnostic smoke | Human-visible browser and log inspection for risky UI/runtime changes | Browser checklist below | Actual local UX and diagnostic logs match expectations | Repeatable automation by itself |
+
+The current default gate covers L0, L1, and L2. That is acceptable for ordinary
+code changes, but runtime-sensitive changes must add L3 or L4 evidence until
+`pnpm test:runtime` exists.
+
+## Runtime Smoke Gate
+
+Runtime smoke checks are required when a change touches:
+
+- `start.sh`, `install.sh`, package scripts, host bootstrap, or local startup
+  behavior;
+- MCP stdio framing, prompts, tools/resources registration, or agent host
+  integration;
+- `COE_DATA_DIR`, persistence startup, replay, checkpoint recovery, or runtime
+  cleanup;
+- port selection, process cleanup, BFF/Web server startup, SSE, session refresh,
+  or confirmToken boundaries;
+- any bug that only appears after a real process starts.
+
+### Current Executable Runtime Lane
+
+The runtime lane that exists today is:
+
+```bash
+pnpm test:e2e
+```
+
+Expected signal:
+
+- Vite starts and serves the console.
+- The Console BFF starts through the real-backend E2E entrypoint.
+- `real_backend_e2e.runtime_prepared` logs an isolated `.tmp` runtime root with
+  separate `data` and `artifacts` directories.
+- `real_backend_e2e.case_seeded` logs a unique seeded case.
+- Playwright passes:
+  - `e2e/console-smoke.spec.ts`
+  - `e2e/real-backend.spec.ts`
+- The seeded case does not enter default `.var/data`.
+
+This is real runtime evidence, but it is not complete runtime coverage.
+
+### Required `test:runtime` Scope
+
+Before adding `pnpm test:runtime` to the default gate, implement it as a
+black-box harness that spawns public entrypoints and validates observable
+contracts. It should be deterministic, use temporary runtime roots, and clean up
+all child processes.
+
+Minimum checks:
+
+1. Local launcher smoke
+   - Start via `./start.sh` with temporary ports and isolated runtime data.
+   - Verify the reported Console URL responds.
+   - Verify stale `.run/dev.pid` plus unhealthy URL is detected and restarted.
+   - Verify logs are written under `.run` or an overridden temp run directory.
+2. MCP stdio smoke
+   - Spawn `pnpm mcp:stdio`.
+   - Send JSON-RPC `initialize`.
+   - Verify `tools/list`, `resources/list`, and `prompts/list` include the
+     canonical surface.
+   - Open a case through `investigation.case.open`.
+   - Read snapshot, timeline, graph, evidence-pool, and diff resources.
+   - Terminate cleanly without hanging stdio.
+3. Persistence restart smoke
+   - Use an isolated `COE_DATA_DIR`.
+   - Create a case and at least one hypothesis/evidence path.
+   - Stop the process.
+   - Restart against the same data directory.
+   - Read resources and verify head revision, timeline, graph, and evidence
+     data survived replay.
+4. Session and confirm boundary smoke
+   - Verify mutation without `x-session-token` returns 401.
+   - Verify `/api/session` issues a fresh usable session.
+   - Verify reviewer confirmToken flow succeeds only for the intended command,
+     case, target ids, and session.
+5. Failure-mode smoke
+   - Occupy default E2E ports and verify automatic port scanning selects a
+     healthy alternate pair when ports are not explicitly pinned.
+   - Explicitly pin an occupied port and verify fail-fast behavior.
+
+Suggested command shape after implementation:
+
+```bash
+pnpm test:runtime
+```
+
+Do not add this command to `package.json` until the harness exists and can pass
+locally. A placeholder script would create false confidence.
+
 ## Fast Smoke Gate
 
 Use this when iterating locally and the next edit depends on quick feedback:
@@ -129,6 +233,7 @@ when the implementation is ready.
 | Console BFF routes, sessions, confirmToken, adapter integration | `pnpm --filter @coe/investigation-console-v2 test -- test/server` | `pnpm --filter @coe/investigation-console-v2 test && pnpm test:e2e` |
 | Console graph, node editor, timeline, revision behavior | `pnpm --filter @coe/investigation-console-v2 test -- test/graph-canvas.behavior.test.ts test/node-editor.test.ts test/workspace-timeline.test.ts` | `pnpm --filter @coe/investigation-console-v2 test && pnpm test:e2e` |
 | Console startup, port handling, Playwright config | `pnpm --filter @coe/investigation-console-v2 test -- test/run-e2e-ports.test.ts test/playwright-config.test.ts test/vite-config.test.ts` | `pnpm test:e2e` |
+| Public runtime entrypoints, process lifecycle, stdio MCP, restart recovery | Current: `pnpm test:e2e` plus manual runtime smoke. Planned: `pnpm test:runtime` | `pnpm exec turbo run test --force && pnpm test:e2e`; after implementation add `pnpm test:runtime` |
 | Shared console client API, SSE, i18n, UI store | `pnpm --filter @coe/console-client test && pnpm --filter @coe/investigation-console-v2 test` | `pnpm typecheck && pnpm test:e2e` |
 | Shared UI package or global CSS | `pnpm --filter @coe/ui typecheck && pnpm --filter @coe/investigation-console-v2 test` | `pnpm --filter @coe/investigation-console-v2 test:e2e` |
 | Bootstrap, install, start, local host registration | `pnpm --filter @coe/investigation-server test -- test/bootstrap/host-bootstrap.test.ts` | `pnpm setup:agents:plan && pnpm typecheck && pnpm test` |

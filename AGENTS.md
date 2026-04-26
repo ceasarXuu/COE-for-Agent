@@ -32,6 +32,7 @@
 - 文档-only 变更至少执行 `pnpm typecheck`；如果文档改变命令、运行时行为、公共契约、测试预期或 runbook，必须执行完整本地门禁。
 - bug 修复必须先复现或明确原始症状，再增加或复用回归验证；不能只凭代码推理宣布修复。
 - Console UI、Graph、Timeline、Node Editor、Session、ConfirmToken、E2E 启动链路相关变更，必须覆盖 `@coe/investigation-console-v2` 的 package 测试，并在最终 gate 中跑 `pnpm test:e2e`。
+- 启动脚本、package scripts、MCP stdio、进程生命周期、端口选择、`COE_DATA_DIR`、persistence restart/replay 相关变更，不能只依赖静态检查或 in-process Vitest；必须补充真实运行时证据。当前至少执行 `pnpm test:e2e` 和对应的手动 runtime smoke；待 `pnpm test:runtime` 落地后改为必跑。
 - MCP tools、resources、prompts、agent docs、command files 相关变更，必须跑 `apps/investigation-server/test/mcp/agent-surface-alignment.test.ts` 或更完整的 server test lane。
 - 资源 schema、generated validators、resource output 相关变更，必须同时验证 `@coe/schemas` 和 server resource tests。
 - E2E 测试必须使用隔离 runtime root，禁止把测试种子写入默认 `.var/data`。
