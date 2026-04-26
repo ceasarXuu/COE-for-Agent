@@ -237,8 +237,9 @@ docs/
 如果你想继续深入，可以按下面顺序阅读：
 
 1. [docs/DEV/technical-design.md](docs/DEV/technical-design.md)
-2. [docs/plans/2026-04-05-coe-mvp-implementation.md](docs/plans/2026-04-05-coe-mvp-implementation.md)
-3. [docs/PRD/coe-for-agent-prd.md](docs/PRD/coe-for-agent-prd.md)
+2. [docs/DEV/smoke-regression-test-strategy.md](docs/DEV/smoke-regression-test-strategy.md)
+3. [docs/plans/2026-04-05-coe-mvp-implementation.md](docs/plans/2026-04-05-coe-mvp-implementation.md)
+4. [docs/PRD/coe-for-agent-prd.md](docs/PRD/coe-for-agent-prd.md)
 
 如果你想快速理解当前代码结构，可以看：
 
