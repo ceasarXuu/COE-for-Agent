@@ -70,7 +70,7 @@ export async function buildConsoleServer(options: BuildConsoleServerOptions = {}
     mcpClient,
     sessionSecret
   });
-  await registerResourceRoutes(app, { mcpClient });
+  await registerResourceRoutes(app, { mcpClient, sessionSecret });
   await registerToolRoutes(app, {
     mcpClient,
     sessionSecret,

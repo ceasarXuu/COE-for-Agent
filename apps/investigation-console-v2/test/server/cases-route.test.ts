@@ -32,9 +32,16 @@ describe('cases route', () => {
     });
     servers.push(app);
 
+    const sessionResponse = await app.inject({
+      method: 'GET',
+      url: '/api/session'
+    });
+    const session = sessionResponse.json() as { sessionToken: string };
+
     const response = await app.inject({
       method: 'GET',
-      url: '/api/cases?status=active&sort=updatedAt:desc&page=2'
+      url: '/api/cases?status=active&sort=updatedAt:desc&page=2',
+      headers: { 'x-session-token': session.sessionToken }
     });
 
     expect(response.statusCode).toBe(200);
@@ -42,6 +49,28 @@ describe('cases route', () => {
     expect(response.json()).toMatchObject({
       items: [{ caseId: 'case_01AAAAAAAAAAAAAAAAAAAAAAAA' }]
     });
+  });
+
+  test('GET /api/cases rejects reads without an explicit session token', async () => {
+    const readResource = vi.fn();
+
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource,
+        invokeTool: vi.fn(),
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/cases'
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(readResource).not.toHaveBeenCalled();
   });
 
   test('POST /api/cases opens a case with reviewer context and returns only canonical created identifiers', async () => {

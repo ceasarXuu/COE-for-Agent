@@ -1,5 +1,6 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
+import { resolveLocalSession } from '../auth/session.js';
 import type { ConsoleMcpClient } from '../mcp-types.js';
 
 function queryValue(query: Record<string, unknown>, key: string): string | undefined {
@@ -12,7 +13,66 @@ function buildCaseResourceUri(caseId: string, resourceName: string, search: URLS
   return `investigation://cases/${caseId}/${resourceName}${serialized.length > 0 ? `?${serialized}` : ''}`;
 }
 
-export async function registerResourceRoutes(app: FastifyInstance, options: { mcpClient: ConsoleMcpClient }) {
+function headerSessionToken(request: FastifyRequest): string | null {
+  const raw = request.headers['x-session-token'];
+  if (Array.isArray(raw)) {
+    return typeof raw[0] === 'string' && raw[0].length > 0 ? raw[0] : null;
+  }
+  return typeof raw === 'string' && raw.length > 0 ? raw : null;
+}
+
+function rejectMissingOrInvalidSession(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  sessionSecret: string
+): boolean {
+  const token = headerSessionToken(request);
+  if (!token) {
+    request.log.warn(
+      { event: 'console_bff.read_session_token_missing', route: request.url },
+      'console read request missing x-session-token'
+    );
+    reply.code(401);
+    void reply.send({ message: 'x-session-token header is required' });
+    return true;
+  }
+
+  try {
+    resolveLocalSession(token, sessionSecret);
+  } catch (error) {
+    request.log.warn(
+      {
+        event: 'console_bff.read_session_token_invalid',
+        route: request.url,
+        detail: error instanceof Error ? error.message : 'unknown'
+      },
+      'console read request rejected: invalid session token'
+    );
+    reply.code(401);
+    void reply.send({ message: 'invalid session token' });
+    return true;
+  }
+
+  return false;
+}
+
+export async function registerResourceRoutes(
+  app: FastifyInstance,
+  options: { mcpClient: ConsoleMcpClient; sessionSecret: string }
+) {
+  app.addHook('preHandler', async (request, reply) => {
+    if (!request.url.startsWith('/api/cases/')) {
+      return;
+    }
+
+    // The collection endpoint /api/cases is registered in cases.ts and has its
+    // own preHandler. Sub-resources under /api/cases/:caseId/* live here.
+    const handled = rejectMissingOrInvalidSession(request, reply, options.sessionSecret);
+    if (handled) {
+      return reply;
+    }
+  });
+
   app.get('/api/cases/:caseId/snapshot', async (request) => {
     const params = request.params as { caseId: string };
     const query = request.query as Record<string, unknown>;

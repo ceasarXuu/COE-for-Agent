@@ -29,15 +29,49 @@ describe('history and tools routes', () => {
     });
     servers.push(app);
 
+    const session = createLocalSession(
+      {
+        actorType: 'user',
+        actorId: 'reviewer-1',
+        role: 'Reviewer',
+        issuer: 'local-test',
+        authMode: 'local'
+      },
+      'local-test-secret'
+    );
+
     const response = await app.inject({
       method: 'GET',
-      url: '/api/cases/case_01AAAAAAAAAAAAAAAAAAAAAAAA/snapshot?revision=4'
+      url: '/api/cases/case_01AAAAAAAAAAAAAAAAAAAAAAAA/snapshot?revision=4',
+      headers: { 'x-session-token': session.sessionToken }
     });
 
     expect(response.statusCode).toBe(200);
     expect(readResource).toHaveBeenCalledWith(
       'investigation://cases/case_01AAAAAAAAAAAAAAAAAAAAAAAA/snapshot?atRevision=4'
     );
+  });
+
+  test('GET /api/cases/:caseId/snapshot rejects reads without an explicit session token', async () => {
+    const readResource = vi.fn();
+
+    const app = await buildConsoleServer({
+      mcpClient: {
+        readResource,
+        invokeTool: vi.fn(),
+        close: vi.fn()
+      },
+      sessionSecret: 'local-test-secret'
+    });
+    servers.push(app);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/cases/case_01AAAAAAAAAAAAAAAAAAAAAAAA/snapshot'
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(readResource).not.toHaveBeenCalled();
   });
 
   test('GET /api/cases/:caseId/diff forwards the diff range', async () => {
@@ -57,9 +91,21 @@ describe('history and tools routes', () => {
     });
     servers.push(app);
 
+    const session = createLocalSession(
+      {
+        actorType: 'user',
+        actorId: 'reviewer-1',
+        role: 'Reviewer',
+        issuer: 'local-test',
+        authMode: 'local'
+      },
+      'local-test-secret'
+    );
+
     const response = await app.inject({
       method: 'GET',
-      url: '/api/cases/case_01AAAAAAAAAAAAAAAAAAAAAAAA/diff?from=3&to=5'
+      url: '/api/cases/case_01AAAAAAAAAAAAAAAAAAAAAAAA/diff?from=3&to=5',
+      headers: { 'x-session-token': session.sessionToken }
     });
 
     expect(response.statusCode).toBe(200);

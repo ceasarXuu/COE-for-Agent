@@ -72,15 +72,34 @@ export async function registerToolRoutes(
       return { message: 'x-session-token header is required for console write requests' };
     }
     const body = asPayload(request.body);
+    const commandName = typeof body.commandName === 'string' ? body.commandName.trim() : '';
+    const caseId = typeof body.caseId === 'string' ? body.caseId.trim() : '';
+    const rationale = typeof body.rationale === 'string' ? body.rationale : '';
+    const targetIds = Array.isArray(body.targetIds)
+      ? body.targetIds.filter((value): value is string => typeof value === 'string' && value.length > 0)
+      : [];
+
+    if (!commandName) {
+      reply.code(400);
+      return { message: 'commandName is required' };
+    }
+    if (!caseId) {
+      reply.code(400);
+      return { message: 'caseId is required' };
+    }
+    if (!rationale.trim()) {
+      reply.code(400);
+      return { message: 'rationale is required' };
+    }
 
     return handleConfirmIntentRequest({
       sessionToken,
       secret: options.sessionSecret,
       body: {
-        commandName: String(body.commandName ?? ''),
-        caseId: String(body.caseId ?? ''),
-        targetIds: Array.isArray(body.targetIds) ? body.targetIds.filter((value): value is string => typeof value === 'string') : [],
-        rationale: String(body.rationale ?? '')
+        commandName,
+        caseId,
+        targetIds,
+        rationale
       }
     });
   });

@@ -90,7 +90,27 @@ export async function registerCasesRoutes(
     sessionSecret: string;
   }
 ) {
-  app.get('/api/cases', async (request) => {
+  app.get('/api/cases', async (request, reply) => {
+    const sessionToken = requireSessionToken(request, reply);
+    if (!sessionToken) {
+      return { message: 'x-session-token header is required for console read requests' };
+    }
+
+    try {
+      resolveLocalSession(sessionToken, options.sessionSecret);
+    } catch (error) {
+      request.log.warn(
+        {
+          event: 'console_bff.read_session_token_invalid',
+          route: request.url,
+          detail: error instanceof Error ? error.message : 'unknown'
+        },
+        'console read request rejected: invalid session token'
+      );
+      reply.code(401);
+      return { message: 'invalid session token' };
+    }
+
     const query = typeof request.query === 'object' && request.query !== null
       ? (request.query as Record<string, unknown>)
       : {};
