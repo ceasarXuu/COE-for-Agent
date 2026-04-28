@@ -53,7 +53,14 @@ async function main() {
 
     const app = await buildConsoleServer({
       mcpClient,
-      sessionSecret: E2E_SECRET
+      sessionSecret: E2E_SECRET,
+      defaultActor: {
+        actorType: 'user',
+        actorId: ACTOR_CONTEXT.actorId,
+        role: ACTOR_CONTEXT.role,
+        issuer: ACTOR_CONTEXT.issuer,
+        authMode: ACTOR_CONTEXT.authMode
+      }
     });
 
     const shutdown = async () => {

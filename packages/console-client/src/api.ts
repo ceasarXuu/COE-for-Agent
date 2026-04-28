@@ -265,6 +265,17 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
     return fetchSession(cachedSession ? 'expired' : 'missing');
   }
 
+  async function fetchJsonWithSession<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const session = await ensureSession();
+    return fetchJson<T>(path, {
+      ...init,
+      headers: {
+        ...(init.headers ?? {}),
+        'x-session-token': session.sessionToken
+      }
+    });
+  }
+
   return {
     async listCases(query?: { search?: string }): Promise<CaseListEnvelope> {
       const params = new URLSearchParams();
@@ -272,31 +283,26 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
         params.set('search', query.search);
       }
 
-      return fetchJson<ResourceEnvelope<CaseListEnvelope>>(
+      return fetchJsonWithSession<ResourceEnvelope<CaseListEnvelope>>(
         `${basePath}/cases${params.toString().length > 0 ? `?${params.toString()}` : ''}`
       ).then((result) => result.data);
     },
 
     async createCase(input: CreateCaseInput): Promise<CreateCaseResult> {
-      const session = await ensureSession();
-
-      return fetchJson<CreateCaseResult>(`${basePath}/cases`, {
+      return fetchJsonWithSession<CreateCaseResult>(`${basePath}/cases`, {
         method: 'POST',
-        headers: {
-          'x-session-token': session.sessionToken
-        },
         body: JSON.stringify(input)
       });
     },
 
     getCaseSnapshot(caseId: string, revision?: number | null): Promise<CaseSnapshotEnvelope> {
-      return fetchJson<CaseSnapshotEnvelope>(
+      return fetchJsonWithSession<CaseSnapshotEnvelope>(
         withRevision(`${basePath}/cases/${encodeURIComponent(caseId)}/snapshot`, revision)
       );
     },
 
     getCaseTimeline(caseId: string, revision?: number | null): Promise<CaseTimelineEnvelope> {
-      return fetchJson<CaseTimelineEnvelope>(
+      return fetchJsonWithSession<CaseTimelineEnvelope>(
         withRevision(`${basePath}/cases/${encodeURIComponent(caseId)}/timeline`, revision)
       );
     },
@@ -316,29 +322,26 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
         params.set('depth', String(query.depth));
       }
 
-      return fetchJson<CaseGraphEnvelope>(
+      return fetchJsonWithSession<CaseGraphEnvelope>(
         `${basePath}/cases/${encodeURIComponent(caseId)}/graph${params.toString().length > 0 ? `?${params.toString()}` : ''}`
       );
     },
 
     getCaseEvidencePool(caseId: string, revision?: number | null): Promise<CaseEvidencePoolEnvelope> {
-      return fetchJson<CaseEvidencePoolEnvelope>(
+      return fetchJsonWithSession<CaseEvidencePoolEnvelope>(
         withRevision(`${basePath}/cases/${encodeURIComponent(caseId)}/evidence-pool`, revision)
       );
     },
 
     getCaseDiff(caseId: string, from: number, to: number): Promise<CaseDiffEnvelope> {
-      return fetchJson<CaseDiffEnvelope>(`${basePath}/cases/${encodeURIComponent(caseId)}/diff?from=${from}&to=${to}`);
+      return fetchJsonWithSession<CaseDiffEnvelope>(
+        `${basePath}/cases/${encodeURIComponent(caseId)}/diff?from=${from}&to=${to}`
+      );
     },
 
     async invokeTool<T = unknown>(toolName: ConsoleToolName, payload: Record<string, unknown>): Promise<T> {
-      const session = await ensureSession();
-
-      return fetchJson<T>(`${basePath}/tools/${toolName}`, {
+      return fetchJsonWithSession<T>(`${basePath}/tools/${toolName}`, {
         method: 'POST',
-        headers: {
-          'x-session-token': session.sessionToken
-        },
         body: JSON.stringify(payload)
       });
     },
@@ -349,15 +352,13 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
       targetIds: string[];
       rationale: string;
     }): Promise<{ confirmToken: string; expiresAt: string }> {
-      const session = await ensureSession();
-
-      return fetchJson<{ confirmToken: string; expiresAt: string }>(`${basePath}/confirm-intent`, {
-        method: 'POST',
-        headers: {
-          'x-session-token': session.sessionToken
-        },
-        body: JSON.stringify(input)
-      });
+      return fetchJsonWithSession<{ confirmToken: string; expiresAt: string }>(
+        `${basePath}/confirm-intent`,
+        {
+          method: 'POST',
+          body: JSON.stringify(input)
+        }
+      );
     },
 
     resetSessionCache() {
