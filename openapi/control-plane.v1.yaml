@@ -52,8 +52,11 @@ paths:
       tags: [export]
       summary: Export a PROV-compatible evidence package
       operationId: exportProv
+      security:
+        - SessionToken: []
       parameters:
         - $ref: '#/components/parameters/CaseId'
+        - $ref: '#/components/parameters/SessionTokenHeader'
       responses:
         '200':
           description: PROV export bundle.
@@ -61,6 +64,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProvExportResponse'
+        '401':
+          description: Missing or invalid session token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Case not found.
           content:
@@ -72,8 +81,11 @@ paths:
       tags: [export]
       summary: Export canonical case events as CloudEvents envelopes
       operationId: exportCaseEvents
+      security:
+        - SessionToken: []
       parameters:
         - $ref: '#/components/parameters/CaseId'
+        - $ref: '#/components/parameters/SessionTokenHeader'
       responses:
         '200':
           description: Event export bundle.
@@ -81,6 +93,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventExportResponse'
+        '401':
+          description: Missing or invalid session token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Case not found.
           content:
@@ -92,6 +110,10 @@ paths:
       tags: [admin]
       summary: Rebuild and checkpoint a case projection at a requested revision
       operationId: rebuildProjection
+      security:
+        - SessionToken: []
+      parameters:
+        - $ref: '#/components/parameters/SessionTokenHeader'
       requestBody:
         required: true
         content:
@@ -106,7 +128,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/RebuildProjectionResponse'
         '400':
-          description: Invalid request payload.
+          description: Invalid request payload (missing caseId or confirmToken).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid session token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Reviewer/Admin role and a valid confirmToken are required.
           content:
             application/json:
               schema:
@@ -118,6 +152,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
+  securitySchemes:
+    SessionToken:
+      type: apiKey
+      in: header
+      name: x-session-token
+      description: HMAC-signed local session token issued by the BFF or a privileged caller.
   parameters:
     CaseId:
       name: caseId
@@ -126,6 +166,13 @@ components:
       schema:
         type: string
       description: Investigation case identifier.
+    SessionTokenHeader:
+      name: x-session-token
+      in: header
+      required: true
+      schema:
+        type: string
+      description: HMAC-signed session token. Obtain from the console BFF or local issuer.
   schemas:
     HealthResponse:
       type: object
@@ -309,7 +356,7 @@ components:
     RebuildProjectionRequest:
       type: object
       additionalProperties: false
-      required: [caseId]
+      required: [caseId, confirmToken]
       properties:
         caseId:
           type: string
@@ -317,6 +364,12 @@ components:
           type: integer
           minimum: 0
           description: Optional target revision to replay and checkpoint.
+        confirmToken:
+          type: string
+          description: >-
+            HMAC-signed confirmation token bound to commandName="admin.rebuild_projection",
+            the caseId, the caller's session, role, and a fixed reason "rebuild-projection".
+            Acquire via /api/confirm-intent on the BFF or by direct issuance with the local secret.
     RebuildProjectionResponse:
       type: object
       additionalProperties: false

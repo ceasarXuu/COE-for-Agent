@@ -8,6 +8,7 @@ import { MUTATION_TOOL_NAMES } from '@coe/mcp-contracts/tool-names';
 import { buildInvestigationApp, type InvestigationApp } from '../src/app.js';
 import { issueConfirmToken, hashConfirmationReason } from '../src/auth/confirm-token.js';
 import { getAuthorizationRequirement } from '../src/auth/policy.js';
+import { issueSessionToken } from '../src/auth/session-token.js';
 import { loadConfig } from '../src/config.js';
 
 const TEST_DATA_ROOT = process.env.COE_SERVER_TEST_DATA_ROOT ?? path.join(os.tmpdir(), 'coe_for_agent_server_test');
@@ -22,6 +23,43 @@ export const DEFAULT_TEST_ACTOR_CONTEXT: ActorContext = {
   issuer: 'local-test',
   authMode: 'local'
 };
+
+export function issueTestSessionToken(actor: ActorContext = DEFAULT_TEST_ACTOR_CONTEXT): {
+  sessionToken: string;
+  actorContext: ActorContext;
+} {
+  const result = issueSessionToken(
+    {
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      sessionId: actor.sessionId,
+      role: actor.role,
+      issuer: actor.issuer,
+      authMode: actor.authMode
+    },
+    TEST_LOCAL_ISSUER_SECRET
+  );
+
+  return {
+    sessionToken: result.sessionToken,
+    actorContext: result.actorContext
+  };
+}
+
+export function issueTestAdminConfirmToken(caseId: string, actor: ActorContext = DEFAULT_TEST_ACTOR_CONTEXT): string {
+  return issueConfirmToken(
+    {
+      commandName: 'admin.rebuild_projection',
+      caseId,
+      targetIds: [caseId],
+      sessionId: actor.sessionId,
+      role: actor.role,
+      issuer: actor.issuer,
+      reasonHash: hashConfirmationReason('rebuild-projection')
+    },
+    TEST_LOCAL_ISSUER_SECRET
+  );
+}
 
 export function createAdminPool() {
   return {
