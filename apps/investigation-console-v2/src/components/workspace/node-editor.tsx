@@ -62,10 +62,19 @@ export function CaseNodeEditor(props: CaseNodeEditorProps) {
           })));
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setEvidenceOptions([]);
         }
+        console.warn(
+          JSON.stringify({
+            event: 'console_ui.node_editor.evidence_pool_load_failed',
+            severity: 'warn',
+            caseId: props.caseId,
+            revision: props.currentRevision,
+            detail: error instanceof Error ? error.message : String(error)
+          })
+        );
       });
 
     return () => {

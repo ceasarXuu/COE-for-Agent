@@ -351,6 +351,14 @@ export function GraphCanvas(props: GraphCanvasProps) {
         ref={containerRef}
         className="h-full overflow-hidden rounded-[inherit] bg-[radial-gradient(circle_at_top,rgba(181,138,70,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_35%)]"
       >
+        {/*
+          ReactFlow's published types are still pinned to React 18's JSX
+          element typings; React 19 changed `JSX.Element` so the component
+          signature does not unify even though runtime behavior is fine.
+          See https://github.com/xyflow/xyflow/issues/4396. Remove this
+          suppression once the upstream package ships React 19 types
+          (tracked alongside the project's React 19 migration plan).
+        */}
         {/* @ts-expect-error ReactFlow has TypeScript compatibility issues with React 19 */}
         <ReactFlow
           className={cn(

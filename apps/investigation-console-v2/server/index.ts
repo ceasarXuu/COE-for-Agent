@@ -139,6 +139,12 @@ export async function buildConsoleServer(options: BuildConsoleServerOptions = {}
 
 async function main(): Promise<void> {
   const app = await buildConsoleServer();
+  // The console BFF is intentionally local-only:
+  //  - sessions are minted from the OS user (see resolveDefaultActor)
+  //  - HMAC secrets default to a per-process ephemeral value
+  //  - reviewer/operator role is granted by env, not a real identity
+  // Binding to 127.0.0.1 is part of the security boundary; do NOT switch
+  // this to 0.0.0.0 without first introducing real authentication.
   await app.listen({
     host: '127.0.0.1',
     port: DEFAULT_PORT

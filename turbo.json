@@ -1,9 +1,22 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "tsconfig.base.json",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml"
+  ],
   "tasks": {
     "build": {
       "dependsOn": [
         "^build"
+      ],
+      "inputs": [
+        "src/**",
+        "scripts/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json"
       ],
       "outputs": [
         "dist/**",
@@ -18,16 +31,49 @@
     "lint": {
       "dependsOn": [
         "^lint"
+      ],
+      "inputs": [
+        "src/**",
+        "test/**",
+        "server/**",
+        "scripts/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "eslint.config.*",
+        ".eslintrc*"
       ]
     },
     "typecheck": {
       "dependsOn": [
-        "^typecheck"
+        "^typecheck",
+        "^build"
+      ],
+      "inputs": [
+        "src/**",
+        "test/**",
+        "server/**",
+        "scripts/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json"
       ]
     },
     "test": {
       "dependsOn": [
-        "^test"
+        "^test",
+        "^build"
+      ],
+      "inputs": [
+        "src/**",
+        "test/**",
+        "server/**",
+        "scripts/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "vitest.config.*",
+        "vite.config.*"
       ],
       "outputs": [
         "coverage/**"
