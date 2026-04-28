@@ -42,6 +42,10 @@ export function resolveIncludedHosts(
 const DEFAULT_ENV: Required<BootstrapEnv> = {
   COE_DATA_DIR: './.var/data',
   OTEL_EXPORTER_OTLP_ENDPOINT: 'http://localhost:4318',
+  // Bootstrap default is intentionally a clearly-marked placeholder. The
+  // server enforces fail-fast on this exact string in production
+  // (see apps/investigation-server/src/config.ts), so accidental deployment
+  // with this value will refuse to start. Operators must override.
   LOCAL_ISSUER_SECRET: 'dev-local-issuer-secret'
 };
 

@@ -1,4 +1,4 @@
-import type { ActorContext, ActorRole } from '@coe/domain';
+import type { ActorContext, ActorRole, ActorType, AuthMode } from '@coe/domain';
 
 const ROLE_RANK: Record<ActorRole, number> = {
   Viewer: 0,
@@ -6,6 +6,31 @@ const ROLE_RANK: Record<ActorRole, number> = {
   Reviewer: 2,
   Admin: 3
 };
+
+const KNOWN_ACTOR_ROLES = new Set<ActorRole>(['Viewer', 'Operator', 'Reviewer', 'Admin']);
+const KNOWN_ACTOR_TYPES = new Set<ActorType>(['agent', 'user', 'system', 'adapter', 'tool_runner']);
+const KNOWN_AUTH_MODES = new Set<AuthMode>(['local', 'oidc', 'service']);
+
+function assertActorRole(value: string): ActorRole {
+  if (!KNOWN_ACTOR_ROLES.has(value as ActorRole)) {
+    throw new Error(`Unknown actor role: ${value}`);
+  }
+  return value as ActorRole;
+}
+
+function assertActorType(value: string): ActorType {
+  if (!KNOWN_ACTOR_TYPES.has(value as ActorType)) {
+    throw new Error(`Unknown actorType: ${value}`);
+  }
+  return value as ActorType;
+}
+
+function assertAuthMode(value: string): AuthMode {
+  if (!KNOWN_AUTH_MODES.has(value as AuthMode)) {
+    throw new Error(`Unknown authMode: ${value}`);
+  }
+  return value as AuthMode;
+}
 
 export interface AuthorizationRequirement {
   minimumRole: ActorRole;
@@ -54,12 +79,12 @@ export function parseActorContext(value: unknown): ActorContext {
   const actorContext = asObject(value);
 
   return {
-    actorType: requireStringField(actorContext, 'actorType') as ActorContext['actorType'],
+    actorType: assertActorType(requireStringField(actorContext, 'actorType')),
     actorId: requireStringField(actorContext, 'actorId'),
     sessionId: requireStringField(actorContext, 'sessionId'),
-    role: requireStringField(actorContext, 'role') as ActorRole,
+    role: assertActorRole(requireStringField(actorContext, 'role')),
     issuer: requireStringField(actorContext, 'issuer'),
-    authMode: requireStringField(actorContext, 'authMode') as ActorContext['authMode']
+    authMode: assertAuthMode(requireStringField(actorContext, 'authMode'))
   };
 }
 
@@ -93,7 +118,9 @@ export function getAuthorizationRequirement(
 }
 
 export function assertAuthorizedActor(actorContext: ActorContext, requirement: AuthorizationRequirement): void {
-  if (ROLE_RANK[actorContext.role] < ROLE_RANK[requirement.minimumRole]) {
+  const actorRank = ROLE_RANK[actorContext.role];
+  const requiredRank = ROLE_RANK[requirement.minimumRole];
+  if (typeof actorRank !== 'number' || typeof requiredRank !== 'number' || actorRank < requiredRank) {
     throw new Error(`${actorContext.role} is not authorized for this command; minimum role is ${requirement.minimumRole}`);
   }
 

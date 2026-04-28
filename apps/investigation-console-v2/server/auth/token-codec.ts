@@ -61,8 +61,8 @@ function verifySignedToken(token: string, secret: string): Record<string, unknow
   }
 
   const expectedSignature = sign(encodedPayload, secret);
-  const signatureBuffer = Buffer.from(signature, 'utf8');
-  const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+  const signatureBuffer = Buffer.from(signature, 'base64url');
+  const expectedBuffer = Buffer.from(expectedSignature, 'base64url');
   if (signatureBuffer.length !== expectedBuffer.length || !timingSafeEqual(signatureBuffer, expectedBuffer)) {
     throw new Error('Signed token signature mismatch');
   }
