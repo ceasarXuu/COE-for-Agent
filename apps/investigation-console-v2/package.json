@@ -14,6 +14,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@coe/auth-core": "workspace:*",
     "@coe/console-client": "workspace:*",
     "@coe/domain": "workspace:*",
     "@coe/investigation-server": "workspace:*",

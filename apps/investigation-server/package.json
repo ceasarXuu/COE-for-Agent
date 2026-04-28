@@ -16,6 +16,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@coe/auth-core": "workspace:*",
     "@coe/domain": "workspace:*",
     "@coe/mcp-contracts": "workspace:*",
     "@coe/persistence": "workspace:*",

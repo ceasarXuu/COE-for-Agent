@@ -20,6 +20,9 @@ importers:
 
   apps/investigation-console-v2:
     dependencies:
+      '@coe/auth-core':
+        specifier: workspace:*
+        version: link:../../packages/auth-core
       '@coe/console-client':
         specifier: workspace:*
         version: link:../../packages/console-client
@@ -102,6 +105,9 @@ importers:
 
   apps/investigation-server:
     dependencies:
+      '@coe/auth-core':
+        specifier: workspace:*
+        version: link:../../packages/auth-core
       '@coe/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -139,6 +145,16 @@ importers:
       tsx:
         specifier: ^4.20.6
         version: 4.21.0
+      vitest:
+        specifier: ^3.1.2
+        version: 3.2.4(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(msw@2.13.4(@types/node@22.19.17)(typescript@5.9.3))(tsx@4.21.0)
+
+  packages/auth-core:
+    dependencies:
+      '@coe/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
       vitest:
         specifier: ^3.1.2
         version: 3.2.4(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(msw@2.13.4(@types/node@22.19.17)(typescript@5.9.3))(tsx@4.21.0)

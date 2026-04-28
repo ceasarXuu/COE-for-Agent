@@ -1,0 +1,21 @@
+{
+  "name": "@coe/auth-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@coe/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.2"
+  }
+}
