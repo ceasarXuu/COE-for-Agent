@@ -10,6 +10,7 @@ export default defineConfig({
   },
   test: {
     include: ['test/**/*.ts'],
-    exclude: ['e2e/**']
+    exclude: ['e2e/**', 'test/setup-env.ts'],
+    setupFiles: ['test/setup-env.ts']
   }
 });

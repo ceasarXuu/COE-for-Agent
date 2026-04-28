@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { userInfo } from 'node:os';
 
 import Fastify from 'fastify';
 
@@ -15,6 +16,8 @@ const INSECURE_PLACEHOLDER_SECRETS = new Set([
   'changeme',
   'secret'
 ]);
+
+const ALLOWED_LOCAL_ROLES = new Set(['Viewer', 'Operator', 'Reviewer', 'Admin']);
 
 function resolveDefaultSessionSecret(): string {
   const provided = process.env.LOCAL_ISSUER_SECRET?.trim();
@@ -40,29 +43,78 @@ function resolveDefaultSessionSecret(): string {
   return ephemeral;
 }
 
+function safeOsUsername(): string {
+  try {
+    const info = userInfo();
+    if (typeof info.username === 'string' && info.username.length > 0) {
+      return info.username;
+    }
+  } catch {
+    // userInfo() may throw on minimal environments; fall through
+  }
+  return 'console-local';
+}
+
+interface DefaultActor {
+  actorType: 'user';
+  actorId: string;
+  role: 'Viewer' | 'Operator' | 'Reviewer' | 'Admin';
+  issuer: string;
+  authMode: 'local';
+}
+
+function resolveDefaultActor(): DefaultActor {
+  const overrideId = process.env.CONSOLE_LOCAL_ACTOR_ID?.trim();
+  const actorId = overrideId && overrideId.length > 0
+    ? overrideId
+    : `local:${safeOsUsername()}`;
+
+  const overrideRole = process.env.CONSOLE_LOCAL_ROLE?.trim();
+  let role: DefaultActor['role'] = 'Operator';
+  if (overrideRole) {
+    if (!ALLOWED_LOCAL_ROLES.has(overrideRole)) {
+      throw new Error(`CONSOLE_LOCAL_ROLE must be one of Viewer|Operator|Reviewer|Admin (got ${overrideRole})`);
+    }
+    role = overrideRole as DefaultActor['role'];
+  } else if (process.env.CONSOLE_REVIEWER_MODE === '1') {
+    role = 'Reviewer';
+  }
+
+  if (role === 'Reviewer' || role === 'Admin') {
+    console.warn(JSON.stringify({
+      event: 'console_bff.default_actor.elevated',
+      severity: 'warn',
+      message: 'Console BFF is issuing default sessions with privileged role; restrict to single-user local environments.',
+      actorId,
+      role
+    }));
+  }
+
+  return {
+    actorType: 'user',
+    actorId,
+    role,
+    issuer: 'local-console',
+    authMode: 'local'
+  };
+}
+
 const DEFAULT_SESSION_SECRET = resolveDefaultSessionSecret();
 const DEFAULT_PORT = Number(process.env.CONSOLE_BFF_PORT ?? '4318');
 
 export interface BuildConsoleServerOptions {
   mcpClient?: ConsoleMcpClient;
   sessionSecret?: string;
+  defaultActor?: DefaultActor;
 }
 
 export async function buildConsoleServer(options: BuildConsoleServerOptions = {}) {
   const sessionSecret = options.sessionSecret ?? DEFAULT_SESSION_SECRET;
+  const defaultActor = options.defaultActor ?? resolveDefaultActor();
   const mcpClient = options.mcpClient
     ? options.mcpClient
     : await import('./mcp-client.js').then((module) => module.createLocalMcpClient());
-  const getDefaultSession = () => createLocalSession(
-    {
-      actorType: 'user',
-      actorId: 'console-reviewer',
-      role: 'Reviewer',
-      issuer: 'local-console',
-      authMode: 'local'
-    },
-    sessionSecret
-  );
+  const getDefaultSession = () => createLocalSession(defaultActor, sessionSecret);
 
   const app = Fastify({ logger: false });
 
