@@ -1,4 +1,5 @@
-import { closeSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
+import { closeSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync, writeSync, existsSync } from 'node:fs';
+import { hostname } from 'node:os';
 import path from 'node:path';
 
 import type { JsonValue } from './schema.js';
@@ -279,12 +280,25 @@ export class LocalPersistenceDatabase {
   readonly dataDir: string;
   private readonly storeFilePath: string;
   private readonly lockFilePath: string;
+  private readonly hostId: string;
   private writeChain: Promise<void> = Promise.resolve();
+  private readonly heldLockReleasers = new Set<() => void>();
+  private signalHandlersInstalled = false;
+  private readonly signalHandler = () => {
+    for (const release of [...this.heldLockReleasers]) {
+      try {
+        release();
+      } catch {
+        // best-effort cleanup on shutdown
+      }
+    }
+  };
 
   constructor(dataDir: string) {
     this.dataDir = dataDir;
     this.storeFilePath = path.join(dataDir, 'store.json');
     this.lockFilePath = path.join(dataDir, 'store.lock');
+    this.hostId = safeHostname();
     mkdirSync(this.dataDir, { recursive: true });
     if (!existsSync(this.storeFilePath)) {
       this.writeStoreSync(createEmptyStore());
@@ -325,7 +339,25 @@ export class LocalPersistenceDatabase {
   }
 
   async destroy(): Promise<void> {
-    return Promise.resolve();
+    // Wait for any in-flight write transaction so we don't unlink a lock
+    // another caller is actively holding.
+    try {
+      await this.writeChain;
+    } catch {
+      // Errors from individual transactions are surfaced to their callers;
+      // destroy() should still proceed to release locks.
+    }
+    for (const release of [...this.heldLockReleasers]) {
+      try {
+        release();
+      } catch {
+        // ignore
+      }
+    }
+    process.off('SIGINT', this.signalHandler);
+    process.off('SIGTERM', this.signalHandler);
+    process.off('exit', this.signalHandler);
+    this.signalHandlersInstalled = false;
   }
 
   private readStoreSync(): PersistenceStore {
@@ -346,37 +378,131 @@ export class LocalPersistenceDatabase {
 
   private async acquireFileLock(): Promise<() => void> {
     mkdirSync(this.dataDir, { recursive: true });
+    this.installSignalHandlersOnce();
 
     while (true) {
       try {
         const fd = openSync(this.lockFilePath, 'wx');
-        closeSync(fd);
-        return () => {
+        try {
+          const meta = JSON.stringify({
+            pid: process.pid,
+            hostname: this.hostId,
+            acquiredAt: new Date().toISOString()
+          });
+          writeSync(fd, meta);
+        } finally {
+          closeSync(fd);
+        }
+        let releaser: () => void = () => {};
+        releaser = () => {
+          this.heldLockReleasers.delete(releaser);
           try {
             unlinkSync(this.lockFilePath);
           } catch {
             // Ignore duplicate/unexpected unlock attempts.
           }
         };
+        this.heldLockReleasers.add(releaser);
+        return releaser;
       } catch (error) {
         const err = error as NodeJS.ErrnoException;
         if (err.code !== 'EEXIST') {
           throw error;
         }
 
-        try {
-          const ageMs = Date.now() - statSync(this.lockFilePath).mtimeMs;
-          if (ageMs > 30_000) {
-            unlinkSync(this.lockFilePath);
-            continue;
-          }
-        } catch {
+        if (this.tryReclaimStaleLock()) {
           continue;
         }
 
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
     }
+  }
+
+  private tryReclaimStaleLock(): boolean {
+    let raw: string;
+    try {
+      raw = readFileSync(this.lockFilePath, 'utf8');
+    } catch {
+      // File disappeared between EEXIST and read; let the next openSync retry.
+      return true;
+    }
+
+    let meta: { pid?: unknown; hostname?: unknown; acquiredAt?: unknown } | null = null;
+    if (raw.length > 0) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (parsed !== null && typeof parsed === 'object') {
+          meta = parsed as { pid?: unknown; hostname?: unknown; acquiredAt?: unknown };
+        }
+      } catch {
+        meta = null;
+      }
+    }
+
+    const ownerHost = meta && typeof meta.hostname === 'string' ? meta.hostname : null;
+    const ownerPid = meta && typeof meta.pid === 'number' ? meta.pid : null;
+    const sameHost = ownerHost === null ? true : ownerHost === this.hostId;
+
+    if (sameHost && ownerPid !== null && !isProcessAlive(ownerPid)) {
+      try {
+        unlinkSync(this.lockFilePath);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // Fall back to age-based heuristic for legacy/unknown lock contents or
+    // cross-host locks where we can't probe the owner.
+    try {
+      const ageMs = Date.now() - statSync(this.lockFilePath).mtimeMs;
+      if (ageMs > 30_000) {
+        unlinkSync(this.lockFilePath);
+        return true;
+      }
+    } catch {
+      return true;
+    }
+
+    return false;
+  }
+
+  private installSignalHandlersOnce(): void {
+    if (this.signalHandlersInstalled) {
+      return;
+    }
+    this.signalHandlersInstalled = true;
+    process.once('SIGINT', this.signalHandler);
+    process.once('SIGTERM', this.signalHandler);
+    process.once('exit', this.signalHandler);
+  }
+}
+
+function safeHostname(): string {
+  try {
+    const value = hostname();
+    return typeof value === 'string' && value.length > 0 ? value : 'unknown-host';
+  } catch {
+    return 'unknown-host';
+  }
+}
+
+function isProcessAlive(pid: number): boolean {
+  if (!Number.isFinite(pid) || pid <= 0) {
+    return false;
+  }
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    // EPERM means the process exists but we lack permission to signal it,
+    // which still counts as alive for the purpose of lock arbitration.
+    if (err.code === 'EPERM') {
+      return true;
+    }
+    return false;
   }
 }
 
