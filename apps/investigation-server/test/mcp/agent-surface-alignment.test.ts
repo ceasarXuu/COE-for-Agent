@@ -5,7 +5,9 @@ import { GUARDRAIL_TOOL_NAMES, MUTATION_TOOL_NAMES } from '@coe/mcp-contracts/to
 import { RESOURCE_URI_TEMPLATES } from '@coe/mcp-contracts/resource-uris';
 import { describe, expect, test } from 'vitest';
 
+import { loadConfig } from '../../src/config.js';
 import { PROMPT_DEFINITIONS } from '../../src/mcp/prompts.js';
+import { createInvestigationMcpServer } from '../../src/mcp/server.js';
 import {
   DEFAULT_HOST_CONFIG,
   handleStdioProtocolMessage,
@@ -103,12 +105,18 @@ function normalizeResourceRef(ref: string): string {
     .replace(/investigation:\/\/cases\/[^/]+\/(snapshot|timeline|graph|evidence-pool|diff)/, 'investigation://cases/{caseId}/$1');
 }
 
+function createStubServer() {
+  return createInvestigationMcpServer({
+    config: loadConfig({ MCP_TRANSPORT: 'stdio' })
+  });
+}
+
 async function protocolCall(
   state: StdioProtocolSessionState,
   message: Parameters<typeof handleStdioProtocolMessage>[0]
 ): Promise<JsonRpcResponse | null> {
   return handleStdioProtocolMessage(message, {
-    server: null,
+    server: createStubServer(),
     state,
     hostConfig: DEFAULT_HOST_CONFIG
   });

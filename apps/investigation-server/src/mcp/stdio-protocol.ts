@@ -1,9 +1,7 @@
 import { RESOURCE_URI_TEMPLATES } from '@coe/mcp-contracts/resource-uris';
 
-import { loadConfig } from '../config.js';
-
 import { PROMPT_DEFINITIONS, findPromptDefinition } from './prompts.js';
-import { createInvestigationMcpServer, type InvestigationMcpServer } from './server.js';
+import { type InvestigationMcpServer } from './server.js';
 
 export interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -83,10 +81,10 @@ const RESOURCE_METADATA_BY_TEMPLATE: Record<string, { name: string; title: strin
   }
 };
 
-function asObject(value: unknown): Record<string, unknown> {
+function asObject(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
-    : {};
+    : null;
 }
 
 function response(id: string | number | null, result: Record<string, unknown>): JsonRpcResponse {
@@ -142,18 +140,6 @@ function buildResourceTemplateList(server: InvestigationMcpServer) {
     }));
 }
 
-function getServer(server: InvestigationMcpServer | null | undefined): InvestigationMcpServer {
-  if (server) {
-    return server;
-  }
-
-  return createInvestigationMcpServer({
-    config: loadConfig({
-      MCP_TRANSPORT: 'stdio'
-    })
-  });
-}
-
 function stringifyData(data: unknown): string {
   return JSON.stringify(data, null, 2);
 }
@@ -161,13 +147,13 @@ function stringifyData(data: unknown): string {
 export async function handleStdioProtocolMessage(
   message: JsonRpcRequest,
   options: {
-    server?: InvestigationMcpServer | null;
+    server: InvestigationMcpServer;
     state: StdioProtocolSessionState;
     hostConfig?: HostProtocolConfig;
   }
 ): Promise<JsonRpcResponse | null> {
   const hostConfig = options.hostConfig ?? DEFAULT_HOST_CONFIG;
-  const server = getServer(options.server);
+  const server = options.server;
   const id = message.id ?? null;
 
   if (message.jsonrpc !== '2.0' || typeof message.method !== 'string') {
@@ -216,8 +202,11 @@ export async function handleStdioProtocolMessage(
       });
     case 'tools/call': {
       const params = asObject(message.params);
+      if (params === null) {
+        return errorResponse(id, -32602, 'Invalid params: params must be an object');
+      }
       const name = typeof params.name === 'string' ? params.name : '';
-      const args = asObject(params.arguments);
+      const args = asObject(params.arguments) ?? {};
 
       try {
         const result = await server.invokeTool(name as never, args as never);
@@ -252,6 +241,9 @@ export async function handleStdioProtocolMessage(
       });
     case 'resources/read': {
       const params = asObject(message.params);
+      if (params === null) {
+        return errorResponse(id, -32602, 'Invalid params: params must be an object');
+      }
       const uri = typeof params.uri === 'string' ? params.uri : '';
       if (!uri) {
         return errorResponse(id, -32602, 'uri is required');
@@ -278,6 +270,9 @@ export async function handleStdioProtocolMessage(
       });
     case 'prompts/get': {
       const params = asObject(message.params);
+      if (params === null) {
+        return errorResponse(id, -32602, 'Invalid params: params must be an object');
+      }
       const name = typeof params.name === 'string' ? params.name : '';
       const prompt = findPromptDefinition(name);
 
@@ -285,7 +280,7 @@ export async function handleStdioProtocolMessage(
         return errorResponse(id, -32602, `Unknown prompt: ${name}`);
       }
 
-      const args = asObject(params.arguments);
+      const args = asObject(params.arguments) ?? {};
       const stringArgs = Object.fromEntries(
         Object.entries(args)
           .filter(([, value]) => typeof value === 'string')

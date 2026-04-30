@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import { loadConfig } from '../../src/config.js';
+import { createInvestigationMcpServer } from '../../src/mcp/server.js';
 import { createTestApp, createAdminPool, assertServerTestDatabaseAvailable, resetServerTestDatabase } from '../test-app.js';
 import { DEFAULT_HOST_CONFIG, handleStdioProtocolMessage, type StdioProtocolSessionState } from '../../src/mcp/stdio-protocol.js';
+
+function createStubServer() {
+  return createInvestigationMcpServer({
+    config: loadConfig({ MCP_TRANSPORT: 'stdio' })
+  });
+}
 
 describe.sequential('stdio MCP protocol', () => {
   let state: StdioProtocolSessionState;
@@ -28,7 +36,7 @@ describe.sequential('stdio MCP protocol', () => {
         }
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
@@ -68,7 +76,7 @@ describe.sequential('stdio MCP protocol', () => {
         }
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
@@ -80,7 +88,7 @@ describe.sequential('stdio MCP protocol', () => {
         method: 'notifications/initialized'
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
@@ -93,7 +101,7 @@ describe.sequential('stdio MCP protocol', () => {
         method: 'prompts/list'
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
@@ -105,7 +113,7 @@ describe.sequential('stdio MCP protocol', () => {
         method: 'resources/templates/list'
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
@@ -150,7 +158,7 @@ describe.sequential('stdio MCP protocol', () => {
         }
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
@@ -162,7 +170,7 @@ describe.sequential('stdio MCP protocol', () => {
         method: 'notifications/initialized'
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
@@ -175,7 +183,7 @@ describe.sequential('stdio MCP protocol', () => {
         method: 'tools/list'
       },
       {
-        server: null,
+        server: createStubServer(),
         state,
         hostConfig: DEFAULT_HOST_CONFIG
       }
