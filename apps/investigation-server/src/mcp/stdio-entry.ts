@@ -15,6 +15,14 @@ async function main(): Promise<void> {
   };
   const decoder = createStdioMessageDecoder();
 
+  function shutdown(signal: string): void {
+    console.error(JSON.stringify({ event: 'mcp.stdio.shutdown', signal }));
+    process.stdin.destroy();
+  }
+
+  process.once('SIGINT', () => shutdown('SIGINT'));
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+
   try {
     process.stdin.setEncoding('utf8');
     for await (const chunk of process.stdin) {
