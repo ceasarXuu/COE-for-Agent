@@ -8,6 +8,7 @@ export interface ToolCallTelemetryEvent {
   name: string;
   success: boolean;
   durationMs: number;
+  denied?: boolean;
 }
 
 export interface ResourceReadTelemetryEvent {

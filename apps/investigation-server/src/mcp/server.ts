@@ -203,15 +203,25 @@ export class InvestigationMcpServer {
       throw new Error(`Tool not implemented: ${name}`);
     }
 
-    try {
-      if (MUTATION_TOOL_NAME_SET.has(name)) {
+    if (MUTATION_TOOL_NAME_SET.has(name)) {
+      try {
         authorizeMutationCommand({
           commandName: name as MutationToolName,
           input,
           secret: this.config.localIssuerSecret
         });
+      } catch (error) {
+        investigationTelemetry.recordToolCall({
+          name,
+          success: false,
+          denied: true,
+          durationMs: Date.now() - startedAt
+        });
+        throw error;
       }
+    }
 
+    try {
       const result = await handler(input);
       const durationMs = Date.now() - startedAt;
 
