@@ -1,4 +1,9 @@
-import { GUARDRAIL_TOOL_NAMES, MUTATION_TOOL_NAMES } from '@coe/mcp-contracts/tool-names';
+import {
+  GUARDRAIL_TOOL_NAMES,
+  MUTATION_TOOL_NAMES,
+  type GuardrailToolName,
+  type MutationToolName
+} from '@coe/mcp-contracts/tool-names';
 import { loadSchemaByRelativePath, type JsonSchema } from '@coe/schemas';
 
 export interface ToolRegistration {
@@ -7,7 +12,7 @@ export interface ToolRegistration {
   description: string;
 }
 
-const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
+const COMMAND_SCHEMA_BY_TOOL_NAME: Record<MutationToolName, string> = {
   'investigation.case.open': 'commands/v1/case.open.request.schema.json',
   'investigation.case.close': 'commands/v1/case.close.request.schema.json',
   'investigation.problem.update': 'commands/v1/problem.update.request.schema.json',
@@ -28,7 +33,7 @@ const COMMAND_SCHEMA_BY_TOOL_NAME: Record<string, string> = {
   'investigation.evidence.capture_and_attach': 'commands/v1/evidence.capture_and_attach.request.schema.json'
 };
 
-const TOOL_DESCRIPTION_BY_NAME: Record<string, string> = {
+const TOOL_DESCRIPTION_BY_NAME: Record<MutationToolName | GuardrailToolName, string> = {
   'investigation.case.open': 'Open a new canonical investigation case with a single problem root.',
   'investigation.case.close': 'Close a canonical investigation case after all closure conditions are satisfied.',
   'investigation.problem.update': 'Update the canonical root problem content for a case.',
