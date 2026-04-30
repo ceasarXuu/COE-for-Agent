@@ -52,7 +52,7 @@ export async function createInProcessInvestigationMcpClient(
       return app.mcpServer.readResource(uri);
     },
     invokeTool(name, input) {
-      return app.mcpServer.invokeTool(name, input as never);
+      return app.mcpServer.invokeTool(name, input);
     },
     async close() {
       unsubscribeHead();
