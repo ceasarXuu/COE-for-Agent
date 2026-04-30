@@ -206,8 +206,6 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
         }
       });
 
-      clearTimeout(timeoutId);
-
       if (!response.ok) {
         const status = response.status;
         const statusText = response.statusText;
@@ -222,13 +220,13 @@ export function createConsoleApiClient(options: ConsoleApiClientOptions = {}) {
 
       return response.json() as Promise<T>;
     } catch (error) {
-      clearTimeout(timeoutId);
-
       if (error instanceof DOMException && error.name === 'AbortError') {
         throw new Error(`Request timeout after ${DEFAULT_FETCH_TIMEOUT_MS}ms`);
       }
 
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
