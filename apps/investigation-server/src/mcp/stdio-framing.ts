@@ -13,6 +13,9 @@ export interface JsonRpcEnvelope {
 
 const HEADER_SEPARATOR = '\r\n\r\n';
 
+/** Maximum allowed message body size in bytes (10 MiB). */
+export const MAX_MESSAGE_SIZE = 10 * 1024 * 1024;
+
 export function createStdioFrame(message: JsonRpcEnvelope): string {
   const payload = JSON.stringify(message);
   return `Content-Length: ${Buffer.byteLength(payload, 'utf8')}\r\n\r\n${payload}`;
@@ -24,6 +27,11 @@ export function createStdioMessageDecoder() {
   return {
     push(chunk: string): JsonRpcEnvelope[] {
       buffer += chunk;
+
+      if (buffer.length > MAX_MESSAGE_SIZE * 2) {
+        throw new Error(`Message buffer exceeded maximum size of ${MAX_MESSAGE_SIZE * 2} bytes`);
+      }
+
       const messages: JsonRpcEnvelope[] = [];
 
       while (true) {
@@ -39,8 +47,14 @@ export function createStdioMessageDecoder() {
         }
 
         const contentLength = Number(contentLengthHeader.split(':')[1]?.trim());
+        if (Number.isNaN(contentLength)) {
+          throw new Error('Invalid Content-Length header: not a number');
+        }
         if (!Number.isInteger(contentLength) || contentLength < 0) {
           throw new Error('Invalid Content-Length header');
+        }
+        if (contentLength > MAX_MESSAGE_SIZE) {
+          throw new Error(`Content-Length ${contentLength} exceeds maximum allowed size of ${MAX_MESSAGE_SIZE}`);
         }
 
         const bodyStart = headerEnd + HEADER_SEPARATOR.length;

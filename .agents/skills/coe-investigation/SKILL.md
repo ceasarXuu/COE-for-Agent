@@ -1,3 +1,8 @@
+---
+name: coe-investigation
+description: Evidence-driven investigation workflow for turning vague issues into tracked cases with structured evidence chains.
+---
+
 # COE Investigation
 
 Use this skill when a task should be handled as an evidence-driven investigation instead of an immediate fix.

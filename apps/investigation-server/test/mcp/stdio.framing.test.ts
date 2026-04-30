@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { createStdioFrame, createStdioMessageDecoder } from '../../src/mcp/stdio-framing.js';
+import { createStdioFrame, createStdioMessageDecoder, MAX_MESSAGE_SIZE } from '../../src/mcp/stdio-framing.js';
 
 describe('stdio MCP framing', () => {
   test('encodes JSON-RPC payloads with Content-Length framing', () => {
@@ -48,5 +48,26 @@ describe('stdio MCP framing', () => {
         method: 'tools/list'
       }
     ]);
+  });
+
+  test('rejects Content-Length exceeding maximum message size', () => {
+    const decoder = createStdioMessageDecoder();
+    const frame = `Content-Length: ${MAX_MESSAGE_SIZE + 1}\r\n\r\n{}`;
+
+    expect(() => decoder.push(frame)).toThrow('exceeds maximum allowed size');
+  });
+
+  test('rejects accumulated buffer exceeding maximum size', () => {
+    const decoder = createStdioMessageDecoder();
+    const oversized = 'x'.repeat(MAX_MESSAGE_SIZE * 2 + 1);
+
+    expect(() => decoder.push(oversized)).toThrow('buffer exceeded maximum size');
+  });
+
+  test('rejects non-numeric Content-Length', () => {
+    const decoder = createStdioMessageDecoder();
+    const frame = 'Content-Length: abc\r\n\r\n{}';
+
+    expect(() => decoder.push(frame)).toThrow('not a number');
   });
 });
